@@ -904,13 +904,11 @@ justify-content:center;
 flex-wrap:wrap;
 ">
 
-<button class="btn btn-main" style="max-width:320px;"
-onclick="generarPDF(true)">
+<button class="btn btn-main" style="max-width:320px;" onclick="generarPDF(true)">
 SEGUIMIENTO Y AJUSTE
 </button>
 
-<button class="btn btn-success" style="max-width:320px;"
-onclick="generarPDF(false)">
+<button class="btn btn-success" style="max-width:320px;" onclick="generarPDF(false)">
 CONTROL EN PROGRAMA CV
 </button>
 
@@ -1292,5 +1290,30 @@ function generarPDF(esSeguimiento) {
 </script>
 
 <script src="app.js"></script>
+<script>
+function generarPDF(esSeguimiento) {
+  console.log("CLICK OK", esSeguimiento);
+
+  let tipo = esSeguimiento ? "seguimiento" : "pscv";
+
+  // Validación mínima
+  if (!globalData || globalData.am === 0) {
+    alert("Primero debes calcular una dosis.");
+    return;
+  }
+
+  // Navegar
+  nav(6);
+
+  // Generar documento
+  setTimeout(() => {
+    if (typeof generarDocumento === "function") {
+      generarDocumento(tipo);
+    } else {
+      alert("Error: generarDocumento no está disponible");
+    }
+  }, 200);
+}
+</script>
 </body>
 </html>
