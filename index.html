@@ -778,15 +778,15 @@ const dosisKg = totalNuevo / peso;
 // mostrar alerta si está entre 0.7 y 1
 const alertaBox = document.getElementById('alerta-dosis-alta');
 
-if (dosisKg >= 0.7 && dosisKg <= 1) {
+if (dosisKg >= 0.7) {
   alertaBox.style.display = 'block';
 } else {
   alertaBox.style.display = 'none';
 }
   
-if (!(dosisKg >= 0.7 && dosisKg <= 1)) {
+if (!(dosisKg >= 0.7)) {
   globalData.acciones = "";
-}  
+}
   
 if (totalNuevo > dosisMaxima) {
 
@@ -833,7 +833,7 @@ Esquema final:
 
 Control en 15 días con glicemias capilares.
 
-${dosisKg >= 0.7 && dosisKg <= 1 ? `
+${dosisKg >= 0.7 ? `
 Conducta adicional:
 Mantener controles y seguimiento por medicina interna APS.
 ${acciones ? acciones : ""}
