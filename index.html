@@ -616,6 +616,39 @@ onclick="calcularSeguimientoPro()">
 AJUSTAR DOSIS (PROTOCOLO APS)
 </button>
 
+<div id="alerta-dosis-alta" style="
+display:none;
+background:#ffe9e9;
+border:2px solid #ff5630;
+border-radius:12px;
+padding:20px;
+max-width:700px;
+margin:20px auto;
+text-align:left;
+">
+
+<p style="font-weight:700; margin-bottom:10px;">
+⚠️ Paciente en dosis alta de insulina (≥0.7 UI/kg/día)
+</p>
+
+<p style="margin-bottom:10px;">
+Mantener controles y seguimiento por medicina interna APS.
+</p>
+
+<p style="margin-bottom:10px;"><b>Acciones sugeridas:</b></p>
+
+<label><input type="checkbox" class="accion-extra" value="Evaluar por nutricionista"> Evaluar por nutricionista</label><br>
+
+<label><input type="checkbox" class="accion-extra" value="Evaluar técnica de administración de insulina por enfermería"> Evaluar por enfermera técnica de administración de insulina</label><br>
+
+<label><input type="checkbox" class="accion-extra" value="Evaluar uso y almacenamiento de insulina por químico farmacéutico"> Evaluar por químico farmacéutico uso y almacenamiento de insulina</label><br>
+
+<label><input type="checkbox" class="accion-extra" value="Derivar a Telediabetología"> Derivar a Telediabetología</label><br>
+
+<label><input type="checkbox" class="accion-extra" value="Derivar a diabetología nivel secundario"> Derivar a Diabetología nivel secundario</label>
+
+</div>
+  
 </div>
 
 <style>
@@ -741,6 +774,18 @@ const dosisMaxima = Math.round(peso * 1);
 
 let totalNuevo = nuevaAM + nuevaPM;
 
+// cálculo dosis por kg
+const dosisKg = totalNuevo / peso;
+
+// mostrar alerta si está entre 0.7 y 1
+const alertaBox = document.getElementById('alerta-dosis-alta');
+
+if (dosisKg >= 0.7 && dosisKg <= 1) {
+  alertaBox.style.display = 'block';
+} else {
+  alertaBox.style.display = 'none';
+}
+  
 if (totalNuevo > dosisMaxima) {
 
   const exceso = totalNuevo - dosisMaxima;
@@ -758,6 +803,12 @@ if (totalNuevo > dosisMaxima) {
 globalData.am = nuevaAM;
 globalData.pm = nuevaPM;
 
+const acciones = Array.from(document.querySelectorAll('.accion-extra:checked'))
+.map(a => "- " + a.value)
+.join("\n");
+
+globalData.acciones = acciones;
+  
 const nota = `
 SEGUIMIENTO INSULINA NPH (PROTOCOLO APS)
 
@@ -779,6 +830,12 @@ Esquema final:
 - ${nuevaPM} UI antes de dormir
 
 Control en 15 días con glicemias capilares.
+
+${dosisKg >= 0.7 && dosisKg <= 1 ? `
+Conducta adicional:
+Mantener controles y seguimiento por medicina interna APS.
+${acciones ? acciones : ""}
+` : ""}
 `;
 
 document.getElementById('nota-clinica').innerText = nota;
@@ -1067,7 +1124,14 @@ function generarDocumento(tipo){
         <li>Mantener rotación de sitios de punción y técnica aprendida.</li>
         <li><b>Control en 15 días</b> con registro de glicemias en ayunas y antes de las once.</li>
       </ul>
-      ${tabla}
+${globalData.acciones ? `
+<b style="font-size:12px;">CONDUCTA ADICIONAL:</b>
+<ul style="margin-top:2px; margin-bottom:5px; padding-left:18px; font-size:12px;">
+  <li>Mantener controles y seguimiento por medicina interna APS.</li>
+  ${globalData.acciones.split("\n").map(a => `<li>${a.replace("- ","")}</li>`).join("")}
+</ul>
+` : ""}
+    ${tabla}
       <div style="display:flex; justify-content: space-between; margin-top:8px; font-size:12px;">
         <div><b>Próximo Control:</b> ____/____/____ Hora: ________</div>
         <div style="text-align:center; width:180px; border-top:1px solid #000; margin-top:20px;">Firma y Timbre Médico</div>
@@ -1110,7 +1174,7 @@ function finalizar(){
 
 <script>
 
-let globalData = {am:0,pm:0,criteria:''};
+let globalData = {am:0,pm:0,criteria:'', acciones:''};
 
 function nav(n){
 document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
