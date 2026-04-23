@@ -789,10 +789,6 @@ if (dosisKg >= 0.7 && dosisKg <= 1) {
 if (!(dosisKg >= 0.7 && dosisKg <= 1)) {
   globalData.acciones = "";
 }  
-
-if (!(dosisKg >= 0.7 && dosisKg <= 1)) {
-  globalData.acciones = "";
-}
   
 if (totalNuevo > dosisMaxima) {
 
@@ -1197,38 +1193,6 @@ document.getElementById('alerta').style.display='block';
 
 function mostrarInicio(){
 document.getElementById('criterios').style.display='block';
-}
-
-function calcularInicio(){
-
-let peso=document.getElementById('peso-paciente').value;
-let factor=document.getElementById('factor-dosis').value;
-
-let sel=[...document.querySelectorAll('.c:checked')].map(c=>c.value);
-
-let total=Math.round(peso*factor);
-
-globalData.am=Math.round(total*0.66);
-globalData.pm=total-globalData.am;
-
-let nota=`INICIO
-
-Paciente con criterios: ${sel.join(', ')}
-
-Insulina NPH:
-- ${globalData.am} unidades antes del desayuno
-- ${globalData.pm} unidades antes de dormir
-
-Educación por enfermería
-Evaluación por nutricionista
-
-Control en 15 días con glicemia en ayunas y Antes de las once`;
-
-document.getElementById('nota-clinica').innerText=nota;
-
-nav(5);
-}
-
 }
 
 function resetTotal(){
