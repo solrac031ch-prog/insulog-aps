@@ -374,7 +374,7 @@ Ingrese el peso del paciente y seleccione el riesgo de hipoglicemia para calcula
 
 <div>
 <label>Peso del paciente (kg)</label>
-<input type="number" id="peso-paciente" placeholder="Ej: 70" oninput="limitDigits(this,3)">
+<input type="number" id="peso-paciente" placeholder="Ej: 70" <input type="number" id="peso-paciente" placeholder="Ej: 70" min="1" max="300">>
 </div>
 
 <div>
@@ -480,10 +480,9 @@ alert("Seleccione al menos un criterio de inicio.");
 return;
 }
 
-globalData.flow = 'inicio';
 globalData.criteria = sel.join(', ');
 
-const total = Math.round(peso * factor);
+const total = Math.max(4, Math.round(peso * factor));
 const am = Math.round(total * 0.66);
 const pm = total - am;
 
@@ -514,11 +513,8 @@ document.getElementById('nota-clinica').innerText = nota;
 
 // navegación segura
 setTimeout(() => {
-if (typeof nav === "function") {
-nav(5);
-} else if (typeof navegar === "function") {
-navegar(5);
-} else {
+nav(5); 
+else {
 alert("Error de navegación");
 }
 }, 600);
@@ -1169,11 +1165,6 @@ ${globalData.acciones ? `
   document.getElementById("pdf").innerHTML = contenidoHeader + contenidoCuerpo + piePagina;
 }
 
-function finalizar(){
-  nav(0);
-  document.getElementById("pdf").innerHTML = "";
-  document.getElementById("nombre-paciente").value = "";
-}
 </script>
 
 <script>
@@ -1197,12 +1188,19 @@ document.getElementById('criterios').style.display='block';
 
 function resetTotal(){
 
+const preview = document.getElementById('preview-dosis');
+if(preview){
+  preview.style.display = 'none';
+  preview.innerHTML = '';
+}
+  
 // limpiar datos globales
 globalData = {am:0,pm:0,criteria:'', acciones:''};
 
 // limpiar inputs
 document.querySelectorAll('input').forEach(i => i.value='');
 document.querySelectorAll('input[type=checkbox]').forEach(c => c.checked=false);
+document.getElementById('criterios').style.display = 'none';
 
 // limpiar tablas
 document.getElementById('tabla-seguimiento').innerHTML = '';
