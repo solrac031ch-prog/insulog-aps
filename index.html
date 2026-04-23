@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <link rel="stylesheet" href="styles.css">
 <meta charset="UTF-8">
 <title>Protocolo de Insulinización APS - Dr. Herrera</title>
 
@@ -1243,55 +1244,6 @@ document.getElementById('alerta').style.display='none';
 // volver a inicio
 nav(0);
 }
-
-  <style>
-/* ===== FIX IMPRESIÓN CLÍNICA ===== */
-
-@media print {
-
-  @page {
-    size: letter;
-    margin: 0;
-  }
-
-  body {
-    background: white;
-  }
-
-  body * {
-    visibility: hidden;
-  }
-
-  #pdf, #pdf * {
-    visibility: visible;
-  }
-
-  #pdf {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    padding: 1cm 3cm;
-    box-sizing: border-box;
-    font-size: 12px;
-    line-height: 1.25;
-  }
-
-  table, tr, td {
-    page-break-inside: avoid;
-  }
-}
-
-/* TABLA MÁS UTILIZABLE */
-#pdf table td {
-  height: 32px;
-  font-size: 12px;
-}
-
-#pdf table th {
-  font-size: 11px;
-}
-</style>
   
 </script>
 
@@ -1348,4 +1300,5 @@ document.addEventListener("click", (e) => {
 </script>
   
 </body>
+  <script src="app.js"></script>
 </html>
