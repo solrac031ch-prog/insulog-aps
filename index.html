@@ -1,3 +1,23 @@
+NO CUMPLISTE LO QUE TE PEDI, POR FAVOR REVISALO 
+
+
+quiero que se activen los siguiente botones/opcionales
+
+1. contol con nutriconista 
+2. Hora con enfermera para evaluar administracion de insulina
+3. Hora con quimico farmaceutico para evaluar uso y almacenamiento de insulina
+4. derivar a telediabetes (mientras tanto controles y seguimientos por medicina interna APS)
+5. derivar a Diabetes/hospiota (mientras tanto controles y seguimientos por medicina interna APS)
+
+Quiero que estos botones se activen cuando la dosis de insulina este mayor a 0.7 u/kg/dia 
+
+y que el boton selecionado pase a la nota clinica para copiar y pegar en ficha clinica y salga en el PDF para entregar al paciente 
+
+no quiero que modifiques nada mas
+recuerda que estoy trabajando en https://github.com/
+dame el codigo exacto y las instrucciones para modifica el codigo de manera clara y didactica
+
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -780,20 +800,8 @@ const alertaBox = document.getElementById('alerta-dosis-alta');
 
 if (dosisKg >= 0.7) {
   alertaBox.style.display = 'block';
-
-  // ACTIVA TODOS LOS CHECKBOX AUTOMÁTICAMENTE DISPONIBLES
-  document.querySelectorAll('.accion-extra').forEach(el => {
-    el.disabled = false;
-  });
-
 } else {
   alertaBox.style.display = 'none';
-
-  // DESACTIVA Y LIMPIA SELECCIÓN
-  document.querySelectorAll('.accion-extra').forEach(el => {
-    el.checked = false;
-    el.disabled = true;
-  });
 }
   
 if (!(dosisKg >= 0.7)) {
@@ -817,11 +825,9 @@ if (totalNuevo > dosisMaxima) {
 globalData.am = nuevaAM;
 globalData.pm = nuevaPM;
 
-const accionesSeleccionadas = Array.from(document.querySelectorAll('.accion-extra:checked'))
-  .map(a => a.value)
-  .join("\n");
-
-globalData.acciones = accionesSeleccionadas;
+const acciones = Array.from(document.querySelectorAll('.accion-extra:checked'))
+.map(a => "- " + a.value)
+.join("\n");
 
 globalData.acciones = acciones;
   
@@ -848,11 +854,9 @@ Esquema final:
 Control en 15 días con glicemias capilares.
 
 ${dosisKg >= 0.7 ? `
-CONDUCTAS INDICADAS:
-
-${globalData.acciones ? globalData.acciones.split("\n").map(a => "• " + a).join("\n") : ""}
-
+Conducta adicional:
 Mantener controles y seguimiento por medicina interna APS.
+${acciones ? acciones : ""}
 ` : ""}
 `;
 
@@ -1347,6 +1351,3 @@ function finalizar() {
 }
 
 </script>
-  
-</body>
-</html>
