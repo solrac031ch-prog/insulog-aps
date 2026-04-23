@@ -533,6 +533,11 @@ alert("Error de navegación");
 Seguimiento y ajuste de insulina NPH
 </h2>
 
+<div style="max-width:500px;margin:10px auto;text-align:left;">
+  <label>Peso del paciente (kg)</label>
+  <input type="number" id="peso-seguimiento" placeholder="Ej: 70">
+</div>
+
 <p style="
 max-width:700px;
 margin:0 auto 20px;
@@ -665,6 +670,13 @@ nav(4);
 /* PROTOCOLO APS REAL MEJORADO */
 function calcularSeguimientoPro() {
 
+const peso = parseFloat(document.getElementById('peso-seguimiento').value);
+
+if (!peso || peso <= 0) {
+  alert("Ingrese peso del paciente para validar dosis máxima.");
+  return;
+}
+
 let am = parseInt(document.getElementById('am-actual').value);
 let pm = parseInt(document.getElementById('pm-actual').value);
 
@@ -721,8 +733,27 @@ if (ayunas.some(v => v < 54) || preonce.some(v => v < 54)) {
 alerta += "🚨 HIPOGLICEMIA SEVERA (<54 mg/dL) - ajustar urgencia.\n";
 }
 
-const nuevaAM = Math.min(99, Math.max(4, am + ajusteAM));
-const nuevaPM = Math.min(99, Math.max(4, pm + ajustePM));
+let nuevaAM = Math.min(99, Math.max(4, am + ajusteAM));
+let nuevaPM = Math.min(99, Math.max(4, pm + ajustePM));
+
+// 🔒 LÍMITE MÁXIMO 1 UI/kg/día
+const dosisMaxima = Math.round(peso * 1);
+
+let totalNuevo = nuevaAM + nuevaPM;
+
+if (totalNuevo > dosisMaxima) {
+
+  const exceso = totalNuevo - dosisMaxima;
+
+  // reducir proporcionalmente
+  const reduccionAM = Math.round((nuevaAM / totalNuevo) * exceso);
+  const reduccionPM = exceso - reduccionAM;
+
+  nuevaAM -= reduccionAM;
+  nuevaPM -= reduccionPM;
+
+  alerta += `⚠️ Dosis ajustada al máximo permitido (${dosisMaxima} UI/día según peso).\n`;
+}
 
 globalData.am = nuevaAM;
 globalData.pm = nuevaPM;
