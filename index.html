@@ -786,6 +786,14 @@ if (dosisKg >= 0.7 && dosisKg <= 1) {
   alertaBox.style.display = 'none';
 }
   
+if (!(dosisKg >= 0.7 && dosisKg <= 1)) {
+  globalData.acciones = "";
+}  
+
+if (!(dosisKg >= 0.7 && dosisKg <= 1)) {
+  globalData.acciones = "";
+}
+  
 if (totalNuevo > dosisMaxima) {
 
   const exceso = totalNuevo - dosisMaxima;
@@ -1221,83 +1229,12 @@ document.getElementById('nota-clinica').innerText=nota;
 nav(5);
 }
 
-let am=parseInt(document.getElementById('am-actual').value);
-let pm=parseInt(document.getElementById('pm-actual').value);
-
-let ayunas=[...document.querySelectorAll('.ay')].map(i=>parseInt(i.value)).filter(v=>!isNaN(v));
-let once=[...document.querySelectorAll('.on')].map(i=>parseInt(i.value)).filter(v=>!isNaN(v));
-
-if(ayunas.length<3){
-alert("Ingrese al menos 3 días");
-return;
-}
-
-let promAy=ayunas.reduce((a,b)=>a+b,0)/ayunas.length;
-let promOn=once.length?once.reduce((a,b)=>a+b,0)/once.length:0;
-
-let ajusteAM=0;
-let ajustePM=0;
-
-// CLÍNICA REAL
-if(promAy>180) ajustePM+=4;
-else if(promAy>130) ajustePM+=2;
-else if(promAy<80) ajustePM-=2;
-
-if(promOn>180) ajusteAM+=4;
-else if(promOn>140) ajusteAM+=2;
-else if(promOn<80 && promOn!==0) ajusteAM-=2;
-
-globalData.am=am+ajusteAM;
-globalData.pm=pm+ajustePM;
-
-let nota=`SEGUIMIENTO
-
-Promedio ayunas: ${Math.round(promAy)}
-Promedio Antes de las once: ${Math.round(promOn)}
-
-Nueva dosis:
-- ${globalData.am} unidades AM
-- ${globalData.pm} unidades PM
-
-Control en 15 días`;
-
-document.getElementById('nota-clinica').innerText=nota;
-
-nav(5);
-}
-
-function generarPDF(seg){
-
-let hoy=new Date().toLocaleDateString();
-
-if(seg){
-document.getElementById('pdf').innerHTML=`
-<h3>Registro glicemias</h3>
-Fecha: ${hoy}<br><br>
-Dosis:
-AM ${globalData.am} / PM ${globalData.pm}
-
-<table>
-<tr><th>Fecha</th><th>Ayunas</th><th>Antes de las once</th></tr>
-${Array.from({length:15},()=>`<tr><td></td><td></td><td></td></tr>`).join('')}
-</table>
-`;
-}else{
-document.getElementById('pdf').innerHTML=`
-<h3>Indicaciones</h3>
-AM ${globalData.am}<br>
-PM ${globalData.pm}<br><br>
-Solicitar control en programa cardiovascular
-`;
-}
-
-nav(6);
 }
 
 function resetTotal(){
 
 // limpiar datos globales
-globalData = {am:0,pm:0,criteria:''};
+globalData = {am:0,pm:0,criteria:'', acciones:''};
 
 // limpiar inputs
 document.querySelectorAll('input').forEach(i => i.value='');
