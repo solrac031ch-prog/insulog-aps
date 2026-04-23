@@ -1185,7 +1185,73 @@ document.getElementById('criterios').style.display='block';
 
   <script>
 
-/* AUTO FECHA */
+<script>
+
+/* =========================
+   ESTADO GLOBAL ÚNICO
+========================= */
+let globalData = {
+  am: 0,
+  pm: 0,
+  criteria: '',
+  acciones: ''
+};
+
+/* =========================
+   NAVEGACIÓN
+========================= */
+function nav(n){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('p' + n).classList.add('active');
+}
+
+/* =========================
+   EXCLUSIÓN
+========================= */
+function exclusion(){
+  document.getElementById('alerta').style.display = 'block';
+}
+
+/* =========================
+   MOSTRAR CRITERIOS
+========================= */
+function mostrarInicio(){
+  document.getElementById('criterios').style.display = 'block';
+}
+
+/* =========================
+   RESET TOTAL
+========================= */
+function resetTotal(){
+
+  globalData = {am:0, pm:0, criteria:'', acciones:''};
+
+  document.querySelectorAll('input').forEach(i => i.value = '');
+  document.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = false);
+
+  const ids = ['criterios','alerta','tabla-seguimiento','nota-clinica','pdf'];
+
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+
+    if(el.tagName === "TBODY" || el.tagName === "DIV"){
+      el.innerHTML = '';
+    }
+  });
+}
+
+/* =========================
+   FINALIZAR
+========================= */
+function finalizar(){
+  resetTotal();
+  nav(0);
+}
+
+/* =========================
+   FECHA AUTOMÁTICA
+========================= */
 document.addEventListener("DOMContentLoaded", () => {
   const fecha = document.getElementById("fecha-hoy");
   if (fecha) {
@@ -1193,91 +1259,4 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-/* LIMPIEZA PDF */
-function limpiarPDF() {
-  const pdf = document.getElementById("pdf");
-  if (!pdf) return;
-
-  let contenido = pdf.innerHTML;
-
-  contenido = contenido.replace(/Informe clínico Insulog APS/gi, "");
-  contenido = contenido.replace(/Plataforma Insulog APS/gi, "");
-
-  pdf.innerHTML = contenido;
-}
-
-window.addEventListener("beforeprint", limpiarPDF);
-
-/* SCROLL AUTOMÁTICO */
-function scrollToPDF() {
-  const pdf = document.getElementById("pdf");
-  if (pdf) {
-    pdf.scrollIntoView({ behavior: "smooth" });
-  }
-}
-
-document.addEventListener("click", (e) => {
-  if (e.target.innerText.includes("GENERAR") ||
-      e.target.innerText.includes("SEGUIMIENTO") ||
-      e.target.innerText.includes("CONTROL")) {
-
-    setTimeout(scrollToPDF, 300);
-  }
-});
-
-/* LIMPIAR AL FINALIZAR */
-document.addEventListener("click", (e) => {
-  if (e.target.closest("button") && e.target.closest("button").innerText.includes("FINALIZAR")) {
-    const pdf = document.getElementById("pdf");
-    if (pdf) pdf.innerHTML = "";
-  }
-});
-
-<script>
-function generarPDF(esSeguimiento) {
-  let tipo = esSeguimiento ? "seguimiento" : "pscv";
-
-  if (!globalData || globalData.am === 0) {
-    alert("Primero debes calcular una dosis.");
-    return;
-  }
-
-  nav(6);
-
-  setTimeout(() => {
-    generarDocumento(tipo);
-  }, 200);
-}
-
-function resetTotal() {
-  globalData = {am:0,pm:0,criteria:'', acciones:''};
-
-  document.querySelectorAll('input').forEach(i => i.value='');
-  document.querySelectorAll('input[type=checkbox]').forEach(c => c.checked=false);
-
-  const criterios = document.getElementById('criterios');
-  if (criterios) criterios.style.display = 'none';
-
-  const alerta = document.getElementById('alerta');
-  if (alerta) alerta.style.display = 'none';
-
-  const tabla = document.getElementById('tabla-seguimiento');
-  if (tabla) tabla.innerHTML = '';
-
-  const nota = document.getElementById('nota-clinica');
-  if (nota) nota.innerText = '';
-
-  const pdf = document.getElementById('pdf');
-  if (pdf) pdf.innerHTML = '';
-}
-
-function finalizar() {
-  resetTotal();
-  nav(0);
-}
 </script>
-  
-let globalData = {am:0,pm:0,criteria:'', acciones:''};
-  
-</body>
-</html>
