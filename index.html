@@ -1182,7 +1182,12 @@ document.getElementById('criterios').style.display='block';
 }
 
 function resetTotal(){
-
+<script>
+function finalizar() {
+  resetTotal();   // limpia todo
+  nav(0);         // vuelve al inicio
+}
+</script>
 const preview = document.getElementById('preview-dosis');
 if(preview){
   preview.style.display = 'none';
