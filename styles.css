@@ -1,0 +1,46 @@
+/* ===== MEJORAS VISUALES ===== */
+
+.page {
+animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+from { opacity:0; transform:translateY(10px); }
+to { opacity:1; transform:translateY(0); }
+}
+
+.btn:hover {
+transform: scale(1.02);
+opacity: 0.95;
+}
+
+input:focus, select:focus {
+outline: none;
+border-color: #0052cc;
+box-shadow: 0 0 5px rgba(0,82,204,0.3);
+}
+
+/* CHECKBOX BONITOS */
+.criterio-btn input {
+accent-color: #0052cc;
+}
+
+/* SCROLL SUAVE */
+html {
+scroll-behavior: smooth;
+}
+
+/* RESPONSIVE */
+@media (max-width:600px){
+.container {
+padding:20px;
+}
+
+.form-grid {
+grid-template-columns:1fr;
+}
+
+.criterios-grid {
+grid-template-columns:1fr;
+}
+}
