@@ -1127,20 +1127,6 @@ function mostrarInicio(){
 document.getElementById('criterios').style.display='block';
 }
 
-function prepararSeguimiento(){
-let t=document.getElementById('tabla-seguimiento');
-t.innerHTML='';
-for(let i=1;i<=15;i++){
-t.innerHTML+=`
-<tr>
-<td>${i}</td>
-<td><input type="number" class="ay"></td>
-<td><input type="number" class="on"></td>
-</tr>`;
-}
-nav(4);
-}
-
 function calcularInicio(){
 
 let peso=document.getElementById('peso-paciente').value;
@@ -1170,8 +1156,6 @@ document.getElementById('nota-clinica').innerText=nota;
 
 nav(5);
 }
-
-function calcularSeguimientoReal(){
 
 let am=parseInt(document.getElementById('am-actual').value);
 let pm=parseInt(document.getElementById('pm-actual').value);
