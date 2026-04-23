@@ -780,8 +780,20 @@ const alertaBox = document.getElementById('alerta-dosis-alta');
 
 if (dosisKg >= 0.7) {
   alertaBox.style.display = 'block';
+
+  // ACTIVA TODOS LOS CHECKBOX AUTOMÁTICAMENTE DISPONIBLES
+  document.querySelectorAll('.accion-extra').forEach(el => {
+    el.disabled = false;
+  });
+
 } else {
   alertaBox.style.display = 'none';
+
+  // DESACTIVA Y LIMPIA SELECCIÓN
+  document.querySelectorAll('.accion-extra').forEach(el => {
+    el.checked = false;
+    el.disabled = true;
+  });
 }
   
 if (!(dosisKg >= 0.7)) {
@@ -805,9 +817,11 @@ if (totalNuevo > dosisMaxima) {
 globalData.am = nuevaAM;
 globalData.pm = nuevaPM;
 
-const acciones = Array.from(document.querySelectorAll('.accion-extra:checked'))
-.map(a => "- " + a.value)
-.join("\n");
+const accionesSeleccionadas = Array.from(document.querySelectorAll('.accion-extra:checked'))
+  .map(a => a.value)
+  .join("\n");
+
+globalData.acciones = accionesSeleccionadas;
 
 globalData.acciones = acciones;
   
@@ -834,9 +848,11 @@ Esquema final:
 Control en 15 días con glicemias capilares.
 
 ${dosisKg >= 0.7 ? `
-Conducta adicional:
+CONDUCTAS INDICADAS:
+
+${globalData.acciones ? globalData.acciones.split("\n").map(a => "• " + a).join("\n") : ""}
+
 Mantener controles y seguimiento por medicina interna APS.
-${acciones ? acciones : ""}
 ` : ""}
 `;
 
