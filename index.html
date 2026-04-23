@@ -1126,7 +1126,7 @@ ${globalData.acciones ? `
 <ul style="margin-top:2px; margin-bottom:5px; padding-left:18px; font-size:12px;">
   <li>Mantener controles y seguimiento por medicina interna APS.</li>
   ${globalData.acciones
-  ? globalData.acciones.split("\n").map(a => `<li>${a.replace("- ","")}</li>`).join("")
+  ${globalData.acciones ? globalData.acciones.split("\n").map(a => `<li>${a.replace("- ","")}</li>`).join("") : ""}(a => `<li>${a.replace("- ","")}</li>`).join("")
   : ""}
 </ul>
 ` : ""}
@@ -1171,8 +1171,6 @@ function nav(n){
 document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
 document.getElementById('p'+n).classList.add('active');
 }
-
-function navegar(n){ nav(n); }
 
 function exclusion(){
 document.getElementById('alerta').style.display='block';
@@ -1252,7 +1250,26 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-</script>
+<script>
+
+/* =========================
+   ESTADO GLOBAL
+========================= */
+let globalData = {
+  am: 0,
+  pm: 0,
+  criteria: '',
+  acciones: ''
+};
+
+/* =========================
+   NAVEGACIÓN
+========================= */
+function nav(n){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('p' + n).classList.add('active');
+}
+
 /* =========================
    EXCLUSIÓN
 ========================= */
@@ -1282,10 +1299,7 @@ function resetTotal(){
   ids.forEach(id => {
     const el = document.getElementById(id);
     if(!el) return;
-
-    if(el.tagName === "TBODY" || el.tagName === "DIV"){
-      el.innerHTML = '';
-    }
+    el.innerHTML = '';
   });
 }
 
