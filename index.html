@@ -514,9 +514,6 @@ document.getElementById('nota-clinica').innerText = nota;
 // navegación segura
 setTimeout(() => {
 nav(5); 
-else {
-alert("Error de navegación");
-}
 }, 600);
 
 }
@@ -1276,6 +1273,25 @@ document.addEventListener("click", (e) => {
 });
 
 </script>
+function generarPDF(esSeguimiento) {
+
+  // decidir tipo de documento
+  let tipo = "";
+
+  if (esSeguimiento) {
+    tipo = "seguimiento";
+  } else {
+    tipo = "pscv";
+  }
+
+  // navegar a pantalla de impresión
+  nav(6);
+
+  // generar documento automáticamente
+  setTimeout(() => {
+    generarDocumento(tipo);
+  }, 200);
+}
   
 </body>
   <script src="app.js"></script>
