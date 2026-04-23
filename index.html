@@ -1125,7 +1125,9 @@ ${globalData.acciones ? `
 <b style="font-size:12px;">CONDUCTA ADICIONAL:</b>
 <ul style="margin-top:2px; margin-bottom:5px; padding-left:18px; font-size:12px;">
   <li>Mantener controles y seguimiento por medicina interna APS.</li>
-  ${globalData.acciones.split("\n").map(a => `<li>${a.replace("- ","")}</li>`).join("")}
+  ${globalData.acciones
+  ? globalData.acciones.split("\n").map(a => `<li>${a.replace("- ","")}</li>`).join("")
+  : ""}
 </ul>
 ` : ""}
     ${tabla}
@@ -1180,10 +1182,10 @@ function mostrarInicio(){
 document.getElementById('criterios').style.display='block';
 }
   
-</script>
+<script>
 
 /* =========================
-   ESTADO GLOBAL ÚNICO
+   ESTADO GLOBAL
 ========================= */
 let globalData = {
   am: 0,
@@ -1200,6 +1202,57 @@ function nav(n){
   document.getElementById('p' + n).classList.add('active');
 }
 
+/* =========================
+   EXCLUSIÓN
+========================= */
+function exclusion(){
+  document.getElementById('alerta').style.display = 'block';
+}
+
+/* =========================
+   MOSTRAR CRITERIOS
+========================= */
+function mostrarInicio(){
+  document.getElementById('criterios').style.display = 'block';
+}
+
+/* =========================
+   RESET TOTAL
+========================= */
+function resetTotal(){
+  globalData = {am:0, pm:0, criteria:'', acciones:''};
+
+  document.querySelectorAll('input').forEach(i => i.value = '');
+  document.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = false);
+
+  const ids = ['criterios','alerta','tabla-seguimiento','nota-clinica','pdf'];
+
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.innerHTML = '';
+  });
+}
+
+/* =========================
+   FINALIZAR
+========================= */
+function finalizar(){
+  resetTotal();
+  nav(0);
+}
+
+/* =========================
+   FECHA AUTOMÁTICA
+========================= */
+document.addEventListener("DOMContentLoaded", () => {
+  const fecha = document.getElementById("fecha-hoy");
+  if (fecha) {
+    fecha.innerText = new Date().toLocaleDateString("es-CL");
+  }
+});
+
+</script>
 /* =========================
    EXCLUSIÓN
 ========================= */
