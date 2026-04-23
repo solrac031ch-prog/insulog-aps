@@ -1181,13 +1181,6 @@ function mostrarInicio(){
 document.getElementById('criterios').style.display='block';
 }
 
-function resetTotal(){
-<script>
-function finalizar() {
-  resetTotal();   // limpia todo
-  nav(0);         // vuelve al inicio
-}
-</script>
 const preview = document.getElementById('preview-dosis');
 if(preview){
   preview.style.display = 'none';
@@ -1277,13 +1270,13 @@ document.addEventListener("click", (e) => {
 
 <script>
 function generarPDF(esSeguimiento) {
+  console.log("CLICK OK", esSeguimiento);
 
-  let tipo = "";
+  let tipo = esSeguimiento ? "seguimiento" : "pscv";
 
-  if (esSeguimiento) {
-    tipo = "seguimiento";
-  } else {
-    tipo = "pscv";
+  if (!globalData || globalData.am === 0) {
+    alert("Primero debes calcular una dosis.");
+    return;
   }
 
   nav(6);
@@ -1292,20 +1285,6 @@ function generarPDF(esSeguimiento) {
     generarDocumento(tipo);
   }, 200);
 }
-</script>
-
-<script src="app.js"></script>
-<script>
-function generarPDF(esSeguimiento) {
-  console.log("CLICK OK", esSeguimiento);
-
-  let tipo = esSeguimiento ? "seguimiento" : "pscv";
-
-  // Validación mínima
-  if (!globalData || globalData.am === 0) {
-    alert("Primero debes calcular una dosis.");
-    return;
-  }
 
   // Navegar
   nav(6);
@@ -1319,6 +1298,44 @@ function generarPDF(esSeguimiento) {
     }
   }, 200);
 }
+
+function resetTotal() {
+
+  // limpiar datos globales
+  globalData = {am:0,pm:0,criteria:'', acciones:''};
+
+  // limpiar inputs
+  document.querySelectorAll('input').forEach(i => i.value='');
+  document.querySelectorAll('input[type=checkbox]').forEach(c => c.checked=false);
+
+  // limpiar UI dinámica
+  const criterios = document.getElementById('criterios');
+  if (criterios) criterios.style.display = 'none';
+
+  const alerta = document.getElementById('alerta');
+  if (alerta) alerta.style.display = 'none';
+
+  const preview = document.getElementById('preview-dosis');
+  if (preview) {
+    preview.style.display = 'none';
+    preview.innerHTML = '';
+  }
+
+  const tabla = document.getElementById('tabla-seguimiento');
+  if (tabla) tabla.innerHTML = '';
+
+  const nota = document.getElementById('nota-clinica');
+  if (nota) nota.innerText = '';
+
+  const pdf = document.getElementById('pdf');
+  if (pdf) pdf.innerHTML = '';
+}
+
+function finalizar() {
+  resetTotal();
+  nav(0);
+}
+  
 </script>
 </body>
 </html>
