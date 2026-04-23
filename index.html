@@ -1234,98 +1234,114 @@ document.addEventListener("click", (e) => {
 });
 
 <script>
-function generarPDF(esSeguimiento) {
-  console.log("CLICK OK", esSeguimiento);
+/* =========================
+   ESTADO GLOBAL CLÍNICO
+========================= */
+let globalData = {
+  am: 0,
+  pm: 0,
+  criteria: '',
+  acciones: ''
+};
 
-  let tipo = esSeguimiento ? "seguimiento" : "pscv";
+/* =========================
+   NAVEGACIÓN
+========================= */
+function nav(n){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('p' + n);
+  if (target) target.classList.add('active');
+}
 
-  if (!globalData || globalData.am === 0) {
-    alert("Primero debes calcular una dosis.");
+/* =========================
+   ALERTA EXCLUSIÓN
+========================= */
+function exclusion(){
+  const alerta = document.getElementById('alerta');
+  if (alerta) alerta.style.display = 'block';
+}
+
+/* =========================
+   MOSTRAR CRITERIOS
+========================= */
+function mostrarInicio(){
+  const c = document.getElementById('criterios');
+  if (c) c.style.display = 'block';
+}
+
+/* =========================
+   RESET COMPLETO
+========================= */
+function resetTotal(){
+  globalData = {am:0, pm:0, criteria:'', acciones:''};
+
+  document.querySelectorAll('input').forEach(i => i.value = '');
+  document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+
+  const ids = [
+    'criterios',
+    'alerta',
+    'tabla-seguimiento',
+    'nota-clinica',
+    'pdf',
+    'preview-dosis',
+    'alerta-dosis-alta'
+  ];
+
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      if (el.tagName === "TBODY" || el.tagName === "DIV") {
+        el.innerHTML = '';
+      }
+      el.style && (el.style.display = 'none');
+    }
+  });
+}
+
+/* =========================
+   FINALIZAR
+========================= */
+function finalizar(){
+  resetTotal();
+  nav(0);
+}
+
+/* =========================
+   COPIAR NOTA
+========================= */
+function copiarNota(){
+  const text = document.getElementById('nota-clinica')?.innerText;
+  if (!text) return;
+
+  navigator.clipboard.writeText(text);
+  alert("Nota copiada");
+}
+
+/* =========================
+   GENERAR PDF
+========================= */
+function generarPDF(seguimiento){
+  if (!globalData.am) {
+    alert("Primero calcula una dosis.");
     return;
   }
 
   nav(6);
 
   setTimeout(() => {
-    generarDocumento(tipo);
+    generarDocumento(seguimiento ? "seguimiento" : "pscv");
   }, 200);
 }
 
-function resetTotal() {
-  globalData = {am:0,pm:0,criteria:'', acciones:''};
-
-  document.querySelectorAll('input').forEach(i => i.value='');
-  document.querySelectorAll('input[type=checkbox]').forEach(c => c.checked=false);
-
-  const criterios = document.getElementById('criterios');
-  if (criterios) criterios.style.display = 'none';
-
-  const alerta = document.getElementById('alerta');
-  if (alerta) alerta.style.display = 'none';
-
-  const tabla = document.getElementById('tabla-seguimiento');
-  if (tabla) tabla.innerHTML = '';
-
-  const nota = document.getElementById('nota-clinica');
-  if (nota) nota.innerText = '';
-
-  const pdf = document.getElementById('pdf');
-  if (pdf) pdf.innerHTML = '';
-}
-
-function finalizar() {
-  resetTotal();
-  nav(0);
-}  
+/* =========================
+   FECHA AUTOMÁTICA
+========================= */
+document.addEventListener("DOMContentLoaded", () => {
+  const el = document.getElementById("fecha-hoy");
+  if (el) el.innerText = new Date().toLocaleDateString("es-CL");
+});
 </script>
-
-  <script>
-
-function generarPDF(esSeguimiento) {
-  console.log("CLICK OK", esSeguimiento);
-
-  let tipo = esSeguimiento ? "seguimiento" : "pscv";
-
-  if (!globalData || globalData.am === 0) {
-    alert("Primero debes calcular una dosis.");
-    return;
-  }
-
-  nav(6);
-
-  setTimeout(() => {
-    generarDocumento(tipo);
-  }, 200);
-}
-
-function resetTotal() {
-  globalData = {am:0,pm:0,criteria:'', acciones:''};
-
-  document.querySelectorAll('input').forEach(i => i.value='');
-  document.querySelectorAll('input[type=checkbox]').forEach(c => c.checked=false);
-
-  const criterios = document.getElementById('criterios');
-  if (criterios) criterios.style.display = 'none';
-
-  const alerta = document.getElementById('alerta');
-  if (alerta) alerta.style.display = 'none';
-
-  const tabla = document.getElementById('tabla-seguimiento');
-  if (tabla) tabla.innerHTML = '';
-
-  const nota = document.getElementById('nota-clinica');
-  if (nota) nota.innerText = '';
-
-  const pdf = document.getElementById('pdf');
-  if (pdf) pdf.innerHTML = '';
-}
-
-function finalizar() {
-  resetTotal();
-  nav(0);
-}
-
-</script>
-  
+    
 </body>
 </html>
