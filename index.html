@@ -374,7 +374,7 @@ Ingrese el peso del paciente y seleccione el riesgo de hipoglicemia para calcula
 
 <div>
 <label>Peso del paciente (kg)</label>
-<input type="number" id="peso-paciente" placeholder="Ej: 70" <input type="number" id="peso-paciente" placeholder="Ej: 70" min="1" max="300">>
+<input type="number" id="peso-paciente" placeholder="Ej: 70" min="1" max="300">
 </div>
 
 <div>
@@ -1272,10 +1272,9 @@ document.addEventListener("click", (e) => {
   }
 });
 
-</script>
+<script>
 function generarPDF(esSeguimiento) {
 
-  // decidir tipo de documento
   let tipo = "";
 
   if (esSeguimiento) {
@@ -1284,15 +1283,14 @@ function generarPDF(esSeguimiento) {
     tipo = "pscv";
   }
 
-  // navegar a pantalla de impresión
   nav(6);
 
-  // generar documento automáticamente
   setTimeout(() => {
     generarDocumento(tipo);
   }, 200);
 }
-  
+</script>
+
+<script src="app.js"></script>
 </body>
-  <script src="app.js"></script>
 </html>
