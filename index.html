@@ -1180,41 +1180,6 @@ document.getElementById('alerta').style.display='block';
 function mostrarInicio(){
 document.getElementById('criterios').style.display='block';
 }
-
-const preview = document.getElementById('preview-dosis');
-if(preview){
-  preview.style.display = 'none';
-  preview.innerHTML = '';
-}
-  
-// limpiar datos globales
-globalData = {am:0,pm:0,criteria:'', acciones:''};
-
-// limpiar inputs
-document.querySelectorAll('input').forEach(i => i.value='');
-document.querySelectorAll('input[type=checkbox]').forEach(c => c.checked=false);
-document.getElementById('criterios').style.display = 'none';
-
-// limpiar tablas
-document.getElementById('tabla-seguimiento').innerHTML = '';
-
-// limpiar textos
-document.getElementById('nota-clinica').innerText = '';
-document.getElementById('pdf').innerHTML = '';
-
-// ocultar criterios
-if(document.getElementById('criterios')){
-document.getElementById('criterios').style.display='none';
-}
-
-// ocultar alerta
-if(document.getElementById('alerta')){
-document.getElementById('alerta').style.display='none';
-}
-
-// volver a inicio
-nav(0);
-}
   
 </script>
 
@@ -1286,40 +1251,17 @@ function generarPDF(esSeguimiento) {
   }, 200);
 }
 
-  // Navegar
-  nav(6);
-
-  // Generar documento
-  setTimeout(() => {
-    if (typeof generarDocumento === "function") {
-      generarDocumento(tipo);
-    } else {
-      alert("Error: generarDocumento no está disponible");
-    }
-  }, 200);
-}
-
 function resetTotal() {
-
-  // limpiar datos globales
   globalData = {am:0,pm:0,criteria:'', acciones:''};
 
-  // limpiar inputs
   document.querySelectorAll('input').forEach(i => i.value='');
   document.querySelectorAll('input[type=checkbox]').forEach(c => c.checked=false);
 
-  // limpiar UI dinámica
   const criterios = document.getElementById('criterios');
   if (criterios) criterios.style.display = 'none';
 
   const alerta = document.getElementById('alerta');
   if (alerta) alerta.style.display = 'none';
-
-  const preview = document.getElementById('preview-dosis');
-  if (preview) {
-    preview.style.display = 'none';
-    preview.innerHTML = '';
-  }
 
   const tabla = document.getElementById('tabla-seguimiento');
   if (tabla) tabla.innerHTML = '';
@@ -1334,8 +1276,7 @@ function resetTotal() {
 function finalizar() {
   resetTotal();
   nav(0);
-}
-  
+}  
 </script>
 </body>
 </html>
