@@ -116,7 +116,7 @@ input, select {
 /* Nueva distribución profesional para P4 */
 .p4-header-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Dos columnas iguales */
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
   max-width: 650px;
   margin: 20px auto;
