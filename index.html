@@ -571,6 +571,14 @@ El ajuste se basa en promedios de glicemias registradas.
 <div class="form-grid">
 
 <div>
+<div style="max-width:500px;margin:10px auto;text-align:left;">
+<label>Tipo de esquema de insulina</label>
+<select id="tipo-esquema">
+<option value="2" selected>2 dosis (AM + PM)</option>
+<option value="am">Solo dosis AM</option>
+<option value="pm">Solo dosis PM</option>
+</select>
+</div>
 <label>Dosis AM actual (04–99)</label>
 <input type="text" id="am-actual" maxlength="2"
 oninput="this.value=this.value.replace(/[^0-9]/g,''); if(this.value>99) this.value=99;">
@@ -849,8 +857,23 @@ if (ayunas.some(v => v < 54) || preonce.some(v => v < 54)) {
 alerta += "🚨 HIPOGLICEMIA SEVERA (<54 mg/dL) - ajustar urgencia.\n";
 }
 
-let nuevaAM = Math.min(99, Math.max(4, am + ajusteAM));
-let nuevaPM = Math.min(99, Math.max(4, pm + ajustePM));
+let nuevaAM = am;
+let nuevaPM = pm;
+
+if (tipo === "2") {
+  nuevaAM = Math.min(99, Math.max(4, am + ajusteAM));
+  nuevaPM = Math.min(99, Math.max(4, pm + ajustePM));
+}
+
+else if (tipo === "am") {
+  nuevaAM = Math.min(99, Math.max(4, am + ajusteAM));
+  nuevaPM = 0;
+}
+
+else if (tipo === "pm") {
+  nuevaPM = Math.min(99, Math.max(4, pm + ajustePM));
+  nuevaAM = 0;
+}
 
 // 🔒 LÍMITE MÁXIMO 1 UI/kg/día
 const dosisMaxima = Math.round(peso * 1);
