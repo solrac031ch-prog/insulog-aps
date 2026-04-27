@@ -1406,6 +1406,39 @@ function finalizar() {
   <p>Insulog APS - Herramienta de Apoyo Clínico</p>
   <p>Basado en protocolos vigentes para el manejo de DM2 en Chile.</p>
 </footer>
+<script>
+// Objeto global para almacenar las dosis y criterios calculados
+const globalData = {};
 
+// Función principal para cambiar de página
+function nav(pagina) {
+  // Oculta todas las páginas
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  // Muestra solo la página solicitada
+  document.getElementById('p' + pagina).classList.add('active');
+  // Sube la vista al inicio de la pantalla
+  window.scrollTo(0, 0);
+}
+
+// Función para mostrar la alerta de exclusión en P1
+function exclusion() {
+  document.getElementById('alerta').style.display = 'block';
+}
+
+// Función para desplegar los criterios de inicio en P2
+function mostrarInicio() {
+  document.getElementById('criterios').style.display = 'block';
+}
+
+// Función para avanzar a la pantalla de impresión (P6) desde P5
+function generarPDF(esSeguimiento) {
+  nav(6);
+}
+
+// Función para resetear el algoritmo al finalizar
+function finalizar() {
+  location.reload(); // Recarga la página limpiando los datos y volviendo a P0
+}
+</script>
 </body>
 </html>
