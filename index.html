@@ -607,62 +607,33 @@ nav(5);
 Seguimiento y ajuste de insulina NPH
 </h2>
 
-<div style="max-width:500px;margin:10px auto;text-align:left;">
-  <label>Peso del paciente (kg)</label>
-  <input type="number" id="peso-seguimiento" placeholder="Ej: 70">
+<div class="p4-header-grid">
+  <div>
+    <label style="color: var(--primary); font-size: 0.9rem;">Peso del paciente (kg)</label>
+    <input type="number" id="peso-seguimiento" placeholder="Ej: 70">
+  </div>
+  
+  <div>
+    <label style="color: var(--primary); font-size: 0.9rem;">Tipo de esquema</label>
+    <select id="tipo-esquema">
+      <option value="2" selected>2 dosis (AM + PM)</option>
+      <option value="am">Solo dosis AM</option>
+      <option value="pm">Solo dosis PM</option>
+    </select>
+  </div>
+
+  <div>
+    <label style="font-size: 0.9rem;">Dosis AM actual</label>
+    <input type="text" id="am-actual" maxlength="2" placeholder="00"
+    oninput="this.value=this.value.replace(/[^0-9]/g,'');">
+  </div>
+
+  <div>
+    <label style="font-size: 0.9rem;">Dosis PM actual</label>
+    <input type="text" id="pm-actual" maxlength="2" placeholder="00"
+    oninput="this.value=this.value.replace(/[^0-9]/g,'');">
+  </div>
 </div>
-
-<p style="
-max-width:700px;
-margin:0 auto 20px;
-font-size:0.98rem;
-line-height:1.4;
-color:#42526e;
-">
-Registro de glicemias capilares (mínimo 3 días).<br><br>
-
-<b>Metas glicémicas:</b><br>
-• Ayunas (pre-desayuno): 90–130 mg/dL (alternativa 100–150 mg/dL)<br>
-• Antes de la once / pre-cena: 90–130 mg/dL (alternativa 100–150 mg/dL)<br><br>
-
-El ajuste se basa en promedios de glicemias registradas.
-</p>
-
-<!-- DOSIS -->
-<div class="form-grid">
-
-<div>
-<div style="max-width:500px;margin:10px auto;text-align:left;">
-<label>Tipo de esquema de insulina</label>
-<select id="tipo-esquema">
-<option value="2" selected>2 dosis (AM + PM)</option>
-<option value="am">Solo dosis AM</option>
-<option value="pm">Solo dosis PM</option>
-</select>
-</div>
-<label>Dosis AM actual (04–99)</label>
-<input type="text" id="am-actual" maxlength="2"
-oninput="this.value=this.value.replace(/[^0-9]/g,''); if(this.value>99) this.value=99;">
-</div>
-
-<div>
-<label>Dosis PM actual (04–99)</label>
-<input type="text" id="pm-actual" maxlength="2"
-oninput="this.value=this.value.replace(/[^0-9]/g,''); if(this.value>99) this.value=99;">
-</div>
-
-</div>
-
-<!-- ALERTA SEGURIDAD -->
-<div style="
-background:#fff4e6;
-border:2px solid #ffab00;
-padding:12px;
-border-radius:10px;
-margin:10px auto;
-max-width:650px;
-font-weight:600;
-color:#7a4b00;
 ">
 ⚠️ Rango permitido: dosis entre 04 y 99 unidades.  
 Valores fuera de rango serán corregidos automáticamente.
