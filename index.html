@@ -614,6 +614,17 @@ onclick="calcularSeguimientoPro()">
 AJUSTAR DOSIS (PROTOCOLO APS)
 </button>
 
+<div id="resumen-promedios" style="
+display:none;
+margin:20px auto;
+max-width:600px;
+padding:15px;
+border-radius:10px;
+background:#f4f5f7;
+font-weight:600;
+line-height:1.5;
+"></div>
+
 <div id="alerta-dosis-alta" style="
 display:none;
 background:#ffe9e9;
@@ -736,26 +747,66 @@ return;
 const promAy = ayunas.reduce((a,b)=>a+b,0)/ayunas.length;
 const promPre = preonce.length ? preonce.reduce((a,b)=>a+b,0)/preonce.length : null;
 
+// 🎯 MOSTRAR PROMEDIOS
+const box = document.getElementById('resumen-promedios');
+box.style.display = 'block';
+
+function colorGlicemia(v){
+  if (v < 70) return "color:#ff5630;";
+  if (v <= 130) return "color:#36b37e;";
+  if (v <= 180) return "color:#ffab00;";
+  return "color:#ff5630;";
+}
+
+box.innerHTML = `
+Promedio ayunas: <span style="${colorGlicemia(promAy)}">${Math.round(promAy)} mg/dL</span><br>
+${promPre !== null ? `Promedio antes de las once: <span style="${colorGlicemia(promPre)}">${Math.round(promPre)} mg/dL</span>` : ""}
+`;
+  
 let ajusteAM = 0;
 let ajustePM = 0;
 let alerta = "";
+let explicacion = "";
 
 /* PROTOCOLO APS REAL */
-if (promAy >= 250) ajustePM = 6;
-else if (promAy > 180) ajustePM = 4;
-else if (promAy > 130) ajustePM = 2;
+if (promAy >= 250) {
+  ajustePM = 6;
+  explicacion += "↑ Insulina nocturna por ayunas muy elevadas\n";
+}
+else if (promAy > 180) {
+  ajustePM = 4;
+  explicacion += "↑ Insulina nocturna\n";
+}
+else if (promAy > 130) {
+  ajustePM = 2;
+  explicacion += "↑ leve insulina nocturna\n";
+}
 else if (promAy < 70) {
+  ajustePM = -2;
+  alerta += "⚠️ Hipoglicemia en ayunas\n";
+  explicacion += "↓ Insulina nocturna\n";
+}
 ajustePM = -2;
 alerta += "⚠️ Hipoglicemia en ayunas.\n";
 }
 
 if (promPre !== null) {
-if (promPre >= 250) ajusteAM = 6;
-else if (promPre > 180) ajusteAM = 4;
-else if (promPre > 130) ajusteAM = 2;
+if (promPre >= 250) {
+  ajusteAM = 6;
+  explicacion += "↑ Insulina matinal por hiperglicemia vespertina\n";
+}
+else if (promPre > 180) {
+  ajusteAM = 4;
+  explicacion += "↑ Insulina matinal\n";
+}
+else if (promPre > 130) {
+  ajusteAM = 2;
+  explicacion += "↑ leve insulina matinal\n";
+}
 else if (promPre < 70) {
-ajusteAM = -2;
-alerta += "⚠️ Hipoglicemia antes de las once.\n";
+  ajusteAM = -2;
+  alerta += "⚠️ Hipoglicemia antes de las once\n";
+  explicacion += "↓ Insulina matinal\n";
 }
 }
 
@@ -836,6 +887,9 @@ Dosis previa:
 Ajuste aplicado:
 - AM → ${nuevaAM}
 - PM → ${nuevaPM}
+
+Razonamiento clínico:
+${explicacion}
 
 ${alerta ? "ALERTAS:\n" + alerta : ""}
 
