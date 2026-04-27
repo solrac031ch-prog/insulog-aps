@@ -395,7 +395,33 @@ background:white;
 }
 
 .criterio-btn input {
-transform:scale(1.2);
+  /* Quita el diseño predeterminado de iOS */
+  -webkit-appearance: none;
+  appearance: none;
+  /* Define un tamaño fijo para que no se vea distinto en iPhone */
+  width: 18px;
+  height: 18px;
+  border: 2px solid #0052cc;
+  border-radius: 4px;
+  background: white;
+  margin-right: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Esto dibuja la "X" o el check cuando marcas la opción en iOS */
+.criterio-btn input:checked {
+  background-color: #0052cc;
+}
+
+.criterio-btn input:checked::after {
+  content: '✓';
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
 }
 </style>
 
