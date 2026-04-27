@@ -1386,77 +1386,39 @@ function limpiarPDF() {
 
 window.addEventListener("beforeprint", limpiarPDF);
 
-/* SCROLL AUTOMÁTICO */
-function scrollToPDF() {
-  const pdf = document.getElementById("pdf");
-  if (pdf) {
-    pdf.scrollIntoView({ behavior: "smooth" });
+const pdfElement = document.getElementById("pdf");
+  if (pdfElement) {
+    pdfElement.scrollIntoView({ behavior: 'smooth' });
   }
 }
 
-document.addEventListener("click", (e) => {
-  if (e.target.innerText.includes("GENERAR") ||
-      e.target.innerText.includes("SEGUIMIENTO") ||
-      e.target.innerText.includes("CONTROL")) {
-
-    setTimeout(scrollToPDF, 300);
-  }
-});
-
-/* LIMPIAR AL FINALIZAR */
-document.addEventListener("click", (e) => {
-  if (e.target.closest("button") && e.target.closest("button").innerText.includes("FINALIZAR")) {
-    const pdf = document.getElementById("pdf");
-    if (pdf) pdf.innerHTML = "";
-  }
-});
-</script> 
-
-<script>
-function generarPDF(esSeguimiento) {
-  console.log("CLICK OK", esSeguimiento);
-
-  let tipo = esSeguimiento ? "seguimiento" : "pscv";
-
-  // 🔥 si no hay datos, igual deja avanzar (fallback)
-  if (!globalData) {
-    globalData = {am: 0, pm: 0, acciones: ""};
-  }
-
-  nav(6);
-
-  setTimeout(() => {
-    generarDocumento(tipo);
-  }, 200);
-}
-
-function resetTotal() {
-  globalData = {am:0,pm:0,criteria:'', acciones:''};
-
-  document.querySelectorAll('input').forEach(i => i.value='');
-  document.querySelectorAll('input[type=checkbox]').forEach(c => c.checked=false);
-
-  const criterios = document.getElementById('criterios');
-  if (criterios) criterios.style.display = 'none';
-
-  const alerta = document.getElementById('alerta');
-  if (alerta) alerta.style.display = 'none';
-
-  const tabla = document.getElementById('tabla-seguimiento');
-  if (tabla) tabla.innerHTML = '';
-
-  const nota = document.getElementById('nota-clinica');
-  if (nota) nota.innerText = '';
-
-  const pdf = document.getElementById('pdf');
-  if (pdf) pdf.innerHTML = '';
-}
-
+// Función para volver al inicio y limpiar los datos del paciente anterior
 function finalizar() {
-  resetTotal();
-  nav(0);
-}  
+  if (confirm("¿Desea finalizar el caso actual? Se borrarán los datos para un nuevo paciente.")) {
+    // 1. Limpiar variables de datos
+    globalData = {am:0, pm:0, criteria:'', acciones:''};
+    
+    // 2. Limpiar todos los campos de texto y números
+    document.querySelectorAll('input').forEach(input => input.value = '');
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    
+    // 3. Ocultar alertas que quedaron abiertas
+    document.getElementById('alerta').style.display = 'none';
+    document.getElementById('criterios').style.display = 'none';
+    document.getElementById('preview-dosis').style.display = 'none';
+    document.getElementById('resumen-promedios').style.display = 'none';
+    document.getElementById('alerta-dosis-alta').style.display = 'none';
+
+    // 4. Volver a la página de inicio (P0)
+    nav(0);
+  }
+}
 </script>
-  
+
+</div> <footer>
+  <p>Insulog APS - Herramienta de Apoyo Clínico</p>
+  <p>Basado en protocolos vigentes para el manejo de DM2 en Chile.</p>
+</footer>
+
 </body>
 </html>
