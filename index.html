@@ -1,3 +1,5 @@
+NO PUDE HACER TODO LO QUE PEDISTE POR QUE ME PERDI... PERO QUEDO ASI POR AHORA
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -259,13 +261,6 @@ gap:12px;
 ">
 <button class="btn btn-main" onclick="mostrarInicio()">INICIO DE INSULINA</button>
 <button class="btn btn-success" onclick="prepSeg()">SEGUIMIENTO DE INSULINA</button>
-
-<div id="tree-container" style="margin-top:30px;"></div>
-
-<button class="btn btn-success" onclick="renderNodo('inicio')">
-INICIAR ALGORITMO INTERACTIVO
-</button>
-  
 </div>
 
 <!-- CRITERIOS -->
@@ -787,9 +782,20 @@ const alertaBox = document.getElementById('alerta-dosis-alta');
 
 if (dosisKg >= 0.7) {
   alertaBox.style.display = 'block';
-  renderNodo("dosis_alta");  // 👈 ESTA ES LA LÍNEA NUEVA
+
+  // ACTIVA TODOS LOS CHECKBOX AUTOMÁTICAMENTE DISPONIBLES
+  document.querySelectorAll('.accion-extra').forEach(el => {
+    el.disabled = false;
+  });
+
 } else {
   alertaBox.style.display = 'none';
+
+  // DESACTIVA Y LIMPIA SELECCIÓN
+  document.querySelectorAll('.accion-extra').forEach(el => {
+    el.checked = false;
+    el.disabled = true;
+  });
 }
   
 if (!(dosisKg >= 0.7)) {
@@ -813,9 +819,11 @@ if (totalNuevo > dosisMaxima) {
 globalData.am = nuevaAM;
 globalData.pm = nuevaPM;
 
-const acciones = Array.from(document.querySelectorAll('.accion-extra:checked'))
-.map(a => "- " + a.value)
-.join("\n");
+const accionesSeleccionadas = Array.from(document.querySelectorAll('.accion-extra:checked'))
+  .map(a => a.value)
+  .join("\n");
+
+globalData.acciones = accionesSeleccionadas;
 
 globalData.acciones = acciones;
   
@@ -842,9 +850,11 @@ Esquema final:
 Control en 15 días con glicemias capilares.
 
 ${dosisKg >= 0.7 ? `
-Conducta adicional:
+CONDUCTAS INDICADAS:
+
+${globalData.acciones ? globalData.acciones.split("\n").map(a => "• " + a).join("\n") : ""}
+
 Mantener controles y seguimiento por medicina interna APS.
-${acciones ? acciones : ""}
 ` : ""}
 `;
 
@@ -1338,73 +1348,7 @@ function finalizar() {
   nav(0);
 }
 
-<script>
-const algoritmoAPS = {
-
-inicio: {
-  texto: "¿Paciente con indicación de insulinización?",
-  opciones: [
-    { texto: "Sí", next: "criterios" },
-    { texto: "No", accion: "fin" }
-  ]
-},
-
-criterios: {
-  texto: "Seleccione criterio principal",
-  opciones: [
-    { texto: "HbA1c > 9%", next: "inicio_insulina" },
-    { texto: "Glicemia >250", next: "inicio_insulina" },
-    { texto: "Sintomático", next: "inicio_insulina" },
-    { texto: "Fracaso oral", next: "inicio_insulina" }
-  ]
-},
-
-inicio_insulina: {
-  texto: "¿Calcular dosis inicial?",
-  opciones: [
-    { texto: "Sí", accion: "ir_dosificacion" },
-    { texto: "Volver", next: "criterios" }
-  ]
-},
-
-dosis_alta: {
-  texto: "Paciente ≥0.7 UI/kg/día",
-  opciones: [
-    { texto: "Nutricionista", accion: "add_accion", valor: "Control con nutricionista" },
-    { texto: "Enfermera", accion: "add_accion", valor: "Hora con enfermera" },
-    { texto: "Químico", accion: "add_accion", valor: "Hora con químico farmacéutico" },
-    { texto: "Telediabetes", accion: "add_accion", valor: "Derivar a Telediabetes" },
-    { texto: "Hospital", accion: "add_accion", valor: "Derivar a Diabetes hospitalaria" },
-    { texto: "Hipoglicemiantes orales", accion: "add_accion", valor: "Reevaluar hipoglicemiantes orales" },
-    { texto: "Finalizar", accion: "fin" }
-  ]
-}
-
-};
 </script>
-
-<script>
-function renderNodo(nombreNodo) {
-
-  const nodo = algoritmoAPS[nombreNodo];
-  const contenedor = document.getElementById("tree-container");
-
-  if (!nodo) return;
-
-  contenedor.innerHTML = `
-    <div style="background:white;padding:20px;border-radius:12px;">
-      <h3>${nodo.texto}</h3>
-      <div style="margin-top:15px;">
-        ${nodo.opciones.map(op => `
-          <button class="btn btn-main"
-            onclick="handleOpcion('${op.next || ''}', '${op.accion || ''}', '${op.valor || ''}')">
-            ${op.texto}
-          </button>
-        `).join("")}
-      </div>
-    </div>
-  `;
-}
-</script>
-
-</script>
+  
+</body>
+</html>
