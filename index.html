@@ -556,9 +556,14 @@ return;
 
 globalData.criteria = sel.join(', ');
 
-const total = Math.max(4, Math.round(peso * factor));
-const am = Math.round(total * 0.66);
-const pm = total - am;
+// Calculamos el total y lo redondeamos al par superior
+let total = Math.ceil((peso * factor) / 2) * 2;
+total = Math.max(4, total); // Mínimo 4 unidades
+
+// Calculamos AM (2/3 del total) y redondeamos a par
+let am = Math.ceil((total * 0.66) / 2) * 2;
+// El resto va a la PM (que también resultará par al restar un par de otro par)
+let pm = total - am;
 
 globalData.am = am;
 globalData.pm = pm;
@@ -928,8 +933,13 @@ let nuevaAM = am;
 let nuevaPM = pm;
 
 if (tipo === "2") {
-  nuevaAM = Math.min(99, Math.max(4, am + ajusteAM));
-  nuevaPM = Math.min(99, Math.max(4, pm + ajustePM));
+  // Aplicamos el ajuste y aseguramos que el resultado sea par
+  nuevaAM = Math.ceil(Math.max(4, am + ajusteAM) / 2) * 2;
+  nuevaPM = Math.ceil(Math.max(4, pm + ajustePM) / 2) * 2;
+  
+  // Limitamos al máximo de 99 (o 98 para mantener el par)
+  nuevaAM = Math.min(98, nuevaAM);
+  nuevaPM = Math.min(98, nuevaPM);
 }
 
 else if (tipo === "am") {
