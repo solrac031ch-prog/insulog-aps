@@ -1375,58 +1375,10 @@ ${globalData.acciones ? `
     </div>
   `;
 
-  document.getElementById("pdf").innerHTML = contenidoHeader + contenidoCuerpo + piePagina;
-}
-
-</script>
-
-<script>
-
-let globalData = {am:0,pm:0,criteria:'', acciones:''};
-
-function nav(n){
-document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-document.getElementById('p'+n).classList.add('active');
-}
-
-function navegar(n){ nav(n); }
-
-function exclusion(){
-document.getElementById('alerta').style.display='block';
-}
-
-function mostrarInicio(){
-document.getElementById('criterios').style.display='block';
-}
+document.getElementById("pdf").innerHTML = contenidoHeader + contenidoCuerpo + piePagina;
   
-</script>
-
-  <script>
-
-/* AUTO FECHA */
-document.addEventListener("DOMContentLoaded", () => {
-  const fecha = document.getElementById("fecha-hoy");
-  if (fecha) {
-    fecha.innerText = new Date().toLocaleDateString("es-CL");
-  }
-});
-
-/* LIMPIEZA PDF */
-function limpiarPDF() {
-  const pdf = document.getElementById("pdf");
-  if (!pdf) return;
-
-  let contenido = pdf.innerHTML;
-
-  contenido = contenido.replace(/Informe clínico Insulog APS/gi, "");
-  contenido = contenido.replace(/Plataforma Insulog APS/gi, "");
-
-  pdf.innerHTML = contenido;
-}
-
-window.addEventListener("beforeprint", limpiarPDF);
-
-const pdfElement = document.getElementById("pdf");
+  // SCROLL AUTOMÁTICO
+  const pdfElement = document.getElementById("pdf");
   if (pdfElement) {
     pdfElement.scrollIntoView({ behavior: 'smooth' });
   }
@@ -1435,26 +1387,21 @@ const pdfElement = document.getElementById("pdf");
 // Función para volver al inicio y limpiar los datos del paciente anterior
 function finalizar() {
   if (confirm("¿Desea finalizar el caso actual? Se borrarán los datos para un nuevo paciente.")) {
-    // 1. Limpiar variables de datos
     globalData = {am:0, pm:0, criteria:'', acciones:''};
     
-    // 2. Limpiar todos los campos de texto y números
     document.querySelectorAll('input').forEach(input => input.value = '');
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
     
-    // 3. Ocultar alertas que quedaron abiertas
     document.getElementById('alerta').style.display = 'none';
     document.getElementById('criterios').style.display = 'none';
     document.getElementById('preview-dosis').style.display = 'none';
     document.getElementById('resumen-promedios').style.display = 'none';
     document.getElementById('alerta-dosis-alta').style.display = 'none';
 
-    // 4. Volver a la página de inicio (P0)
     nav(0);
   }
 }
 </script>
-
 </div> <footer>
   <p>Insulog APS - Herramienta de Apoyo Clínico</p>
   <p>Basado en protocolos vigentes para el manejo de DM2 en Chile.</p>
