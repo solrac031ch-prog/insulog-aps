@@ -747,6 +747,11 @@ return;
 const promAy = ayunas.reduce((a,b)=>a+b,0)/ayunas.length;
 const promPre = preonce.length ? preonce.reduce((a,b)=>a+b,0)/preonce.length : null;
 
+if (preonce.length > 0 && preonce.length < 3) {
+  alert("Debe ingresar al menos 3 glicemias antes de las once.");
+  return;
+}
+
 // 🎯 MOSTRAR PROMEDIOS
 const box = document.getElementById('resumen-promedios');
 box.style.display = 'block';
@@ -781,13 +786,22 @@ else if (promAy > 130) {
   ajustePM = 2;
   explicacion += "↑ leve insulina nocturna\n";
 }
+if (promAy >= 250) {
+  ajustePM = 6;
+  explicacion += "↑ Insulina nocturna por ayunas muy elevadas\n";
+}
+else if (promAy > 180) {
+  ajustePM = 4;
+  explicacion += "↑ Insulina nocturna\n";
+}
+else if (promAy > 130) {
+  ajustePM = 2;
+  explicacion += "↑ leve insulina nocturna\n";
+}
 else if (promAy < 70) {
   ajustePM = -2;
   alerta += "⚠️ Hipoglicemia en ayunas\n";
   explicacion += "↓ Insulina nocturna\n";
-}
-ajustePM = -2;
-alerta += "⚠️ Hipoglicemia en ayunas.\n";
 }
 
 if (promPre !== null) {
