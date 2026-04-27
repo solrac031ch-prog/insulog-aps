@@ -816,29 +816,14 @@ box.innerHTML = `
 Promedio ayunas: <span style="${colorGlicemia(promAy)}">${Math.round(promAy)} mg/dL</span><br>
 ${promPre !== null ? `Promedio antes de las once: <span style="${colorGlicemia(promPre)}">${Math.round(promPre)} mg/dL</span>` : ""}
 `;
-  
 let ajusteAM = 0;
 let ajustePM = 0;
-// BLOQUEAR AJUSTES SEGÚN ESQUEMA
-if (tipo === "am") {
-  ajustePM = 0;
-}
-
-if (tipo === "pm") {
-  ajusteAM = 0;
-}
 let alerta = "";
 let explicacion = "";
 
 /* PROTOCOLO APS REAL */
-else if (promAy > 180) {
-  ajustePM = 4;
-  explicacion += "↑ Insulina nocturna\n";
-}
-else if (promAy > 130) {
-  ajustePM = 2;
-  explicacion += "↑ leve insulina nocturna\n";
-}
+
+// AYUNAS → ajusta PM
 if (promAy >= 250) {
   ajustePM = 6;
   explicacion += "↑ Insulina nocturna por ayunas muy elevadas\n";
@@ -857,23 +842,25 @@ else if (promAy < 70) {
   explicacion += "↓ Insulina nocturna\n";
 }
 
+// PREONCE → ajusta AM
 if (promPre !== null) {
-if (promPre >= 250) {
-  ajusteAM = 6;
-  explicacion += "↑ Insulina matinal por hiperglicemia vespertina\n";
-}
-else if (promPre > 180) {
-  ajusteAM = 4;
-  explicacion += "↑ Insulina matinal\n";
-}
-else if (promPre > 130) {
-  ajusteAM = 2;
-  explicacion += "↑ leve insulina matinal\n";
-}
-else if (promPre < 70) {
-  ajusteAM = -2;
-  alerta += "⚠️ Hipoglicemia antes de las once\n";
-  explicacion += "↓ Insulina matinal\n";
+  if (promPre >= 250) {
+    ajusteAM = 6;
+    explicacion += "↑ Insulina matinal por hiperglicemia vespertina\n";
+  }
+  else if (promPre > 180) {
+    ajusteAM = 4;
+    explicacion += "↑ Insulina matinal\n";
+  }
+  else if (promPre > 130) {
+    ajusteAM = 2;
+    explicacion += "↑ leve insulina matinal\n";
+  }
+  else if (promPre < 70) {
+    ajusteAM = -2;
+    alerta += "⚠️ Hipoglicemia antes de las once\n";
+    explicacion += "↓ Insulina matinal\n";
+  }
 }
 }
 
