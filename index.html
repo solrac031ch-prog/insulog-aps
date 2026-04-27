@@ -811,7 +811,7 @@ function calcularSeguimientoPro() {
   let am = parseInt(document.getElementById('am-actual').value) || 0;
   let pm = parseInt(document.getElementById('pm-actual').value) || 0;
 
-  // Validación de seguridad de rangos iniciales
+  // Validación de seguridad inicial
   am = Math.min(99, Math.max(0, am));
   pm = Math.min(99, Math.max(0, pm));
 
@@ -823,18 +823,18 @@ function calcularSeguimientoPro() {
     return;
   }
 
-  const promAy = ayunas.reduce((a, b) => a + b, 0) / ayunas.length;
-  const promPre = preonce.length ? preonce.reduce((a, b) => a + b, 0) / preonce.length : null;
+  const promAy = ayunas.reduce((a,b)=>a+b,0)/ayunas.length;
+  const promPre = preonce.length ? preonce.reduce((a,b)=>a+b,0)/preonce.length : null;
 
   if (preonce.length > 0 && preonce.length < 3) {
     alert("Debe ingresar al menos 3 glicemias antes de las once.");
     return;
   }
 
-  // Visualización de promedios (Mantiene sus estilos)
+  // Mostrar promedios visuales
   const box = document.getElementById('resumen-promedios');
   box.style.display = 'block';
-  function colorGlicemia(v) {
+  function colorGlicemia(v){
     if (v < 70) return "color:#ff5630;";
     if (v <= 130) return "color:#36b37e;";
     return "color:#ff5630;";
@@ -847,7 +847,7 @@ function calcularSeguimientoPro() {
   let alerta = "";
   let explicacion = "";
 
-  // --- SU LÓGICA DE PROTOCOLO APS ---
+  // Ajuste según Protocolo APS (Su lógica original)
   if (promAy >= 250) { ajustePM = 6; explicacion += "↑ Insulina nocturna por ayunas muy elevadas\n"; }
   else if (promAy > 180) { ajustePM = 4; explicacion += "↑ Insulina nocturna\n"; }
   else if (promAy > 130) { ajustePM = 2; explicacion += "↑ leve insulina nocturna\n"; }
@@ -860,32 +860,23 @@ function calcularSeguimientoPro() {
     else if (promPre < 70) { ajusteAM = -2; alerta += "⚠️ Hipoglicemia antes de las once\n"; explicacion += "↓ Insulina matinal\n"; }
   }
 
-  // Cálculo de nuevas dosis respetando PARIDAD
-  let nuevaAM = am;
-  let nuevaPM = pm;
-
-  if (tipo === "2" || tipo === "am") nuevaAM = Math.max(0, Math.ceil((am + ajusteAM) / 2) * 2);
-  if (tipo === "2" || tipo === "pm") nuevaPM = Math.max(0, Math.ceil((pm + ajustePM) / 2) * 2);
-  if (tipo === "am") nuevaPM = 0;
-  if (tipo === "pm") nuevaAM = 0;
+  // Nuevas dosis pares
+  let nuevaAM = (tipo === "2" || tipo === "am") ? Math.ceil(Math.max(4, am + ajusteAM) / 2) * 2 : 0;
+  let nuevaPM = (tipo === "2" || tipo === "pm") ? Math.ceil(Math.max(4, pm + ajustePM) / 2) * 2 : 0;
 
   // Límite máximo 1 UI/kg
   const dosisMaxima = Math.round(peso * 1);
-  let totalNuevo = nuevaAM + nuevaPM;
-
-  if (totalNuevo > dosisMaxima) {
+  if ((nuevaAM + nuevaPM) > dosisMaxima) {
     alerta += `⚠️ Dosis ajustada al máximo permitido (${dosisMaxima} UI/día).\n`;
-    // Reducción simple manteniendo pares
     while ((nuevaAM + nuevaPM) > dosisMaxima) {
-      if (nuevaPM > 4) nuevaPM -= 2;
-      else if (nuevaAM > 4) nuevaAM -= 2;
-      else break;
+      if (nuevaPM > 4) nuevaPM -= 2; else if (nuevaAM > 4) nuevaAM -= 2; else break;
     }
   }
 
-  // Gestión de Alerta Dosis Alta (0.7 UI/kg) - Su código original
   const dosisKg = (nuevaAM + nuevaPM) / peso;
   const alertaBox = document.getElementById('alerta-dosis-alta');
+
+  // Control de visibilidad de alerta de dosis alta
   if (dosisKg >= 0.7) {
     alertaBox.style.display = 'block';
     document.querySelectorAll('.accion-extra').forEach(el => el.disabled = false);
@@ -896,21 +887,37 @@ function calcularSeguimientoPro() {
 
   globalData.am = nuevaAM;
   globalData.pm = nuevaPM;
-  globalData.acciones = Array.from(document.querySelectorAll('.accion-extra:checked')).map(a => a.value).join("\n");
+  
+  // Captura de acciones seleccionadas para la nota
+  const accionesSeleccionadas = Array.from(document.querySelectorAll('.accion-extra:checked'))
+    .map(a => a.value)
+    .join("\n");
+  globalData.acciones = accionesSeleccionadas;
 
-  // Generación de la Nota (Mantiene su formato exacto)
+  // Construcción de la nota clínica (Respetando su estructura original)
   const nota = `SEGUIMIENTO INSULINA NPH (PROTOCOLO APS)
+
 Promedio ayunas: ${Math.round(promAy)} mg/dL
 ${promPre !== null ? "Promedio Antes de las once: " + Math.round(promPre) + " mg/dL" : ""}
 
-Dosis previa: AM ${am} | PM ${pm}
-Nuevo Esquema:
-- ${nuevaAM} UI AM (desayuno)
-- ${nuevaPM} UI PM (dormir)
+Dosis previa:
+- AM: ${am} UI
+- PM: ${pm} UI
 
-Razonamiento: ${explicacion}
-${alerta ? "ALERTAS: " + alerta : ""}
-${dosisKg >= 0.7 ? "\nCONDUCTAS INDICADAS:\n" + globalData.acciones : ""}
+Esquema final:
+- ${nuevaAM} UI antes del desayuno
+- ${nuevaPM} UI antes de dormir
+
+Razonamiento clínico:
+${explicacion}
+${alerta ? "ALERTAS:\n" + alerta : ""}
+
+Control en 15 días con glicemias capilares.
+
+${dosisKg >= 0.7 ? `
+CONDUCTAS INDICADAS:
+${globalData.acciones ? globalData.acciones.split("\n").map(a => "• " + a).join("\n") : "• Mantener seguimiento por medicina interna APS."}
+` : ""}
 `;
 
   document.getElementById('nota-clinica').innerText = nota;
