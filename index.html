@@ -762,12 +762,13 @@ if (tipo === "am" && isNaN(am)) {
   return;
 }
 
-if (tipo === "pm" && isNaN(pm)) {
-  alert("Ingrese dosis PM válida");
+if (
+  (tipo === "2" && (isNaN(am) || isNaN(pm))) ||
+  (tipo === "am" && isNaN(am)) ||
+  (tipo === "pm" && isNaN(pm))
+) {
+  alert("Ingrese dosis válidas entre 04 y 99");
   return;
-}
-alert("Ingrese dosis válidas entre 04 y 99");
-return;
 }
 
 /* rango seguridad */
@@ -834,14 +835,6 @@ let alerta = "";
 let explicacion = "";
 
 /* PROTOCOLO APS REAL */
-else if (promAy > 180) {
-  ajustePM = 4;
-  explicacion += "↑ Insulina nocturna\n";
-}
-else if (promAy > 130) {
-  ajustePM = 2;
-  explicacion += "↑ leve insulina nocturna\n";
-}
 if (promAy >= 250) {
   ajustePM = 6;
   explicacion += "↑ Insulina nocturna por ayunas muy elevadas\n";
