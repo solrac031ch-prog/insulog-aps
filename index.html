@@ -933,22 +933,26 @@ let nuevaAM = am;
 let nuevaPM = pm;
 
 if (tipo === "2") {
-  // Aplicamos el ajuste y aseguramos que el resultado sea par
+  // Ajuste y aseguramos paridad
   nuevaAM = Math.ceil(Math.max(4, am + ajusteAM) / 2) * 2;
   nuevaPM = Math.ceil(Math.max(4, pm + ajustePM) / 2) * 2;
   
-  // Limitamos al máximo de 99 (o 98 para mantener el par)
+  // Límite superior par
   nuevaAM = Math.min(98, nuevaAM);
   nuevaPM = Math.min(98, nuevaPM);
 }
 
 else if (tipo === "am") {
-  nuevaAM = Math.min(99, Math.max(4, am + ajusteAM));
+  // Forzamos a que si la dosis es solo AM, también sea par
+  nuevaAM = Math.ceil(Math.max(4, am + ajusteAM) / 2) * 2;
+  nuevaAM = Math.min(98, nuevaAM);
   nuevaPM = 0;
 }
 
 else if (tipo === "pm") {
-  nuevaPM = Math.min(99, Math.max(4, pm + ajustePM));
+  // Forzamos a que si la dosis es solo PM, también sea par
+  nuevaPM = Math.ceil(Math.max(4, pm + ajustePM) / 2) * 2;
+  nuevaPM = Math.min(98, nuevaPM);
   nuevaAM = 0;
 }
 
@@ -966,15 +970,12 @@ const alertaBox = document.getElementById('alerta-dosis-alta');
 if (dosisKg >= 0.7) {
   alertaBox.style.display = 'block';
 
-  // ACTIVA TODOS LOS CHECKBOX AUTOMÁTICAMENTE DISPONIBLES
   document.querySelectorAll('.accion-extra').forEach(el => {
     el.disabled = false;
   });
-
 } else {
   alertaBox.style.display = 'none';
 
-  // DESACTIVA Y LIMPIA SELECCIÓN
   document.querySelectorAll('.accion-extra').forEach(el => {
     el.checked = false;
     el.disabled = true;
@@ -986,22 +987,25 @@ if (!(dosisKg >= 0.7)) {
 }
   
 if (totalNuevo > dosisMaxima) {
-
   const exceso = totalNuevo - dosisMaxima;
 
-  // reducir proporcionalmente
-  const reduccionAM = Math.round((nuevaAM / totalNuevo) * exceso);
-  const reduccionPM = exceso - reduccionAM;
+  // Reducir proporcionalmente asegurando que la reducción mantenga números pares
+  let reduccionAM = Math.ceil(((nuevaAM / totalNuevo) * exceso) / 2) * 2;
+  let reduccionPM = Math.ceil((exceso - reduccionAM) / 2) * 2;
 
   nuevaAM -= reduccionAM;
   nuevaPM -= reduccionPM;
+
+  // Doble validación para asegurar mínimos y pares tras el recorte
+  if(nuevaAM > 0) nuevaAM = Math.max(4, Math.ceil(nuevaAM / 2) * 2);
+  if(nuevaPM > 0) nuevaPM = Math.max(4, Math.ceil(nuevaPM / 2) * 2);
 
   alerta += `⚠️ Dosis ajustada al máximo permitido (${dosisMaxima} UI/día según peso).\n`;
 }
 
 globalData.am = nuevaAM;
 globalData.pm = nuevaPM;
-
+  
 const accionesSeleccionadas = Array.from(document.querySelectorAll('.accion-extra:checked'))
   .map(a => a.value)
   .join("\n");
