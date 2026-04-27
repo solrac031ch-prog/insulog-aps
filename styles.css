@@ -20,6 +20,7 @@ body {
   color: var(--text);
 }
 
+/* CONTENEDOR */
 .container {
   max-width: 960px;
   margin: auto;
@@ -29,11 +30,16 @@ body {
   box-shadow: var(--shadow);
 }
 
-/* PAGES */
-.page { display:none; }
-.page.active { display:block; }
+/* PÁGINAS (CRÍTICO) */
+.page {
+  display:none;
+}
 
-/* BUTTONS */
+.active {
+  display:block;
+}
+
+/* BOTONES */
 .btn {
   width:100%;
   padding:14px;
@@ -41,9 +47,12 @@ body {
   border:none;
   font-weight:600;
   cursor:pointer;
+  transition:0.2s;
 }
 
 .btn-main { background:var(--primary); color:white; }
+.btn-main:hover { background:var(--primary-dark); }
+
 .btn-danger { background:var(--danger); color:white; }
 .btn-success { background:var(--success); color:white; }
 
@@ -53,38 +62,16 @@ input, select {
   padding:12px;
   border-radius:10px;
   border:var(--border);
+  font-size:1rem;
 }
 
-/* CARDS */
+/* CARDS (IMPORTANTE PARA TU UI) */
 .card {
   background:white;
   border:var(--border);
   border-radius:12px;
   padding:16px;
   margin:10px 0;
-}
-
-/* GRID */
-.form-grid {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:16px;
-}
-
-/* CRITERIOS */
-.criterios-grid {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-}
-
-.criterio-btn {
-  display:flex;
-  gap:10px;
-  padding:10px;
-  border:var(--border);
-  border-radius:10px;
-  background:#f9fafc;
 }
 
 /* ALERTAS */
@@ -102,6 +89,47 @@ input, select {
   border-radius:12px;
 }
 
+/* CRITERIOS (CLAVE PARA P2) */
+.criterios-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.criterio-btn {
+  display:flex;
+  gap:10px;
+  padding:10px;
+  border:var(--border);
+  border-radius:10px;
+  background:#f9fafc;
+  align-items:center;
+}
+
+/* FORM GRID (P3) */
+.form-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+
+/* NOTA */
+.nota {
+  background:#091e42;
+  color:#00fbff;
+  padding:20px;
+  border-radius:12px;
+  white-space:pre-wrap;
+}
+
 /* UTIL */
 .subtitle { font-size:1.1rem; font-weight:600; }
 .app-label { font-size:12px; color:var(--muted); margin-bottom:10px; }
+
+/* RESPONSIVE */
+@media (max-width:600px){
+  .form-grid,
+  .criterios-grid {
+    grid-template-columns:1fr;
+  }
+}
