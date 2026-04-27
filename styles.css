@@ -113,6 +113,23 @@ input, select {
   gap:16px;
 }
 
+/* Nueva distribución profesional para P4 */
+.p4-header-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Dos columnas iguales */
+  gap: 16px;
+  max-width: 650px;
+  margin: 20px auto;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e6e8f0;
+}
+
+.p4-header-grid > div {
+  text-align: left;
+}
+
 /* NOTA */
 .nota {
   background:#091e42;
