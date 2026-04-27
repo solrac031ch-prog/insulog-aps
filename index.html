@@ -762,121 +762,50 @@ function calcularSeguimientoPro() {
   const tipo = document.getElementById('tipo-esquema').value;
 
   if (!peso || peso <= 0) {
-    alert("Ingrese peso del paciente para validar dosis máxima.");
+    alert("Ingrese peso del paciente.");
     return;
   }
 
   let am = parseInt(document.getElementById('am-actual').value) || 0;
   let pm = parseInt(document.getElementById('pm-actual').value) || 0;
 
-  // Validación de seguridad inicial
-  am = Math.min(99, Math.max(0, am));
-  pm = Math.min(99, Math.max(0, pm));
-
   const ayunas = Array.from(document.querySelectorAll('.ay')).map(i => parseInt(i.value)).filter(v => !isNaN(v));
   const preonce = Array.from(document.querySelectorAll('.pre')).map(i => parseInt(i.value)).filter(v => !isNaN(v));
 
   if (ayunas.length < 3) {
-    alert("Debe ingresar al menos 3 glicemias en ayunas.");
+    alert("Se requieren 3 glicemias en ayunas.");
     return;
   }
 
   const promAy = ayunas.reduce((a,b)=>a+b,0)/ayunas.length;
   const promPre = preonce.length ? preonce.reduce((a,b)=>a+b,0)/preonce.length : null;
 
-  if (preonce.length > 0 && preonce.length < 3) {
-    alert("Debe ingresar al menos 3 glicemias antes de las once.");
-    return;
-  }
+  let ajAM = 0; let ajPM = 0; let explicacion = "";
 
-  // Mostrar promedios visuales
-  const box = document.getElementById('resumen-promedios');
-  box.style.display = 'block';
-  function colorGlicemia(v){
-    if (v < 70) return "color:#ff5630;";
-    if (v <= 130) return "color:#36b37e;";
-    return "color:#ff5630;";
-  }
-  box.innerHTML = `Promedio ayunas: <span style="${colorGlicemia(promAy)}">${Math.round(promAy)} mg/dL</span><br>
-  ${promPre !== null ? `Promedio antes de las once: <span style="${colorGlicemia(promPre)}">${Math.round(promPre)} mg/dL</span>` : ""}`;
-
-  let ajusteAM = 0;
-  let ajustePM = 0;
-  let alerta = "";
-  let explicacion = "";
-
-  // Ajuste según Protocolo APS (Su lógica original)
-  if (promAy >= 250) { ajustePM = 6; explicacion += "↑ Insulina nocturna por ayunas muy elevadas\n"; }
-  else if (promAy > 180) { ajustePM = 4; explicacion += "↑ Insulina nocturna\n"; }
-  else if (promAy > 130) { ajustePM = 2; explicacion += "↑ leve insulina nocturna\n"; }
-  else if (promAy < 70) { ajustePM = -2; alerta += "⚠️ Hipoglicemia en ayunas\n"; explicacion += "↓ Insulina nocturna\n"; }
+  // Lógica APS
+  if (promAy > 130) { ajPM = (promAy > 180) ? 4 : 2; explicacion += "↑ Insulina nocturna por ayunas\n"; }
+  else if (promAy < 70) { ajPM = -2; explicacion += "↓ Insulina nocturna por hipoglicemia\n"; }
 
   if (promPre !== null) {
-    if (promPre >= 250) { ajusteAM = 6; explicacion += "↑ Insulina matinal por hiperglicemia vespertina\n"; }
-    else if (promPre > 180) { ajusteAM = 4; explicacion += "↑ Insulina matinal\n"; }
-    else if (promPre > 130) { ajusteAM = 2; explicacion += "↑ leve insulina matinal\n"; }
-    else if (promPre < 70) { ajusteAM = -2; alerta += "⚠️ Hipoglicemia antes de las once\n"; explicacion += "↓ Insulina matinal\n"; }
+    if (promPre > 130) { ajAM = (promPre > 180) ? 4 : 2; explicacion += "↑ Insulina matinal por pre-once\n"; }
+    else if (promPre < 70) { ajAM = -2; explicacion += "↓ Insulina matinal por hipoglicemia\n"; }
   }
 
-  // Nuevas dosis pares
-  let nuevaAM = (tipo === "2" || tipo === "am") ? Math.ceil(Math.max(4, am + ajusteAM) / 2) * 2 : 0;
-  let nuevaPM = (tipo === "2" || tipo === "pm") ? Math.ceil(Math.max(4, pm + ajustePM) / 2) * 2 : 0;
+  let nAM = (tipo==="2"||tipo==="am") ? Math.ceil((am+ajAM)/2)*2 : 0;
+  let nPM = (tipo==="2"||tipo==="pm") ? Math.ceil((pm+ajPM)/2)*2 : 0;
 
-  // Límite máximo 1 UI/kg
-  const dosisMaxima = Math.round(peso * 1);
-  if ((nuevaAM + nuevaPM) > dosisMaxima) {
-    alerta += `⚠️ Dosis ajustada al máximo permitido (${dosisMaxima} UI/día).\n`;
-    while ((nuevaAM + nuevaPM) > dosisMaxima) {
-      if (nuevaPM > 4) nuevaPM -= 2; else if (nuevaAM > 4) nuevaAM -= 2; else break;
-    }
-  }
-
-  const dosisKg = (nuevaAM + nuevaPM) / peso;
-  const alertaBox = document.getElementById('alerta-dosis-alta');
-
-  // Control de visibilidad de alerta de dosis alta
-  if (dosisKg >= 0.7) {
-    alertaBox.style.display = 'block';
-    document.querySelectorAll('.accion-extra').forEach(el => el.disabled = false);
-  } else {
-    alertaBox.style.display = 'none';
-    document.querySelectorAll('.accion-extra').forEach(el => { el.checked = false; el.disabled = true; });
-  }
-
-  globalData.am = nuevaAM;
-  globalData.pm = nuevaPM;
+  const dosisKg = (nAM + nPM) / peso;
   
-  // Captura de acciones seleccionadas para la nota
-  const accionesSeleccionadas = Array.from(document.querySelectorAll('.accion-extra:checked'))
-    .map(a => a.value)
-    .join("\n");
-  globalData.acciones = accionesSeleccionadas;
+  // Guardar datos para la nota
+  globalData.am = nAM; 
+  globalData.pm = nPM;
+  globalData.acciones = Array.from(document.querySelectorAll('.accion-extra:checked')).map(a => a.value).join("\n");
 
-  // Construcción de la nota clínica (Respetando su estructura original)
-  const nota = `SEGUIMIENTO INSULINA NPH (PROTOCOLO APS)
-
-Promedio ayunas: ${Math.round(promAy)} mg/dL
-${promPre !== null ? "Promedio Antes de las once: " + Math.round(promPre) + " mg/dL" : ""}
-
-Dosis previa:
-- AM: ${am} UI
-- PM: ${pm} UI
-
-Esquema final:
-- ${nuevaAM} UI antes del desayuno
-- ${nuevaPM} UI antes de dormir
-
-Razonamiento clínico:
-${explicacion}
-${alerta ? "ALERTAS:\n" + alerta : ""}
-
-Control en 15 días con glicemias capilares.
-
-${dosisKg >= 0.7 ? `
-CONDUCTAS INDICADAS:
-${globalData.acciones ? globalData.acciones.split("\n").map(a => "• " + a).join("\n") : "• Mantener seguimiento por medicina interna APS."}
-` : ""}
-`;
+  const nota = `SEGUIMIENTO APS
+Promedios: Ayunas ${Math.round(promAy)} | Pre-once ${promPre ? Math.round(promPre) : 'N/A'}
+Nuevo Esquema: AM ${nAM} UI | PM ${nPM} UI
+Razonamiento: ${explicacion}
+${dosisKg >= 0.7 ? "\nALERTA DOSIS ALTA (>0.7 UI/kg):\n" + (globalData.acciones || "Derivar a Medicina Interna.") : ""}`;
 
   document.getElementById('nota-clinica').innerText = nota;
   nav(5);
