@@ -741,6 +741,7 @@ nav(4);
 function calcularSeguimientoPro() {
 
 const peso = parseFloat(document.getElementById('peso-seguimiento').value);
+const tipo = document.getElementById('tipo-esquema').value;
 
 if (!peso || peso <= 0) {
   alert("Ingrese peso del paciente para validar dosis máxima.");
@@ -750,14 +751,37 @@ if (!peso || peso <= 0) {
 let am = parseInt(document.getElementById('am-actual').value);
 let pm = parseInt(document.getElementById('pm-actual').value);
 
-if (isNaN(am) || isNaN(pm)) {
+// VALIDACIÓN SEGÚN TIPO
+if (tipo === "2" && (isNaN(am) || isNaN(pm))) {
+  alert("Ingrese dosis AM y PM válidas");
+  return;
+}
+
+if (tipo === "am" && isNaN(am)) {
+  alert("Ingrese dosis AM válida");
+  return;
+}
+
+if (tipo === "pm" && isNaN(pm)) {
+  alert("Ingrese dosis PM válida");
+  return;
+}
 alert("Ingrese dosis válidas entre 04 y 99");
 return;
 }
 
 /* rango seguridad */
-am = Math.min(99, Math.max(4, am));
-pm = Math.min(99, Math.max(4, pm));
+if (tipo === "2" || tipo === "am") {
+  am = Math.min(99, Math.max(4, am));
+} else {
+  am = 0;
+}
+
+if (tipo === "2" || tipo === "pm") {
+  pm = Math.min(99, Math.max(4, pm));
+} else {
+  pm = 0;
+}
 
 const ayunas = Array.from(document.querySelectorAll('.ay'))
 .map(i => parseInt(i.value))
@@ -798,14 +822,18 @@ ${promPre !== null ? `Promedio antes de las once: <span style="${colorGlicemia(p
   
 let ajusteAM = 0;
 let ajustePM = 0;
+// BLOQUEAR AJUSTES SEGÚN ESQUEMA
+if (tipo === "am") {
+  ajustePM = 0;
+}
+
+if (tipo === "pm") {
+  ajusteAM = 0;
+}
 let alerta = "";
 let explicacion = "";
 
 /* PROTOCOLO APS REAL */
-if (promAy >= 250) {
-  ajustePM = 6;
-  explicacion += "↑ Insulina nocturna por ayunas muy elevadas\n";
-}
 else if (promAy > 180) {
   ajustePM = 4;
   explicacion += "↑ Insulina nocturna\n";
