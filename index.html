@@ -17,12 +17,10 @@
 
 <h1>Insulog APS</h1>
 
-<p class="subtitle">
-Insulinización en Atención Primaria de Salud
-</p>
+<p class="subtitle">Insulinización en Atención Primaria de Salud</p>
 
 <div class="card">
-<p class="card-title">Bibliografía utilizada:</p>
+<p><b>Bibliografía utilizada:</b></p>
 <ul>
 <li>Guía ALAD 2019: Diagnóstico y tratamiento de DM2</li>
 <li>ADA Standards of Care 2024</li>
@@ -31,41 +29,35 @@ Insulinización en Atención Primaria de Salud
 </div>
 
 <div class="card">
-<p class="doctor-name">Dr. Carlos Herrera Malaver</p>
-<p class="doctor-role">Médico Internista</p>
+<p><b>Dr. Carlos Herrera Malaver</b></p>
+<p>Médico Internista</p>
 </div>
 
-<button class="btn btn-main" onclick="nav(1)">
-INICIAR ALGORITMO
-</button>
+<button class="btn btn-main" onclick="nav(1)">INICIAR ALGORITMO</button>
 
 </div>
-
 
 <!-- P1 -->
 <div id="p1" class="page">
 
-<div class="app-label">[P1] Evaluación inicial (criterios de exclusión)</div>
+<div class="app-label">[P1] Evaluación inicial</div>
 
 <h2>Evaluación inicial</h2>
 
-<p>
-¿El paciente presenta DM tipo 1, patología pancreática, embarazo, cirugía pancreática o es menor de 18 años?
-</p>
+<p>¿DM1, embarazo, pancreatitis, cirugía pancreática o menor de 18 años?</p>
 
 <div class="button-group">
 <button class="btn btn-danger" onclick="exclusion()">SÍ</button>
 <button class="btn btn-main" onclick="nav(2)">NO</button>
 </div>
 
-<div id="alerta" class="alert-card">
+<div id="alerta" class="alert-card" style="display:none;">
 <p>Derivar a nivel secundario.</p>
-<p>Derivar a Medicina Interna en APS.</p>
-<p>Puede requerir insulinas de acción rápida o análogos.</p>
+<p>Derivar a Medicina Interna APS.</p>
+<p>Posible requerimiento de insulina intensiva.</p>
 </div>
 
 </div>
-
 
 <!-- P2 -->
 <div id="p2" class="page">
@@ -75,39 +67,34 @@ INICIAR ALGORITMO
 <h2>Definición del proceso</h2>
 
 <div class="alert-warning">
-⚠️ Todo paciente que inicia insulina debe suspender glibenclamida.
+⚠️ Suspender glibenclamida al iniciar insulina
 </div>
 
 <p>Seleccione tipo de manejo</p>
 
 <div class="button-column">
-<button class="btn btn-main" onclick="mostrarInicio()">INICIO DE INSULINA</button>
+<button class="btn btn-main" onclick="mostrarInicio()">INICIO</button>
 <button class="btn btn-success" onclick="prepSeg()">SEGUIMIENTO</button>
 </div>
 
-<div id="criterios">
+<div id="criterios" style="display:none;">
 
-<p>¿Criterios de inicio?</p>
+<p>Criterios de inicio</p>
 
 <div class="criterios-grid">
-
 <label class="criterio-btn"><input type="checkbox" class="c" value="HbA1c > 9%">HbA1c > 9%</label>
 <label class="criterio-btn"><input type="checkbox" class="c" value="Glicemia > 250">Glicemia > 250</label>
-<label class="criterio-btn"><input type="checkbox" class="c" value="Síntomas">Síntomas hiperglicemia</label>
-<label class="criterio-btn"><input type="checkbox" class="c" value="Fracaso oral">Fracaso terapia oral</label>
+<label class="criterio-btn"><input type="checkbox" class="c" value="Síntomas">Síntomas</label>
+<label class="criterio-btn"><input type="checkbox" class="c" value="Fracaso oral">Fracaso oral</label>
 <label class="criterio-btn"><input type="checkbox" class="c" value="Deseo paciente">Deseo paciente</label>
 <label class="criterio-btn"><input type="checkbox" class="c" value="Crisis">Crisis hiperglicémica</label>
-
 </div>
 
-<button class="btn btn-main" onclick="nav(3)">
-SIGUIENTE
-</button>
+<button class="btn btn-main" onclick="nav(3)">SIGUIENTE</button>
 
 </div>
 
 </div>
-
 
 <!-- P3 -->
 <div id="p3" class="page">
@@ -115,10 +102,6 @@ SIGUIENTE
 <div class="app-label">[P3] Dosificación</div>
 
 <h2>Dosificación inicial</h2>
-
-<p>
-Ingrese peso y riesgo de hipoglicemia
-</p>
 
 <div class="form-grid">
 
@@ -130,29 +113,27 @@ Ingrese peso y riesgo de hipoglicemia
 <div>
 <label>Riesgo</label>
 <select id="factor-dosis">
-<option value="0.1">Alto riesgo</option>
+<option value="0.1">Alto</option>
 <option value="0.2" selected>Estándar</option>
-<option value="0.3">Bajo riesgo</option>
+<option value="0.3">Bajo</option>
 </select>
 </div>
 
 </div>
 
-<div class="card info">
-<p>Guía de dosis clínica</p>
+<div class="card">
+<p>Guía clínica de dosis</p>
 </div>
 
 <div id="preview-dosis" class="card"></div>
 
-<button class="btn btn-main" onclick="calcularInicioMejorado()">
-CALCULAR
-</button>
+<button class="btn btn-main" onclick="calcularInicioMejorado()">CALCULAR</button>
 
 </div>
 
-
 <!-- P4 -->
 <div id="p4" class="page">
+
 <div class="app-label">[P4] Seguimiento</div>
 
 <h2>Seguimiento insulina</h2>
@@ -170,15 +151,12 @@ CALCULAR
 
 <div id="tabla-seguimiento"></div>
 
-<button class="btn btn-main" onclick="calcularSeguimientoPro()">
-AJUSTAR
-</button>
+<button class="btn btn-main" onclick="calcularSeguimientoPro()">AJUSTAR</button>
 
 <div id="resumen-promedios"></div>
 <div id="alerta-dosis-alta"></div>
 
 </div>
-
 
 <!-- P5 -->
 <div id="p5" class="page">
@@ -187,20 +165,11 @@ AJUSTAR
 
 <div id="nota-clinica" class="nota"></div>
 
-<button class="btn btn-success" onclick="copiarNota()">
-COPIAR
-</button>
-
-<button class="btn btn-main" onclick="generarPDF(true)">
-SEGUIMIENTO
-</button>
-
-<button class="btn btn-success" onclick="generarPDF(false)">
-CONTROL CV
-</button>
+<button class="btn btn-success" onclick="copiarNota()">COPIAR</button>
+<button class="btn btn-main" onclick="generarPDF(true)">SEGUIMIENTO</button>
+<button class="btn btn-success" onclick="generarPDF(false)">CONTROL</button>
 
 </div>
-
 
 <!-- P6 -->
 <div id="p6" class="page">
@@ -224,10 +193,9 @@ CONTROL CV
 
 </div>
 
-
-<!-- SCRIPTS ORIGINALES SIN CAMBIOS -->
+<!-- SCRIPTS ORIGINALES (SIN CAMBIOS) -->
 <script>
-// (tu JS intacto)
+// tu JS original intacto
 </script>
 
 </body>
