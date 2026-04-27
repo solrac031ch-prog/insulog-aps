@@ -822,8 +822,6 @@ const accionesSeleccionadas = Array.from(document.querySelectorAll('.accion-extr
   .join("\n");
 
 globalData.acciones = accionesSeleccionadas;
-
-globalData.acciones = acciones;
   
 const nota = `
 SEGUIMIENTO INSULINA NPH (PROTOCOLO APS)
@@ -1253,6 +1251,7 @@ document.addEventListener("click", (e) => {
     if (pdf) pdf.innerHTML = "";
   }
 });
+</script> 
 
 <script>
 function generarPDF(esSeguimiento) {
@@ -1298,54 +1297,6 @@ function finalizar() {
   resetTotal();
   nav(0);
 }  
-</script>
-
-  <script>
-
-function generarPDF(esSeguimiento) {
-  console.log("CLICK OK", esSeguimiento);
-
-  let tipo = esSeguimiento ? "seguimiento" : "pscv";
-
-  if (!globalData || globalData.am === 0) {
-    alert("Primero debes calcular una dosis.");
-    return;
-  }
-
-  nav(6);
-
-  setTimeout(() => {
-    generarDocumento(tipo);
-  }, 200);
-}
-
-function resetTotal() {
-  globalData = {am:0,pm:0,criteria:'', acciones:''};
-
-  document.querySelectorAll('input').forEach(i => i.value='');
-  document.querySelectorAll('input[type=checkbox]').forEach(c => c.checked=false);
-
-  const criterios = document.getElementById('criterios');
-  if (criterios) criterios.style.display = 'none';
-
-  const alerta = document.getElementById('alerta');
-  if (alerta) alerta.style.display = 'none';
-
-  const tabla = document.getElementById('tabla-seguimiento');
-  if (tabla) tabla.innerHTML = '';
-
-  const nota = document.getElementById('nota-clinica');
-  if (nota) nota.innerText = '';
-
-  const pdf = document.getElementById('pdf');
-  if (pdf) pdf.innerHTML = '';
-}
-
-function finalizar() {
-  resetTotal();
-  nav(0);
-}
-
 </script>
   
 </body>
