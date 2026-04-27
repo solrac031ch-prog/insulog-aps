@@ -1074,7 +1074,10 @@ function generarDocumento(tipo){
   if(tipo === "seguimiento") tituloDoc = "SEGUIMIENTO Y AJUSTE DE INSULINA NPH";
   if(tipo === "pscv") tituloDoc = "CONTROL EN PROGRAMA DE SALUD CARDIOVASCULAR";
 
-  const dosis = `
+  const am = globalData.am || 0;
+const pm = globalData.pm || 0;
+
+const dosis = `
     <div style="margin-bottom:10px;">
       <b style="font-size:14px; border-bottom: 1.5px solid #000;">DOSIS ACTUAL INDICADA</b><br>
       <div style="margin-top:5px; font-size:13px;">
@@ -1259,9 +1262,9 @@ function generarPDF(esSeguimiento) {
 
   let tipo = esSeguimiento ? "seguimiento" : "pscv";
 
-  if (!globalData || globalData.am === 0) {
-    alert("Primero debes calcular una dosis.");
-    return;
+  // 🔥 si no hay datos, igual deja avanzar (fallback)
+  if (!globalData) {
+    globalData = {am: 0, pm: 0, acciones: ""};
   }
 
   nav(6);
