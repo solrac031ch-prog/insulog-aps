@@ -670,10 +670,16 @@ function definirEsquemaInicio() {
     motivo = "HbA1c/glicemias marcadamente elevadas o síntomas catabólicos, compatible con hiperglicemia sostenida.";
   }
 
-  if (riesgoHipo.length > 0) {
+    if (riesgoHipo.length > 0) {
     esquema = "monodosis_pm";
     texto = "NPH monodosis nocturna con inicio conservador";
     motivo = "Alto riesgo de hipoglicemia; se sugiere dosis menor, ajuste progresivo y control precoz.";
+
+    const factorDosis = document.getElementById('factor-dosis');
+    if (factorDosis) factorDosis.value = "0.1";
+  } else {
+    const factorDosis = document.getElementById('factor-dosis');
+    if (factorDosis) factorDosis.value = "0.2";
   }
 
   globalData.criteria = criterios.join(", ");
