@@ -947,7 +947,7 @@ function toggleAccion(boton) {
   boton.classList.toggle("seleccionada");
 }
 
-function generarNotaDosisAlta() {
+ffunction generarNotaDosisAlta() {
   const accionesSeleccionadas = Array.from(document.querySelectorAll('#p41 .accion-btn.seleccionada')).map(a => a.dataset.value);
 
   if (accionesSeleccionadas.length > 0) {
@@ -967,7 +967,7 @@ ${globalData.acciones || "Mantener controles y seguimiento por medicina interna 
   document.getElementById('nota-clinica').innerText = nota;
   nav(5);
 }
-
+</script>
   
 Promedios: Ayunas ${globalData.promAy} | Pre-once ${globalData.promPre}
 Nuevo Esquema: AM ${globalData.am} UI | PM ${globalData.pm} UI
