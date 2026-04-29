@@ -781,15 +781,30 @@ Mantener controles y seguimiento por medicina interna APS.
 
 <p style="margin-bottom:10px;"><b>Acciones sugeridas:</b></p>
 
-<label><input type="checkbox" class="accion-extra" value="Evaluar por nutricionista"> Evaluar por nutricionista</label><br>
+<div style="display:flex;flex-direction:column;gap:10px;">
 
-<label><input type="checkbox" class="accion-extra" value="Evaluar técnica de administración de insulina por enfermería"> Evaluar técnica de administración de insulina por enfermería</label><br>
+<button type="button" class="btn btn-main accion-btn" data-value="Evaluar por nutricionista" onclick="toggleAccion(this)">
+1. Evaluar por nutricionista
+</button>
 
-<label><input type="checkbox" class="accion-extra" value="Evaluar uso y almacenamiento de insulina por químico farmacéutico"> Evaluar uso y almacenamiento de insulina por químico farmacéutico</label><br>
+<button type="button" class="btn btn-main accion-btn" data-value="Evaluar técnica de administración de insulina por enfermería" onclick="toggleAccion(this)">
+2. Evaluar técnica de administración de insulina por enfermería
+</button>
 
-<label><input type="checkbox" class="accion-extra" value="Derivar a Telediabetología"> Derivar a Telediabetología</label><br>
+<button type="button" class="btn btn-main accion-btn" data-value="Evaluar uso y almacenamiento de insulina por químico farmacéutico" onclick="toggleAccion(this)">
+3. Evaluar uso y almacenamiento de insulina por químico farmacéutico
+</button>
 
-<label><input type="checkbox" class="accion-extra" value="Derivar a diabetología nivel secundario"> Derivar a diabetología nivel secundario</label>
+<button type="button" class="btn btn-main accion-btn" data-value="Derivar a Telediabetología" onclick="toggleAccion(this)">
+4. Derivar a Telediabetología
+</button>
+
+<button type="button" class="btn btn-main accion-btn" data-value="Derivar a diabetología nivel secundario" onclick="toggleAccion(this)">
+5. Derivar a diabetología nivel secundario
+</button>
+
+</div>
+
 
 </div>
 
@@ -818,7 +833,22 @@ text-align:center;
 
 #tabla-seguimiento tr:nth-child(even){background:#f4f5f7;}
 #tabla-seguimiento tr:hover{background:#e6f0ff;}
+
+.accion-btn {
+  text-align: left;
+  background: #f4f5f7;
+  color: #172b4d;
+  border: 2px solid #dfe1e6;
+  box-shadow: none;
+}
+
+.accion-btn.seleccionada {
+  background: #0052cc;
+  color: white;
+  border-color: #0052cc;
+}
 </style>
+
 
 <script>
 /* generar tabla (SIN CAMBIOS FUNCIONALES) */
@@ -913,16 +943,32 @@ Razonamiento: ${explicacion}`;
   nav(5);
 }
 
+function toggleAccion(boton) {
+  boton.classList.toggle("seleccionada");
+}
+
 function generarNotaDosisAlta() {
-  const accionesSeleccionadas = Array.from(document.querySelectorAll('#p41 .accion-extra:checked')).map(a => a.value);
+  const accionesSeleccionadas = Array.from(document.querySelectorAll('#p41 .accion-btn.seleccionada')).map(a => a.dataset.value);
 
   if (accionesSeleccionadas.length > 0) {
-    accionesSeleccionadas.unshift("Derivar a Medicina Interna APS");
+    accionesSeleccionadas.unshift("Evaluación y seguimiento por Medicina Interna APS");
   }
 
   globalData.acciones = accionesSeleccionadas.join("\n");
 
   const nota = `SEGUIMIENTO APS
+Promedios: Ayunas ${globalData.promAy} | Pre-once ${globalData.promPre}
+Nuevo Esquema: AM ${globalData.am} UI | PM ${globalData.pm} UI
+Razonamiento: ${globalData.explicacion}
+
+ALERTA DOSIS ALTA (>0.7 UI/kg):
+${globalData.acciones || "Mantener controles y seguimiento por medicina interna APS."}`;
+
+  document.getElementById('nota-clinica').innerText = nota;
+  nav(5);
+}
+
+  
 Promedios: Ayunas ${globalData.promAy} | Pre-once ${globalData.promPre}
 Nuevo Esquema: AM ${globalData.am} UI | PM ${globalData.pm} UI
 Razonamiento: ${globalData.explicacion}
