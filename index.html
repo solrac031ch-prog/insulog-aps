@@ -427,38 +427,21 @@ margin-bottom:20px;
 </label>
 
 </div>
-
-<div style="max-width:380px; margin:30px auto;">
-<button class="btn btn-main" onclick="nav(21)">
-SIGUIENTE: DOSIFICACIÓN
-</button>
-</div>
-
-</div>
-
-</div>
-<!-- P2.1 -->
-<div id="p21" class="page" style="text-align:center;">
-
-<div style="font-size:12px;color:#6b778c;margin-bottom:10px;font-weight:600;">
-[P2.1] Datos para esquema inicial
-</div>
-
-<h2 style="margin-bottom:10px;">
-Datos para esquema inicial
-</h2>
-
-<p style="
-max-width:700px;
-margin:0 auto 20px;
-font-size:1.05rem;
-line-height:1.5;
+<div style="
+max-width:760px;
+margin:25px auto 0;
+padding:18px;
+border:2px solid #dfe1e6;
+border-radius:12px;
+background:#f4f5f7;
+text-align:left;
 ">
-Ingrese los datos disponibles para orientar el esquema inicial de insulina NPH.
+
+<p style="font-weight:700;margin-top:0;margin-bottom:15px;text-align:center;">
+Datos disponibles para orientar esquema inicial
 </p>
 
 <div class="form-grid">
-
 <div>
 <label>HbA1c más reciente (%)</label>
 <input type="number" id="hba1c-inicio" placeholder="Ej: 10.5" min="4" max="20" step="0.1">
@@ -473,81 +456,54 @@ Ingrese los datos disponibles para orientar el esquema inicial de insulina NPH.
 <label>Glicemia casual / post carga / PTGO (mg/dL)</label>
 <input type="number" id="glicemia-casual-inicio" placeholder="Ej: 320" min="40" max="700">
 </div>
-
 </div>
 
-<div style="
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:18px;
-max-width:800px;
-margin:25px auto;
-text-align:left;
-">
-
-<div style="
-background:#fff4e6;
-border:2px solid #ffab00;
-border-radius:12px;
-padding:18px;
-">
-
-<p style="font-weight:700;margin-top:0;">
+<p style="font-weight:700;margin:20px 0 10px;">
 Síntomas catabólicos o descompensación
 </p>
 
-<label><input type="checkbox" class="catabolico" value="Baja de peso involuntaria"> Baja de peso involuntaria</label><br>
-<label><input type="checkbox" class="catabolico" value="Poliuria marcada"> Poliuria marcada</label><br>
-<label><input type="checkbox" class="catabolico" value="Polidipsia marcada"> Polidipsia marcada</label><br>
-<label><input type="checkbox" class="catabolico" value="Astenia marcada / compromiso del estado general"> Astenia marcada / compromiso del estado general</label><br>
-<label><input type="checkbox" class="catabolico" value="Sospecha de cetosis o cetonuria"> Sospecha de cetosis o cetonuria</label><br>
-<label><input type="checkbox" class="catabolico" value="Glicemias muy elevadas con síntomas"> Glicemias muy elevadas con síntomas</label>
-
+<div class="seleccion-grid">
+<button type="button" class="btn btn-main seleccion-btn catabolico-btn" data-value="Baja de peso involuntaria" onclick="toggleSeleccion(this)">Baja de peso involuntaria</button>
+<button type="button" class="btn btn-main seleccion-btn catabolico-btn" data-value="Poliuria marcada" onclick="toggleSeleccion(this)">Poliuria marcada</button>
+<button type="button" class="btn btn-main seleccion-btn catabolico-btn" data-value="Polidipsia marcada" onclick="toggleSeleccion(this)">Polidipsia marcada</button>
+<button type="button" class="btn btn-main seleccion-btn catabolico-btn" data-value="Astenia marcada / compromiso del estado general" onclick="toggleSeleccion(this)">Astenia marcada / compromiso del estado general</button>
+<button type="button" class="btn btn-main seleccion-btn catabolico-btn" data-value="Sospecha de cetosis o cetonuria" onclick="toggleSeleccion(this)">Sospecha de cetosis o cetonuria</button>
+<button type="button" class="btn btn-main seleccion-btn catabolico-btn" data-value="Glicemias muy elevadas con síntomas" onclick="toggleSeleccion(this)">Glicemias muy elevadas con síntomas</button>
 </div>
 
-<div style="
-background:#ffe9e9;
-border:2px solid #ff5630;
-border-radius:12px;
-padding:18px;
-">
-
-<p style="font-weight:700;margin-top:0;">
+<p style="font-weight:700;margin:20px 0 10px;">
 Alto riesgo de hipoglicemia
 </p>
 
-<label><input type="checkbox" class="riesgo-hipo" value="Adulto mayor frágil"> Adulto mayor frágil</label><br>
-<label><input type="checkbox" class="riesgo-hipo" value="Enfermedad renal crónica"> Enfermedad renal crónica</label><br>
-<label><input type="checkbox" class="riesgo-hipo" value="Baja ingesta o ingesta irregular"> Baja ingesta o ingesta irregular</label><br>
-<label><input type="checkbox" class="riesgo-hipo" value="Antecedente de hipoglicemia"> Antecedente de hipoglicemia</label><br>
-<label><input type="checkbox" class="riesgo-hipo" value="Vive solo o bajo soporte familiar"> Vive solo o bajo soporte familiar</label><br>
-<label><input type="checkbox" class="riesgo-hipo" value="Deterioro cognitivo"> Deterioro cognitivo</label><br>
-<label><input type="checkbox" class="riesgo-hipo" value="Consumo problemático de alcohol"> Consumo problemático de alcohol</label><br>
-<label><input type="checkbox" class="riesgo-hipo" value="Actividad de alto riesgo ante hipoglicemia"> Actividad de alto riesgo ante hipoglicemia</label>
-
-</div>
-
+<div class="seleccion-grid">
+<button type="button" class="btn btn-main seleccion-btn riesgo-hipo-btn" data-value="Adulto mayor frágil" onclick="toggleSeleccion(this)">Adulto mayor frágil</button>
+<button type="button" class="btn btn-main seleccion-btn riesgo-hipo-btn" data-value="Enfermedad renal crónica" onclick="toggleSeleccion(this)">Enfermedad renal crónica</button>
+<button type="button" class="btn btn-main seleccion-btn riesgo-hipo-btn" data-value="Baja ingesta o ingesta irregular" onclick="toggleSeleccion(this)">Baja ingesta o ingesta irregular</button>
+<button type="button" class="btn btn-main seleccion-btn riesgo-hipo-btn" data-value="Antecedente de hipoglicemia" onclick="toggleSeleccion(this)">Antecedente de hipoglicemia</button>
+<button type="button" class="btn btn-main seleccion-btn riesgo-hipo-btn" data-value="Vive solo o bajo soporte familiar" onclick="toggleSeleccion(this)">Vive solo o bajo soporte familiar</button>
+<button type="button" class="btn btn-main seleccion-btn riesgo-hipo-btn" data-value="Deterioro cognitivo" onclick="toggleSeleccion(this)">Deterioro cognitivo</button>
+<button type="button" class="btn btn-main seleccion-btn riesgo-hipo-btn" data-value="Consumo problemático de alcohol" onclick="toggleSeleccion(this)">Consumo problemático de alcohol</button>
+<button type="button" class="btn btn-main seleccion-btn riesgo-hipo-btn" data-value="Actividad de alto riesgo ante hipoglicemia" onclick="toggleSeleccion(this)">Actividad de alto riesgo ante hipoglicemia</button>
 </div>
 
 <div id="sugerencia-esquema-inicio" style="
 display:none;
-max-width:700px;
-margin:20px auto;
-padding:18px;
-border-radius:12px;
+margin-top:18px;
+padding:14px;
+border-radius:10px;
 background:#e6f0ff;
 border:2px solid #0052cc;
 color:#003b99;
 font-weight:600;
 line-height:1.5;
-text-align:left;
 "></div>
 
-<button class="btn btn-main" style="max-width:360px;margin:20px auto;"
-onclick="definirEsquemaInicio()">
-CONTINUAR A DOSIFICACIÓN
+</div>
+  
+<div style="max-width:380px; margin:30px auto;">
+<button class="btn btn-main" onclick="definirEsquemaInicio()">
+SIGUIENTE: DOSIFICACIÓN
 </button>
-
 </div>
 
 <style>
@@ -608,6 +564,33 @@ background:white;
   color: white;
   font-size: 14px;
   font-weight: bold;
+}
+
+.seleccion-grid {
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+}
+
+.seleccion-btn {
+text-align:left;
+background:#ffffff;
+color:#172b4d;
+border:2px solid #dfe1e6;
+box-shadow:none;
+font-size:0.9rem;
+}
+
+.seleccion-btn.seleccionada {
+background:#0052cc;
+color:#ffffff;
+border-color:#0052cc;
+}
+
+@media (max-width:760px) {
+.seleccion-grid {
+grid-template-columns:1fr;
+}
 }
 </style>
 
@@ -738,13 +721,17 @@ box-sizing:border-box;
 
 <script>
 <script>
+function toggleSeleccion(boton) {
+  boton.classList.toggle("seleccionada");
+}
+
 function definirEsquemaInicio() {
   const hba1c = parseFloat(document.getElementById('hba1c-inicio').value);
   const ayunas = parseFloat(document.getElementById('glicemia-ayunas-inicio').value);
   const casual = parseFloat(document.getElementById('glicemia-casual-inicio').value);
 
-  const catabolicos = Array.from(document.querySelectorAll('.catabolico:checked')).map(c => c.value);
-  const riesgoHipo = Array.from(document.querySelectorAll('.riesgo-hipo:checked')).map(c => c.value);
+  const catabolicos = Array.from(document.querySelectorAll('.catabolico-btn.seleccionada')).map(c => c.dataset.value);
+  const riesgoHipo = Array.from(document.querySelectorAll('.riesgo-hipo-btn.seleccionada')).map(c => c.dataset.value);
 
   let esquema = "monodosis_pm";
   let texto = "NPH monodosis nocturna";
@@ -775,17 +762,18 @@ function definirEsquemaInicio() {
   globalData.riesgoHipo = riesgoHipo.join(", ");
 
   const caja = document.getElementById('sugerencia-esquema-inicio');
-  caja.style.display = 'block';
-  caja.innerHTML = `
-    Esquema sugerido: ${texto}<br><br>
-    Motivo: ${motivo}
-  `;
+  if (caja) {
+    caja.style.display = 'block';
+    caja.innerHTML = `
+      Esquema sugerido: ${texto}<br><br>
+      Motivo: ${motivo}
+    `;
+  }
 
-  setTimeout(() => {
-    mostrarResumenEsquemaInicio();
-    nav(3);
-  }, 700);
+  mostrarResumenEsquemaInicio();
+  nav(3);
 }
+
 function mostrarResumenEsquemaInicio() {
   const caja = document.getElementById('resumen-esquema-inicio');
 
