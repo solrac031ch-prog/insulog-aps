@@ -1027,11 +1027,27 @@ function calcularSeguimientoPro() {
     advertencias.push("Dosis PM queda en 0 UI: interpretar como suspensión de dosis nocturna.");
   }
 
+   const promediosDisponibles = [
+    ayunas.promedio,
+    preonce && preonce.promedio !== null ? preonce.promedio : null
+  ].filter(v => v !== null);
+
+  const promedioGlobal = promediosDisponibles.length
+    ? promediosDisponibles.reduce((a,b)=>a+b,0) / promediosDisponibles.length
+    : null;
+
+  const hba1cEstimada = promedioGlobal !== null
+    ? ((promedioGlobal + 46.7) / 28.7).toFixed(1)
+    : 'N/A';
+
   globalData.am = nAM;
   globalData.pm = nPM;
   globalData.promAy = ayunas.promedio !== null ? Math.round(ayunas.promedio) : 'N/A';
   globalData.promPre = preonce && preonce.promedio !== null ? Math.round(preonce.promedio) : 'N/A';
+  globalData.promedioGlobal = promedioGlobal !== null ? Math.round(promedioGlobal) : 'N/A';
+  globalData.hba1cEstimada = hba1cEstimada;
   globalData.explicacion = [
+
     ajustePM.texto,
     ajusteAM.texto,
     excluidos.length ? `Valores altos aislados excluidos del promedio: ${excluidos.join(", ")}` : "",
@@ -1048,6 +1064,8 @@ function calcularSeguimientoPro() {
 
   const nota = `SEGUIMIENTO APS
 Promedios usados: Ayunas ${globalData.promAy} | Pre-once ${globalData.promPre}
+Promedio global estimado: ${globalData.promedioGlobal} mg/dL
+HbA1c estimada a 90 días si mantiene este patrón: ${globalData.hba1cEstimada}%
 Nuevo Esquema: AM ${nAM} UI | PM ${nPM} UI
 Razonamiento:
 ${globalData.explicacion}`;
@@ -1071,7 +1089,9 @@ function generarNotaDosisAlta() {
   globalData.acciones = accionesSeleccionadas.join("\n");
 
   const nota = `SEGUIMIENTO APS
-Promedios: Ayunas ${globalData.promAy} | Pre-once ${globalData.promPre}
+Promedios usados: Ayunas ${globalData.promAy} | Pre-once ${globalData.promPre}
+Promedio global estimado: ${globalData.promedioGlobal} mg/dL
+HbA1c estimada a 90 días si mantiene este patrón: ${globalData.hba1cEstimada}%
 Nuevo Esquema: AM ${globalData.am} UI | PM ${globalData.pm} UI
 Razonamiento: ${globalData.explicacion}
 
