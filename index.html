@@ -629,6 +629,19 @@ line-height:1.5;
 ">
 Ingrese el peso del paciente y seleccione el riesgo de hipoglicemia para calcular la dosis inicial de insulina NPH.
 </p>
+<div id="resumen-esquema-inicio" style="
+display:none;
+background:#e6f0ff;
+border:2px solid #0052cc;
+border-radius:12px;
+padding:16px;
+max-width:650px;
+margin:0 auto 25px;
+text-align:left;
+font-weight:600;
+line-height:1.5;
+color:#003b99;
+"></div>
 
 <div class="form-grid">
 
@@ -769,8 +782,20 @@ function definirEsquemaInicio() {
   `;
 
   setTimeout(() => {
+    mostrarResumenEsquemaInicio();
     nav(3);
   }, 700);
+}
+function mostrarResumenEsquemaInicio() {
+  const caja = document.getElementById('resumen-esquema-inicio');
+
+  if (!caja || !globalData.textoEsquemaInicio) return;
+
+  caja.style.display = 'block';
+  caja.innerHTML = `
+    Esquema sugerido: ${globalData.textoEsquemaInicio}<br><br>
+    Motivo: ${globalData.motivoEsquemaInicio}
+  `;
 }
 
 function calcularInicioMejorado() {
@@ -795,10 +820,20 @@ globalData.criteria = sel.join(', ');
 let total = Math.ceil((peso * factor) / 2) * 2;
 total = Math.max(4, total); // Mínimo 4 unidades
 
-// Calculamos AM (2/3 del total) y redondeamos a par
-let am = Math.ceil((total * 0.66) / 2) * 2;
-// El resto va a la PM (que también resultará par al restar un par de otro par)
-let pm = total - am;
+let am = 0;
+let pm = 0;
+
+if (globalData.esquemaInicio === "doble_dosis") {
+  // Calculamos AM (2/3 del total) y redondeamos a par
+  am = Math.ceil((total * 0.66) / 2) * 2;
+  // El resto va a la PM
+  pm = total - am;
+} else {
+  // Inicio conservador en monodosis nocturna
+  am = 0;
+  pm = total;
+}
+
 
 globalData.am = am;
 globalData.pm = pm;
@@ -807,6 +842,7 @@ globalData.pm = pm;
 const preview = document.getElementById('preview-dosis');
 preview.style.display = 'block';
 preview.innerHTML = `
+Esquema sugerido: ${globalData.textoEsquemaInicio || "NPH monodosis nocturna"}<br><br>
 Dosis total: ${total} UI/día<br><br>
 • Mañana: ${am} UI<br>
 • Noche: ${pm} UI
@@ -815,6 +851,8 @@ Dosis total: ${total} UI/día<br><br>
 // NOTA CLÍNICA
 const nota = `INICIO
 Paciente con criterios de inicio de insulina bajo ${globalData.criteria}.
+Esquema sugerido: ${globalData.textoEsquemaInicio || "NPH monodosis nocturna"}
+Motivo: ${globalData.motivoEsquemaInicio || "Inicio conservador con NPH nocturna."}
 Se inicia insulina NPH en dosis de:
 - ${am} unidades antes del desayuno
 - ${pm} unidades antes de dormir
