@@ -943,44 +943,75 @@ alert("Nota copiada en portapapeles");
 </div>
 
 <style>
-/* ESTILOS DE DISEÑO Y MAQUETACIÓN PARA P6 */
+/* ESTILOS DE DISEÑO PREMIUM PARA P6 */
 .imprimible-container {
   margin: 20px auto;
   background: white;
-  padding: 15px;
-  border: 1px solid #ccc;
+  padding: 30px;
+  border: 1px solid #dcdfe6;
   text-align: left;
-  font-size: 13px;
-  line-height: 1.3;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #2c3e50;
   max-width: 800px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
-/* TABLA OPTIMIZADA - ALTURA REDUCIDA PARA PÁGINA ÚNICA */
+/* TABLA ESTILO CLÍNICO PROFESIONAL */
 .tabla-registro {
   width: 100%;
   border-collapse: collapse;
-  margin: 8px 0;
+  margin: 15px 0;
   table-layout: fixed;
-}
-
-.tabla-registro th, .tabla-registro td {
-  border: 1.2px solid #333;
-  padding: 0;
-  /* Altura encogida para asegurar entrada de pie de página */
-  height: 28px; 
-  text-align: center;
-  vertical-align: middle;
+  border: 1.5px solid #333;
 }
 
 .tabla-registro th {
-  background-color: #f2f2f2;
-  font-size: 10px;
-  font-weight: bold;
+  background-color: #f8f9fa;
+  color: #1a2b3c;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 1px solid #333;
+  padding: 10px 4px;
 }
 
-.col-fecha { width: 15%; }
+.tabla-registro td {
+  border: 1px solid #666;
+  height: 24px; /* Altura optimizada para página única */
+}
+
+.col-fecha { width: 18%; }
 .col-hora  { width: 12%; }
-.col-glic  { width: 36.5%; }
+.col-glic  { width: 35%; }
+
+/* CONFIGURACIÓN DE IMPRESIÓN MEJORADA */
+@media print {
+  @page {
+    size: letter;
+    margin: 1cm;
+  }
+
+  body { background: white; }
+
+  .container > *:not(#p6), 
+  #p6 > *:not(#pdf),
+  .btn, footer {
+    display: none !important;
+  }
+
+  .imprimible-container {
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100%;
+    box-shadow: none !important;
+  }
+
+  .imprimible-container * {
+    color: #000 !important;
+  }
+}
 
 /* CONFIGURACIÓN DE IMPRESIÓN ESTRICTA PARA PÁGINA ÚNICA */
 @media print {
@@ -1048,17 +1079,26 @@ function generarDocumento(tipo){
 const pm = globalData.pm || 0;
 
 const dosis = `
-    <div style="margin-bottom:10px;">
-      <b style="font-size:14px; border-bottom: 1.5px solid #000;">DOSIS ACTUAL INDICADA</b><br>
-      <div style="margin-top:5px; font-size:13px;">
-        • Antes del desayuno (AM): <b style="font-size:16px;">${globalData.am} UI</b><br>
-        • Antes de dormir (PM): <b style="font-size:16px;">${globalData.pm} UI</b>
+    <div style="margin: 15px 0; padding: 15px; border: 2px solid #0052cc; border-radius: 10px; background: #f0f7ff;">
+      <b style="font-size:14px; color:#0052cc; text-transform: uppercase; letter-spacing: 0.5px;">Dosis Actual Indicada</b>
+      <div style="margin-top:10px; display: flex; justify-content: space-around; align-items: center;">
+        <div style="text-align:center;">
+          <span style="font-size:11px; color:#555;">MAÑANA (AM)</span><br>
+          <b style="font-size:24px;">${globalData.am} <small style="font-size:14px;">UI</small></b>
+        </div>
+        <div style="height: 40px; border-left: 1px solid #bcd9ff;"></div>
+        <div style="text-align:center;">
+          <span style="font-size:11px; color:#555;">NOCHE (PM)</span><br>
+          <b style="font-size:24px;">${globalData.pm} <small style="font-size:14px;">UI</small></b>
+        </div>
       </div>
     </div>
   `;
 
   const tabla = `
-    <b style="font-size:12px;">REGISTRO DE 15 DÍAS</b>
+    <div style="margin-top:15px; margin-bottom:5px;">
+      <b style="font-size:12px; color:#1a2b3c;">REGISTRO DE CONTROL (15 DÍAS)</b>
+    </div>
     <table class="tabla-registro">
       <thead>
         <tr>
@@ -1075,12 +1115,17 @@ const dosis = `
   `;
 
   let contenidoHeader = `
-    <div style="text-align:center; margin-bottom:15px;">
-      <b style="font-size:16px; text-decoration: underline;">${tituloDoc}</b>
+    <div style="border-bottom: 2px solid #0052cc; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end;">
+      <div>
+        <b style="font-size:18px; color:#0052cc;">${tituloDoc}</b><br>
+        <span style="font-size:12px; color:#666;">Plataforma de Apoyo Clínico Insulog APS</span>
+      </div>
+      <div style="text-align: right; font-size: 12px;">
+        <b>Fecha:</b> ${fecha}
+      </div>
     </div>
-    <div style="margin-bottom:8px;">
-      <b>Paciente:</b> ${nombre}<br>
-      <b>Fecha de emisión:</b> ${fecha}
+    <div style="margin-bottom:15px; font-size:14px;">
+      <b>Paciente:</b> <span style="border-bottom: 1px dotted #333;">${nombre}</span>
     </div>
   `;
 
@@ -1089,16 +1134,23 @@ const dosis = `
   if(tipo === "inicio"){
     contenidoCuerpo = `
       ${dosis}
-      <b style="font-size:12px;">INDICACIONES:</b>
-      <ul style="margin-top:2px; margin-bottom:5px; padding-left:18px; font-size:12px;">
-        <li>Educación por enfermería para técnica de administración.</li>
-        <li>Evaluación por nutricionista.</li>
-        <li><b>Control en 15 días</b> con registro de glicemias capilares.</li>
-      </ul>
+      <div style="margin: 15px 0;">
+        <b style="font-size:12px; text-transform: uppercase;">Indicaciones del Facultativo:</b>
+        <ul style="margin-top:5px; padding-left:20px; font-size:12px; line-height: 1.5;">
+          <li><b>Educación:</b> Coordinar con enfermería técnica de administración y sitios de punción.</li>
+          <li><b>Nutrición:</b> Evaluación por nutricionista para ajuste de plan alimentario.</li>
+          <li><b>Seguimiento:</b> Control médico en 15 días con este registro completo.</li>
+        </ul>
+      </div>
       ${tabla}
-      <div style="display:flex; justify-content: space-between; margin-top:8px; font-size:12px;">
-        <div><b>Próximo Control:</b> ____/____/____ Hora: ________</div>
-        <div style="text-align:center; width:180px; border-top:1px solid #000; margin-top:10px;">Firma y Timbre Médico</div>
+      <div style="display:flex; justify-content: space-between; margin-top:15px; font-size:12px;">
+        <div style="background: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px solid #eee;">
+          <b>Próximo Control:</b> ____/____/____<br>
+          <b>Hora:</b> ________
+        </div>
+        <div style="text-align:center; width:200px; border-top:1px solid #000; margin-top:35px; padding-top: 5px;">
+          <b>Firma y Timbre Médico</b>
+        </div>
       </div>
     `;
   }
@@ -1106,22 +1158,23 @@ const dosis = `
   if(tipo === "seguimiento"){
     contenidoCuerpo = `
       ${dosis}
-      <b style="font-size:12px;">INDICACIONES:</b>
-      <ul style="margin-top:2px; margin-bottom:5px; padding-left:18px; font-size:12px;">
-        <li>Mantener rotación de sitios de punción y técnica aprendida.</li>
-        <li><b>Control en 15 días</b> con registro de glicemias en ayunas y antes de las once.</li>
-      </ul>
-${globalData.acciones ? `
-<b style="font-size:12px;">CONDUCTA ADICIONAL:</b>
-<ul style="margin-top:2px; margin-bottom:5px; padding-left:18px; font-size:12px;">
-  <li>Mantener controles y seguimiento por medicina interna APS.</li>
-  ${globalData.acciones.split("\n").map(a => `<li>${a.replace("- ","")}</li>`).join("")}
-</ul>
-` : ""}
-    ${tabla}
-      <div style="display:flex; justify-content: space-between; margin-top:8px; font-size:12px;">
-        <div><b>Próximo Control:</b> ____/____/____ Hora: ________</div>
-        <div style="text-align:center; width:180px; border-top:1px solid #000; margin-top:10px;">Firma y Timbre Médico</div>
+      <div style="margin: 15px 0;">
+        <b style="font-size:12px; text-transform: uppercase;">Indicaciones de Continuidad:</b>
+        <ul style="margin-top:5px; padding-left:20px; font-size:12px; line-height: 1.5;">
+          <li>Mantener rotación estricta de sitios de punción (abdomen, muslos, brazos).</li>
+          <li><b>Registro:</b> Glicemias capilares en ayunas y antes de la cena (antes de las once).</li>
+          ${globalData.acciones ? globalData.acciones.split("\n").map(a => `<li>${a.replace("- ","")}</li>`).join("") : ""}
+        </ul>
+      </div>
+      ${tabla}
+      <div style="display:flex; justify-content: space-between; margin-top:15px; font-size:12px;">
+        <div style="background: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px solid #eee;">
+          <b>Próximo Control:</b> ____/____/____<br>
+          <b>Hora:</b> ________
+        </div>
+        <div style="text-align:center; width:200px; border-top:1px solid #000; margin-top:35px; padding-top: 5px;">
+          <b>Firma y Timbre Médico</b>
+        </div>
       </div>
     `;
   }
@@ -1129,26 +1182,33 @@ ${globalData.acciones ? `
   if(tipo === "pscv"){
     contenidoCuerpo = `
       ${dosis}
-      <div style="background:#f9f9f9; padding:8px; border:1px dashed #666; margin:10px 0; font-size:12px;">
-        <b>INDICACIÓN ESPECIAL:</b><br>
-        Si el glucómetro es propiedad del CESFAM, favor devolverlo en oficina de dirección (2do piso) con la encargada Susan.
+      <div style="background:#fff4e6; padding:15px; border:1px solid #ffd8a8; border-radius:8px; margin:20px 0; font-size:13px; color: #856404;">
+        <b>⚠️ INDICACIÓN IMPORTANTE:</b><br>
+        Si el glucómetro es propiedad del CESFAM, favor devolverlo en la oficina de dirección (2do piso) con la encargada Susan al finalizar este ciclo.
       </div>
-      <p style="font-size:12px;"><b>CONTROL:</b> Continuar controles según cronograma en su Programa de Salud Cardiovascular (PSCV).</p>
-      <div style="text-align:center; width:200px; border-top:1px solid #000; margin:20px auto 0;">Firma y Timbre Médico</div>
+      <p style="font-size:13px; line-height: 1.5;"><b>CONTROL DE PROGRAMA:</b> El paciente se encuentra compensado. Continuar controles regulares según cronograma en su Programa de Salud Cardiovascular (PSCV).</p>
+      <div style="text-align:center; width:220px; border-top:1.5px solid #000; margin:60px auto 0; padding-top: 5px;">
+        <b style="font-size:13px;">Firma y Timbre Médico</b>
+      </div>
     `;
   }
 
   const piePagina = `
-    <div class="footer-impresion">
-      <hr style="border:0; border-top:1px solid #ccc; margin: 10px 0 5px 0;">
-      <div style="font-size:9px; text-align:center; color:#333; line-height:1.1;">
-        Vacunatorio: Verificar vacunas al día (COVID, Influenza, Neumococo).<br>
-        Ajuste basado en guías MINSAL, ADA y ALAD. Plataforma <b>Insulog APS</b><br>
-        <b>Dr. Carlos Herrera Malaver – Médico Internista</b>
+    <div style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="font-size:9px; color:#777; line-height:1.2;">
+          <b>Vacunatorio:</b> COVID, Influenza, Neumococo (Verificar vigencia).<br>
+          Ajuste clínico basado en normas MINSAL, ADA 2024 y ALAD.<br>
+          <i>Documento generado por Insulog APS ®</i>
+        </div>
+        <div style="text-align: right; font-size: 11px; color: #1a2b3c;">
+          <b>Dr. Carlos Herrera Malaver</b><br>
+          Médico Internista
+        </div>
       </div>
     </div>
   `;
-
+  
 document.getElementById("pdf").innerHTML = contenidoHeader + contenidoCuerpo + piePagina;
   
   // SCROLL AUTOMÁTICO
