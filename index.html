@@ -879,7 +879,93 @@ if(this.value>999) this.value=999;">
 nav(4);
 }
 
-/* PROTOCOLO APS ACTUALIZADO - MANTIENE TODA SU LÓGICA ORIGINAL */
+/* PROTOCOLO APS ACTUALIZADO - AJUSTE CON SEGURIDAD HIPOGLICEMIA Y VALORES ATÍPICOS */
+function analizarGlicemias(valores, nombre) {
+  const datos = valores.filter(v => !isNaN(v));
+  const excluidos = [];
+  let usados = [...datos];
+
+  if (datos.length >= 4) {
+    usados = datos.filter((valor, index) => {
+      if (valor < 70) return true;
+
+      const resto = datos.filter((_, i) => i !== index);
+      const promedioResto = resto.reduce((a,b)=>a+b,0) / resto.length;
+
+      if (valor > promedioResto + 50) {
+        excluidos.push(`${nombre} ${valor} mg/dL`);
+        return false;
+      }
+
+      return true;
+    });
+  }
+
+  const promedio = usados.length ? usados.reduce((a,b)=>a+b,0) / usados.length : null;
+  const min = datos.length ? Math.min(...datos) : null;
+  const hipoSevera = datos.some(v => v < 54);
+  const hipo = datos.some(v => v < 70);
+
+  return {
+    datos,
+    usados,
+    promedio,
+    min,
+    hipoSevera,
+    hipo,
+    excluidos
+  };
+}
+
+function ajustePorPerfil(analisis, nombreDosis) {
+  if (!analisis || analisis.promedio === null) {
+    return {
+      ajuste: 0,
+      texto: `${nombreDosis}: sin datos suficientes para ajuste`
+    };
+  }
+
+  if (analisis.hipoSevera) {
+    return {
+      ajuste: -4,
+      texto: `${nombreDosis}: reducir 4 UI por glicemia <54 mg/dL. Considerar suspender temporalmente esta dosis hasta evaluación clínica`
+    };
+  }
+
+  if (analisis.hipo) {
+    return {
+      ajuste: -4,
+      texto: `${nombreDosis}: reducir 4 UI por glicemia <70 mg/dL`
+    };
+  }
+
+  if (analisis.promedio < 80) {
+    return {
+      ajuste: -2,
+      texto: `${nombreDosis}: reducir 2 UI por promedio 70-79 mg/dL`
+    };
+  }
+
+  if (analisis.promedio <= 130) {
+    return {
+      ajuste: 0,
+      texto: `${nombreDosis}: mantener por promedio en meta 80-130 mg/dL`
+    };
+  }
+
+  if (analisis.promedio <= 180) {
+    return {
+      ajuste: 2,
+      texto: `${nombreDosis}: aumentar 2 UI por promedio 131-180 mg/dL`
+    };
+  }
+
+  return {
+    ajuste: 4,
+    texto: `${nombreDosis}: aumentar 4 UI por promedio >180 mg/dL`
+  };
+}
+
 function calcularSeguimientoPro() {
   const peso = parseFloat(document.getElementById('peso-seguimiento').value);
   const tipo = document.getElementById('tipo-esquema').value;
@@ -892,37 +978,65 @@ function calcularSeguimientoPro() {
   let am = parseInt(document.getElementById('am-actual').value) || 0;
   let pm = parseInt(document.getElementById('pm-actual').value) || 0;
 
-  const ayunas = Array.from(document.querySelectorAll('.ay')).map(i => parseInt(i.value)).filter(v => !isNaN(v));
-  const preonce = Array.from(document.querySelectorAll('.pre')).map(i => parseInt(i.value)).filter(v => !isNaN(v));
+  const ayunasRaw = Array.from(document.querySelectorAll('.ay')).map(i => parseInt(i.value)).filter(v => !isNaN(v));
+  const preonceRaw = Array.from(document.querySelectorAll('.pre')).map(i => parseInt(i.value)).filter(v => !isNaN(v));
 
-  if (ayunas.length < 3) {
+  if (ayunasRaw.length < 3) {
     alert("Se requieren 3 glicemias en ayunas.");
     return;
   }
 
-  const promAy = ayunas.reduce((a,b)=>a+b,0)/ayunas.length;
-  const promPre = preonce.length ? preonce.reduce((a,b)=>a+b,0)/preonce.length : null;
+  const ayunas = analizarGlicemias(ayunasRaw, "Ayunas");
+  const preonce = preonceRaw.length ? analizarGlicemias(preonceRaw, "Pre-once") : null;
 
-  let ajAM = 0; let ajPM = 0; let explicacion = "";
+  const ajustePM = ajustePorPerfil(ayunas, "PM");
+  const ajusteAM = preonce ? ajustePorPerfil(preonce, "AM") : { ajuste: 0, texto: "AM: sin datos de pre-once para ajuste" };
 
-  if (promAy > 130) { ajPM = (promAy > 180) ? 4 : 2; explicacion += "↑ Insulina nocturna por ayunas\n"; }
-  else if (promAy < 70) { ajPM = -2; explicacion += "↓ Insulina nocturna por hipoglicemia\n"; }
+  let nAM = (tipo==="2"||tipo==="am") ? Math.ceil((am + ajusteAM.ajuste) / 2) * 2 : 0;
+  let nPM = (tipo==="2"||tipo==="pm") ? Math.ceil((pm + ajustePM.ajuste) / 2) * 2 : 0;
 
-  if (promPre !== null) {
-    if (promPre > 130) { ajAM = (promPre > 180) ? 4 : 2; explicacion += "↑ Insulina matinal por pre-once\n"; }
-    else if (promPre < 70) { ajAM = -2; explicacion += "↓ Insulina matinal por hipoglicemia\n"; }
-  }
-
-  let nAM = (tipo==="2"||tipo==="am") ? Math.ceil((am+ajAM)/2)*2 : 0;
-  let nPM = (tipo==="2"||tipo==="pm") ? Math.ceil((pm+ajPM)/2)*2 : 0;
+  nAM = Math.max(0, nAM);
+  nPM = Math.max(0, nPM);
 
   const dosisKg = (nAM + nPM) / peso;
-  
-  globalData.am = nAM; 
+
+  const excluidos = [
+    ...ayunas.excluidos,
+    ...(preonce ? preonce.excluidos : [])
+  ];
+
+  const advertencias = [];
+
+  if (ayunas.hipoSevera) {
+    advertencias.push("Hipoglicemia severa en ayunas: priorizar seguridad, evaluar suspensión temporal de dosis PM y control clínico.");
+  } else if (ayunas.hipo) {
+    advertencias.push("Hipoglicemia en ayunas: reducir dosis PM.");
+  }
+
+  if (preonce && preonce.hipoSevera) {
+    advertencias.push("Hipoglicemia severa pre-once: priorizar seguridad, evaluar suspensión temporal de dosis AM y control clínico.");
+  } else if (preonce && preonce.hipo) {
+    advertencias.push("Hipoglicemia pre-once: reducir dosis AM.");
+  }
+
+  if (nAM === 0 && (tipo==="2" || tipo==="am")) {
+    advertencias.push("Dosis AM queda en 0 UI: interpretar como suspensión de dosis matinal.");
+  }
+
+  if (nPM === 0 && (tipo==="2" || tipo==="pm")) {
+    advertencias.push("Dosis PM queda en 0 UI: interpretar como suspensión de dosis nocturna.");
+  }
+
+  globalData.am = nAM;
   globalData.pm = nPM;
-  globalData.promAy = Math.round(promAy);
-  globalData.promPre = promPre ? Math.round(promPre) : 'N/A';
-  globalData.explicacion = explicacion;
+  globalData.promAy = ayunas.promedio !== null ? Math.round(ayunas.promedio) : 'N/A';
+  globalData.promPre = preonce && preonce.promedio !== null ? Math.round(preonce.promedio) : 'N/A';
+  globalData.explicacion = [
+    ajustePM.texto,
+    ajusteAM.texto,
+    excluidos.length ? `Valores altos aislados excluidos del promedio: ${excluidos.join(", ")}` : "",
+    advertencias.length ? `Advertencias: ${advertencias.join(" ")}` : ""
+  ].filter(Boolean).join("\n");
   globalData.dosisKg = dosisKg;
 
   if (dosisKg >= 0.7) {
@@ -933,13 +1047,15 @@ function calcularSeguimientoPro() {
   globalData.acciones = "";
 
   const nota = `SEGUIMIENTO APS
-Promedios: Ayunas ${globalData.promAy} | Pre-once ${globalData.promPre}
+Promedios usados: Ayunas ${globalData.promAy} | Pre-once ${globalData.promPre}
 Nuevo Esquema: AM ${nAM} UI | PM ${nPM} UI
-Razonamiento: ${explicacion}`;
+Razonamiento:
+${globalData.explicacion}`;
 
   document.getElementById('nota-clinica').innerText = nota;
   nav(5);
 }
+
 
 function toggleAccion(boton) {
   boton.classList.toggle("seleccionada");
