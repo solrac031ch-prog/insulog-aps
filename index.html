@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <link rel="stylesheet" href="styles.css">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Protocolo de Insulinización APS - Dr. Herrera</title>
 
 <style>
@@ -110,6 +110,80 @@ font-size:12px;
 @page { size: letter; }
 .btn, footer { display:none; }
 }
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+button,
+input,
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  font-size: 16px;
+}
+
+button {
+  touch-action: manipulation;
+}
+
+.container {
+  width: 100%;
+}
+
+.p4-header-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  max-width: 820px;
+  margin: 0 auto 14px;
+}
+
+@media (max-width: 760px) {
+  body {
+    padding: 12px;
+  }
+
+  .container {
+    padding: 18px;
+    border-radius: 12px;
+  }
+
+  .criterios-grid,
+  .form-grid,
+  .p4-header-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .criterio-btn {
+    white-space: normal;
+  }
+
+  .btn {
+    min-height: 48px;
+  }
+
+  #nota-clinica {
+    font-size: 0.9rem;
+  }
+
+  .imprimible-container {
+    width: 100%;
+    padding: 18px;
+  }
+}
+
 </style>
 </head>
 
@@ -895,10 +969,37 @@ CONTROL EN PROGRAMA CV
 function copiarNota(){
 const text = document.getElementById('nota-clinica').innerText;
 
-navigator.clipboard.writeText(text).then(() => {
-alert("Nota copiada en portapapeles");
-});
+if (navigator.clipboard && window.isSecureContext) {
+  navigator.clipboard.writeText(text).then(() => {
+    alert("Nota copiada en portapapeles");
+  }).catch(() => {
+    copiarNotaFallback(text);
+  });
+} else {
+  copiarNotaFallback(text);
 }
+}
+
+function copiarNotaFallback(text) {
+  const area = document.createElement("textarea");
+  area.value = text;
+  area.style.position = "fixed";
+  area.style.left = "-9999px";
+  area.style.top = "0";
+  document.body.appendChild(area);
+  area.focus();
+  area.select();
+
+  try {
+    document.execCommand("copy");
+    alert("Nota copiada en portapapeles");
+  } catch (e) {
+    alert("No se pudo copiar automáticamente. Mantenga presionada la nota y seleccione copiar.");
+  }
+
+  document.body.removeChild(area);
+}
+
 </script>
 
 <div id="p6" class="page" style="text-align:center;">
