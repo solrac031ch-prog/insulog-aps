@@ -955,11 +955,13 @@ alert("Nota copiada en portapapeles");
   max-width: 800px;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-sizing: border-box; /* Esto hace que el margen izquierdo y derecho sean iguales */
+  width: 95%; /* Da un pequeño respiro a los bordes en el celular */
 }
 
 /* TABLA ESTILO CLÍNICO PROFESIONAL */
 .tabla-registro {
-  width: 100%;
+  width: 100% !important; /* Obliga a la tabla a respetar los márgenes del contenedor */
   border-collapse: collapse;
   margin: 15px 0;
   table-layout: fixed;
@@ -1000,12 +1002,13 @@ alert("Nota copiada en portapapeles");
     display: none !important;
   }
 
-  .imprimible-container {
+.imprimible-container {
     border: none !important;
-    padding: 0 !important;
+    padding: 0.5cm 1cm !important; /* Margen simétrico: 1cm a la izquierda y 1cm a la derecha */
     margin: 0 !important;
-    width: 100%;
+    width: 100% !important;
     box-shadow: none !important;
+    box-sizing: border-box !important;
   }
 
   .imprimible-container * {
