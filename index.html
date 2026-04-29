@@ -662,7 +662,7 @@ Educación por enfermería para inicio de insulina.
 Evaluación por nutricionista.
 Control médico en 15 días con seguimiento de glicemia en ayunas y Antes de las once.`;
 
-document.getElementById('nota-clinica').innerText = nota;
+renderNotaClinica(nota);
 
 // navegación segura
 setTimeout(() => {
@@ -847,6 +847,40 @@ text-align:center;
   color: white;
   border-color: #0052cc;
 }
+
+.nota-linea {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
+.nota-verde {
+  background: #e6fcf5;
+  color: #006644;
+}
+
+.nota-amarilla {
+  background: #fff4e6;
+  color: #8a5d00;
+}
+
+.nota-roja {
+  background: #ffe9e9;
+  color: #7a0000;
+  font-weight: 700;
+}
+
+.nota-azul {
+  background: #e6f0ff;
+  color: #003b99;
+  font-weight: 700;
+}
+
+.nota-gris {
+  background: #f4f5f7;
+  color: #172b4d;
+}
 </style>
 
 
@@ -978,6 +1012,9 @@ function calcularSeguimientoPro() {
   let am = parseInt(document.getElementById('am-actual').value) || 0;
   let pm = parseInt(document.getElementById('pm-actual').value) || 0;
 
+  globalData.amActual = am;
+  globalData.pmActual = pm;
+
   const ayunasRaw = Array.from(document.querySelectorAll('.ay')).map(i => parseInt(i.value)).filter(v => !isNaN(v));
   const preonceRaw = Array.from(document.querySelectorAll('.pre')).map(i => parseInt(i.value)).filter(v => !isNaN(v));
 
@@ -1062,15 +1099,16 @@ function calcularSeguimientoPro() {
 
   globalData.acciones = "";
 
-  const nota = `SEGUIMIENTO APS
+    const nota = `SEGUIMIENTO APS
 Promedios usados: Ayunas ${globalData.promAy} | Pre-once ${globalData.promPre}
 Promedio global estimado: ${globalData.promedioGlobal} mg/dL
 HbA1c estimada a 90 días si mantiene este patrón: ${globalData.hba1cEstimada}%
-Nuevo Esquema: AM ${nAM} UI | PM ${nPM} UI
+Esquema actual: AM ${globalData.amActual} UI | PM ${globalData.pmActual} UI
+Nuevo Esquema sugerido: AM ${nAM} UI | PM ${nPM} UI
 Razonamiento:
 ${globalData.explicacion}`;
 
-  document.getElementById('nota-clinica').innerText = nota;
+  renderNotaClinica(nota);
   nav(5);
 }
 
@@ -1092,13 +1130,14 @@ function generarNotaDosisAlta() {
 Promedios usados: Ayunas ${globalData.promAy} | Pre-once ${globalData.promPre}
 Promedio global estimado: ${globalData.promedioGlobal} mg/dL
 HbA1c estimada a 90 días si mantiene este patrón: ${globalData.hba1cEstimada}%
-Nuevo Esquema: AM ${globalData.am} UI | PM ${globalData.pm} UI
+Esquema actual: AM ${globalData.amActual} UI | PM ${globalData.pmActual} UI
+Nuevo Esquema sugerido: AM ${globalData.am} UI | PM ${globalData.pm} UI
 Razonamiento: ${globalData.explicacion}
 
 ALERTA DOSIS ALTA (>0.7 UI/kg):
 ${globalData.acciones || "Mantener controles y seguimiento por medicina interna APS."}`;
 
-  document.getElementById('nota-clinica').innerText = nota;
+   renderNotaClinica(nota);
   nav(5);
 }
 </script>
@@ -1183,7 +1222,54 @@ CONTROL EN PROGRAMA CV
 </div>
 
 <script>
+function escaparHTML(texto) {
+  return texto
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function claseNota(linea) {
+  const l = linea.toLowerCase();
+
+  if (l.includes("alerta") || l.includes("hipoglicemia") || l.includes("<54") || l.includes("<70") || l.includes("suspensión")) {
+    return "nota-roja";
+  }
+
+  if (l.includes("hba1c estimada")) {
+    const valor = parseFloat(linea.replace(",", ".").match(/[\d.]+/)?.[0]);
+    if (!isNaN(valor)) {
+      if (valor <= 7) return "nota-verde";
+      if (valor < 9) return "nota-amarilla";
+      return "nota-roja";
+    }
+  }
+
+  if (l.includes("nuevo esquema") || l.includes("dosis sugerida")) {
+    return "nota-azul";
+  }
+
+  if (l.includes("esquema actual") || l.includes("promedios usados") || l.includes("promedio global")) {
+    return "nota-gris";
+  }
+
+  return "";
+}
+
+function renderNotaClinica(texto) {
+  const html = texto.split("\n").map(linea => {
+    const clase = claseNota(linea);
+    const contenido = escaparHTML(linea) || "&nbsp;";
+    return clase
+      ? `<span class="nota-linea ${clase}">${contenido}</span>`
+      : `<span class="nota-linea">${contenido}</span>`;
+  }).join("");
+
+  document.getElementById('nota-clinica').innerHTML = html;
+}
+
 function copiarNota(){
+
 const text = document.getElementById('nota-clinica').innerText;
 
 if (navigator.clipboard && window.isSecureContext) {
