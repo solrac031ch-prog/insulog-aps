@@ -850,36 +850,6 @@ nav(4);
 }
 
 /* PROTOCOLO APS ACTUALIZADO - MANTIENE TODA SU LÓGICA ORIGINAL */
-<script>
-/* generar tabla (SIN CAMBIOS FUNCIONALES) */
-function prepSeg() {
-const tbody = document.getElementById('tabla-seguimiento');
-tbody.innerHTML = "";
-
-for (let i = 1; i <= 15; i++) {
-tbody.innerHTML += `
-<tr>
-<td style="font-weight:600;">${i}</td>
-
-<td>
-<input class="ay glicemia" type="text" maxlength="3"
-oninput="this.value=this.value.replace(/[^0-9]/g,'');
-if(this.value>999) this.value=999;">
-</td>
-
-<td>
-<input class="pre glicemia" type="text" maxlength="3"
-oninput="this.value=this.value.replace(/[^0-9]/g,'');
-if(this.value>999) this.value=999;">
-</td>
-</tr>
-`;
-}
-
-nav(4);
-}
-
-/* PROTOCOLO APS ACTUALIZADO - MANTIENE TODA SU LÓGICA ORIGINAL */
 function calcularSeguimientoPro() {
   const peso = parseFloat(document.getElementById('peso-seguimiento').value);
   const tipo = document.getElementById('tipo-esquema').value;
