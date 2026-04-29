@@ -905,7 +905,6 @@ function calcularSeguimientoPro() {
 
   let ajAM = 0; let ajPM = 0; let explicacion = "";
 
-  // Lógica APS
   if (promAy > 130) { ajPM = (promAy > 180) ? 4 : 2; explicacion += "↑ Insulina nocturna por ayunas\n"; }
   else if (promAy < 70) { ajPM = -2; explicacion += "↓ Insulina nocturna por hipoglicemia\n"; }
 
@@ -919,7 +918,6 @@ function calcularSeguimientoPro() {
 
   const dosisKg = (nAM + nPM) / peso;
   
-  // Guardar datos para la nota
   globalData.am = nAM; 
   globalData.pm = nPM;
   globalData.promAy = Math.round(promAy);
@@ -947,7 +945,7 @@ function toggleAccion(boton) {
   boton.classList.toggle("seleccionada");
 }
 
-ffunction generarNotaDosisAlta() {
+function generarNotaDosisAlta() {
   const accionesSeleccionadas = Array.from(document.querySelectorAll('#p41 .accion-btn.seleccionada')).map(a => a.dataset.value);
 
   if (accionesSeleccionadas.length > 0) {
@@ -957,18 +955,6 @@ ffunction generarNotaDosisAlta() {
   globalData.acciones = accionesSeleccionadas.join("\n");
 
   const nota = `SEGUIMIENTO APS
-Promedios: Ayunas ${globalData.promAy} | Pre-once ${globalData.promPre}
-Nuevo Esquema: AM ${globalData.am} UI | PM ${globalData.pm} UI
-Razonamiento: ${globalData.explicacion}
-
-ALERTA DOSIS ALTA (>0.7 UI/kg):
-${globalData.acciones || "Mantener controles y seguimiento por medicina interna APS."}`;
-
-  document.getElementById('nota-clinica').innerText = nota;
-  nav(5);
-}
-</script>
-  
 Promedios: Ayunas ${globalData.promAy} | Pre-once ${globalData.promPre}
 Nuevo Esquema: AM ${globalData.am} UI | PM ${globalData.pm} UI
 Razonamiento: ${globalData.explicacion}
