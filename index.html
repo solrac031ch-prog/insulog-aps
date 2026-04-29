@@ -982,16 +982,24 @@ alert("Nota copiada en portapapeles");
 .col-hora  { width: 12%; }
 .col-glic  { width: 36.5%; }
 
-/* CONFIGURACIÓN DE IMPRESIÓN ESTRICTA */
+/* CONFIGURACIÓN DE IMPRESIÓN ESTRICTA PARA PÁGINA ÚNICA */
 @media print {
   @page {
     size: letter;
-    margin: 0;
+    margin: 0.5cm; /* Margen pequeño para evitar saltos de página */
   }
 
   body {
     background: white;
     padding: 0;
+  }
+
+  .container {
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    max-width: 100%;
   }
 
   .container > *:not(#p6), 
@@ -1005,13 +1013,19 @@ alert("Nota copiada en portapapeles");
   .imprimible-container {
     border: none;
     margin: 0 !important;
-    padding: 1cm 3cm !important; /* Margen lateral de 3cm estricto */
-    width: auto;
+    padding: 0.5cm 1.5cm !important; /* Reducido para que quepa en iOS */
+    width: 100%;
     max-width: none;
+    font-size: 11px; /* Fuente ligeramente más pequeña */
+  }
+
+  .tabla-registro td {
+    height: 22px; /* Celdas más bajas para ahorrar espacio vertical */
   }
 
   .footer-impresion {
-    margin-top: 10px;
+    margin-top: 5px;
+    position: relative;
     page-break-inside: avoid;
   }
 }
