@@ -1,0 +1,342 @@
+name: Fix seguimiento NPH algorithm
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/trigger-fix-seguimiento-nph.txt
+
+permissions:
+  contents: write
+
+jobs:
+  patch-followup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch calcularSeguimientoPro
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+
+          marker = 'function calcularSeguimientoPro()'
+          start = text.find(marker)
+          if start == -1:
+              raise SystemExit('No se encontró function calcularSeguimientoPro()')
+
+          brace_start = text.find('{', start)
+          if brace_start == -1:
+              raise SystemExit('No se encontró apertura de función')
+
+          depth = 0
+          end = None
+          in_string = None
+          escape = False
+          in_line_comment = False
+          in_block_comment = False
+
+          for i in range(brace_start, len(text)):
+              ch = text[i]
+              nxt = text[i + 1] if i + 1 < len(text) else ''
+
+              if in_line_comment:
+                  if ch == '\n':
+                      in_line_comment = False
+                  continue
+
+              if in_block_comment:
+                  if ch == '*' and nxt == '/':
+                      in_block_comment = False
+                  continue
+
+              if in_string:
+                  if escape:
+                      escape = False
+                  elif ch == '\\':
+                      escape = True
+                  elif ch == in_string:
+                      in_string = None
+                  continue
+
+              if ch == '/' and nxt == '/':
+                  in_line_comment = True
+                  continue
+              if ch == '/' and nxt == '*':
+                  in_block_comment = True
+                  continue
+              if ch in ('"', "'", '`'):
+                  in_string = ch
+                  continue
+
+              if ch == '{':
+                  depth += 1
+              elif ch == '}':
+                  depth -= 1
+                  if depth == 0:
+                      end = i + 1
+                      break
+
+          if end is None:
+              raise SystemExit('No se pudo determinar cierre de calcularSeguimientoPro()')
+
+          replacement = r'''function calcularSeguimientoPro() {
+  const peso = Number(document.getElementById('peso-seguimiento')?.value || 0);
+  const tipoEsquema = document.getElementById('tipo-esquema')?.value || '2';
+  let amActual = Number(document.getElementById('am-actual')?.value || 0);
+  let pmActual = Number(document.getElementById('pm-actual')?.value || 0);
+
+  if (!peso || peso <= 0) {
+    alert('Ingrese un peso válido para calcular UI/kg/día y seguridad de dosis.');
+    return;
+  }
+
+  if (tipoEsquema === 'am') pmActual = 0;
+  if (tipoEsquema === 'pm') amActual = 0;
+
+  if (tipoEsquema === '2' && amActual <= 0 && pmActual <= 0) {
+    alert('Ingrese al menos una dosis actual de insulina.');
+    return;
+  }
+  if (tipoEsquema === 'am' && amActual <= 0) {
+    alert('Ingrese la dosis AM actual.');
+    return;
+  }
+  if (tipoEsquema === 'pm' && pmActual <= 0) {
+    alert('Ingrese la dosis PM actual.');
+    return;
+  }
+
+  const filas = Array.from(document.querySelectorAll('#tabla-seguimiento tr'));
+  const ayunas = [];
+  const once = [];
+
+  filas.forEach((fila) => {
+    const inputs = Array.from(fila.querySelectorAll('input'));
+    if (inputs[0]) {
+      const valorAyunas = Number(inputs[0].value);
+      if (!Number.isNaN(valorAyunas) && valorAyunas > 0) ayunas.push(valorAyunas);
+    }
+    if (inputs[1]) {
+      const valorOnce = Number(inputs[1].value);
+      if (!Number.isNaN(valorOnce) && valorOnce > 0) once.push(valorOnce);
+    }
+  });
+
+  if (ayunas.length === 0 && once.length === 0) {
+    alert('Ingrese al menos un registro de glicemia de seguimiento.');
+    return;
+  }
+
+  const promedio = (valores) => valores.length ? Math.round(valores.reduce((a, b) => a + b, 0) / valores.length) : null;
+  const promAyunas = promedio(ayunas);
+  const promOnce = promedio(once);
+
+  const hayHipoAyunas = ayunas.some(v => v < 70);
+  const hayHipoOnce = once.some(v => v < 70);
+  const hayHipoGrave = [...ayunas, ...once].some(v => v < 54);
+  const hayHipo = hayHipoAyunas || hayHipoOnce || hayHipoGrave;
+
+  const META_AYUNAS_ALTA = 130;
+  const META_ONCE_ALTA = 180;
+
+  const redondearPar = (valor) => {
+    if (!Number.isFinite(valor)) return 0;
+    return Math.max(0, Math.round(valor / 2) * 2);
+  };
+
+  const reducirDosis = (dosis, severa = false) => {
+    const factor = severa ? 0.8 : 0.9;
+    return redondearPar(Math.max(0, dosis * factor));
+  };
+
+  const incrementoPorPromedio = (prom, metaAlta) => {
+    if (prom === null || prom <= metaAlta) return 0;
+    if (prom <= 180) return 2;
+    return 4;
+  };
+
+  const dosisNuevaParaAgregar = () => {
+    // Inicio conservador de segunda dosis: 0,1 UI/kg, máximo inicial 10 UI, mínimo práctico 4 UI.
+    return redondearPar(Math.min(10, Math.max(4, peso * 0.1)));
+  };
+
+  let nuevaAM = amActual;
+  let nuevaPM = pmActual;
+  let esquemaFinal = tipoEsquema;
+  const acciones = [];
+  const alertas = [];
+
+  if (hayHipo) {
+    if (hayHipoAyunas && nuevaPM > 0) {
+      nuevaPM = reducirDosis(nuevaPM, hayHipoGrave);
+      acciones.push(`Se reduce NPH PM por hipoglicemia en ayunas (${hayHipoGrave ? '<54' : '<70'} mg/dL).`);
+    }
+    if (hayHipoOnce && nuevaAM > 0) {
+      nuevaAM = reducirDosis(nuevaAM, hayHipoGrave);
+      acciones.push(`Se reduce NPH AM por hipoglicemia diurna/antes de once (${hayHipoGrave ? '<54' : '<70'} mg/dL).`);
+    }
+    if (tipoEsquema === 'pm' && hayHipoOnce && nuevaPM > 0 && nuevaAM === 0) {
+      nuevaPM = reducirDosis(nuevaPM, hayHipoGrave);
+      acciones.push('Paciente en monodosis PM con hipoglicemia registrada: se reduce la única dosis disponible y no se intensifica.');
+    }
+    if (tipoEsquema === 'am' && hayHipoAyunas && nuevaAM > 0 && nuevaPM === 0) {
+      nuevaAM = reducirDosis(nuevaAM, hayHipoGrave);
+      acciones.push('Paciente en monodosis AM con hipoglicemia registrada: se reduce la única dosis disponible y no se intensifica.');
+    }
+    alertas.push('No intensificar insulina en presencia de hipoglicemia sin evaluar técnica, alimentación, horario de dosis, ingesta, ERC y fragilidad.');
+  } else if (tipoEsquema === 'pm') {
+    // NPH PM controla principalmente glicemia de ayunas. Si la glicemia de tarde/pre-cena está alta, corresponde agregar AM.
+    if (promOnce !== null && promOnce > META_ONCE_ALTA) {
+      nuevaAM = dosisNuevaParaAgregar();
+      esquemaFinal = '2';
+      acciones.push(`Promedio antes de once/pre-cena ${promOnce} mg/dL: se agrega NPH AM y se pasa a esquema AM + PM.`);
+    }
+
+    const incPM = incrementoPorPromedio(promAyunas, META_AYUNAS_ALTA);
+    if (incPM > 0) {
+      nuevaPM = redondearPar(pmActual + incPM);
+      acciones.push(`Promedio ayunas ${promAyunas} mg/dL: se aumenta NPH PM en ${incPM} UI.`);
+    } else if (promAyunas !== null) {
+      acciones.push(`Promedio ayunas ${promAyunas} mg/dL en meta: se mantiene NPH PM.`);
+    }
+  } else if (tipoEsquema === 'am') {
+    // NPH AM controla principalmente glicemia diurna/pre-cena. Si ayunas está alta, corresponde agregar PM.
+    if (promAyunas !== null && promAyunas > META_AYUNAS_ALTA) {
+      nuevaPM = dosisNuevaParaAgregar();
+      esquemaFinal = '2';
+      acciones.push(`Promedio ayunas ${promAyunas} mg/dL: se agrega NPH PM y se pasa a esquema AM + PM.`);
+    }
+
+    const incAM = incrementoPorPromedio(promOnce, META_ONCE_ALTA);
+    if (incAM > 0) {
+      nuevaAM = redondearPar(amActual + incAM);
+      acciones.push(`Promedio antes de once/pre-cena ${promOnce} mg/dL: se aumenta NPH AM en ${incAM} UI.`);
+    } else if (promOnce !== null) {
+      acciones.push(`Promedio antes de once/pre-cena ${promOnce} mg/dL en meta: se mantiene NPH AM.`);
+    }
+  } else {
+    const incPM = incrementoPorPromedio(promAyunas, META_AYUNAS_ALTA);
+    const incAM = incrementoPorPromedio(promOnce, META_ONCE_ALTA);
+
+    if (incPM > 0) {
+      nuevaPM = redondearPar(pmActual + incPM);
+      acciones.push(`Promedio ayunas ${promAyunas} mg/dL: se aumenta NPH PM en ${incPM} UI.`);
+    } else if (promAyunas !== null) {
+      acciones.push(`Promedio ayunas ${promAyunas} mg/dL en meta: se mantiene NPH PM.`);
+    }
+
+    if (incAM > 0) {
+      nuevaAM = redondearPar(amActual + incAM);
+      acciones.push(`Promedio antes de once/pre-cena ${promOnce} mg/dL: se aumenta NPH AM en ${incAM} UI.`);
+    } else if (promOnce !== null) {
+      acciones.push(`Promedio antes de once/pre-cena ${promOnce} mg/dL en meta: se mantiene NPH AM.`);
+    }
+  }
+
+  const totalDiario = nuevaAM + nuevaPM;
+  const uiKgDia = totalDiario / peso;
+
+  if (uiKgDia >= 1) {
+    alertas.push(`Dosis total ${uiKgDia.toFixed(2)} UI/kg/día: no seguir escalando en APS sin evaluación clínica; revisar técnica, adherencia, lipohipertrofia, alimentación y derivar/evaluar por Medicina Interna.`);
+  } else if (uiKgDia >= 0.7) {
+    alertas.push(`Dosis alta ${uiKgDia.toFixed(2)} UI/kg/día: revisar técnica de inyección, adherencia, sitios de punción, ingesta y necesidad de evaluación por Medicina Interna APS.`);
+  }
+
+  if (acciones.length === 0) acciones.push('Sin cambios de dosis según promedios ingresados.');
+
+  globalData.am = nuevaAM;
+  globalData.pm = nuevaPM;
+
+  const resumen = document.getElementById('resumen-promedios');
+  if (resumen) {
+    resumen.style.display = 'block';
+    resumen.innerHTML = `
+      <b>Promedios:</b><br>
+      Ayunas: ${promAyunas ?? 'sin datos'} mg/dL<br>
+      Antes de once/pre-cena: ${promOnce ?? 'sin datos'} mg/dL<br><br>
+      <b>Esquema recomendado:</b> ${esquemaFinal === '2' ? 'NPH AM + PM' : (esquemaFinal === 'am' ? 'solo NPH AM' : 'solo NPH PM')}<br>
+      NPH AM: ${nuevaAM} UI<br>
+      NPH PM: ${nuevaPM} UI<br>
+      Total: ${totalDiario} UI/día (${uiKgDia.toFixed(2)} UI/kg/día)
+    `;
+  }
+
+  const alertaDosisAlta = document.getElementById('alerta-dosis-alta');
+  if (alertaDosisAlta) {
+    if (alertas.length > 0) {
+      alertaDosisAlta.style.display = 'block';
+      alertaDosisAlta.innerHTML = `
+        <div style="margin:20px auto;max-width:650px;background:#fff4e6;border:2px solid #ffab00;border-radius:12px;padding:16px;text-align:left;line-height:1.5;color:#8a5d00;font-weight:600;">
+          ${alertas.map(a => `⚠️ ${a}`).join('<br><br>')}
+        </div>
+      `;
+    } else {
+      alertaDosisAlta.style.display = 'none';
+      alertaDosisAlta.innerHTML = '';
+    }
+  }
+
+  const nota = `SEGUIMIENTO DE INSULINA NPH
+Paciente en seguimiento de insulinización en APS.
+
+Esquema actual informado:
+- NPH AM: ${amActual} UI
+- NPH PM: ${pmActual} UI
+
+Promedios de glicemia capilar:
+- Ayunas: ${promAyunas ?? 'sin datos'} mg/dL
+- Antes de once/pre-cena: ${promOnce ?? 'sin datos'} mg/dL
+
+Conducta sugerida según patrón glicémico:
+${acciones.map(a => '- ' + a).join('\n')}
+
+Nueva indicación sugerida:
+- NPH AM: ${nuevaAM} UI antes del desayuno
+- NPH PM: ${nuevaPM} UI antes de dormir
+- Dosis total diaria: ${totalDiario} UI/día (${uiKgDia.toFixed(2)} UI/kg/día)
+
+${alertas.length ? 'Alertas de seguridad:\n' + alertas.map(a => '- ' + a).join('\n') + '\n\n' : ''}Mantener educación en técnica de administración, reconocimiento y manejo de hipoglicemia, automonitoreo y control precoz según protocolo APS.`;
+
+  renderNotaClinica(nota);
+
+  setTimeout(() => {
+    nav(5);
+  }, 600);
+}'''
+
+          updated = text[:start] + replacement + text[end:]
+          path.write_text(updated, encoding='utf-8')
+          print('calcularSeguimientoPro() reemplazada correctamente')
+          PY
+
+      - name: Validate patched HTML structure lightly
+        shell: bash
+        run: |
+          grep -q "function calcularSeguimientoPro()" index.html
+          grep -q "se agrega NPH AM" index.html
+          grep -q "se agrega NPH PM" index.html
+
+      - name: Commit patch to branch
+        shell: bash
+        run: |
+          BRANCH="fix/seguimiento-nph-bid"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No hay cambios para commitear"
+            exit 0
+          fi
+          git commit -m "Fix NPH follow-up intensification to AM+PM"
+          git push --force origin "$BRANCH"
