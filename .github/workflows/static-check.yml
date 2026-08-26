@@ -2,7 +2,7 @@ name: Insulog static checks
 
 on:
   push:
-    branches: [main, optimize-app-2026-08]
+    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log]
   pull_request:
     branches: [main]
 
@@ -17,7 +17,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check JavaScript syntax
-        run: node --check app.js
+        run: |
+          node --check app.js
+          node --check pdf-enhancements.js
 
       - name: Validate manifest JSON
         run: python -m json.tool manifest.webmanifest > /dev/null
@@ -29,6 +31,7 @@ jobs:
           import re
 
           html = Path("index.html").read_text(encoding="utf-8")
+          pdf_js = Path("pdf-enhancements.js").read_text(encoding="utf-8")
           required_ids = [
               "p0", "p1", "p2", "p3", "p4", "p41", "p5", "p6",
               "peso-paciente", "factor-dosis", "peso-seguimiento",
@@ -47,5 +50,15 @@ jobs:
 
           if './app.js?v=20260826' not in html:
               raise SystemExit("Optimized app.js is not loaded from index.html")
+
+          if './pdf-enhancements.js?v=20260826-2' not in html:
+              raise SystemExit("PDF enhancement JavaScript is not loaded")
+
+          if './pdf-enhancements.css?v=20260826-2' not in html:
+              raise SystemExit("PDF enhancement CSS is not loaded")
+
+          for required_text in ["Preonce / Precena", "col-hora-medicion", "col-hgt"]:
+              if required_text not in pdf_js:
+                  raise SystemExit(f"PDF glucose log is missing: {required_text}")
 
           print("Static structure checks passed")
