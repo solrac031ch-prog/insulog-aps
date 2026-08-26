@@ -1,11 +1,13 @@
 "use strict";
 
-const CACHE_NAME = "insulog-static-20260826";
+const CACHE_NAME = "insulog-static-20260826-pdf2";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
   "./styles.css?v=20260826",
+  "./pdf-enhancements.css?v=20260826-2",
   "./app.js?v=20260826",
+  "./pdf-enhancements.js?v=20260826-2",
   "./manifest.webmanifest?v=20260826",
   "./assets/icons/icon-32.png?v=20260826",
   "./assets/icons/icon-180.png?v=20260826",
