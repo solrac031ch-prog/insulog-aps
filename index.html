@@ -68,7 +68,7 @@
       <p class="section-prompt">Seleccione el tipo de manejo</p>
       <div class="stack-actions narrow-actions">
         <button type="button" class="btn btn-main" onclick="mostrarInicio()">INICIO DE INSULINA</button>
-        <button type="button" class="btn btn-success" onclick="prepSeg()">SEGUIMIENTO DE INSULINA</button>
+        <button type="button" class="btn btn-success" onclick="nav(35)">SEGUIMIENTO DE INSULINA</button>
       </div>
 
       <div id="criterios" class="is-hidden">
@@ -157,6 +157,49 @@
       <button type="button" class="btn btn-main btn-narrow section-action" onclick="calcularInicioMejorado()">CALCULAR DOSIS Y GENERAR NOTA</button>
     </section>
 
+    <section id="p35" class="page page-center" aria-hidden="true">
+      <div class="page-label">[P3.5] Tratamiento concomitante</div>
+      <h2>Tratamiento concomitante disponible en APS</h2>
+      <p class="lead">Marque los medicamentos que el paciente utiliza actualmente antes de registrar sus glicemias de seguimiento.</p>
+
+      <div id="tratamiento-concomitante-seguimiento" class="card card-blue text-left aps-context-card">
+        <div class="aps-med-grid">
+          <label class="aps-med-option">
+            <input type="checkbox" data-aps-med="seguimiento" data-label="Metformina 850 mg">
+            <span>Metformina 850 mg</span>
+          </label>
+          <label class="aps-med-option">
+            <input type="checkbox" data-aps-med="seguimiento" data-label="Metformina XR 1.000 mg (si intolerancia/RAM a metformina convencional)">
+            <span>Metformina XR 1.000 mg (si intolerancia/RAM a metformina convencional)</span>
+          </label>
+          <label class="aps-med-option">
+            <input type="checkbox" data-aps-med="seguimiento" data-label="Dapagliflozina 10 mg/día" data-class="sglt2">
+            <span>Dapagliflozina 10 mg/día</span>
+          </label>
+          <label class="aps-med-option">
+            <input type="checkbox" data-aps-med="seguimiento" data-label="Empagliflozina 25 mg/día" data-class="sglt2">
+            <span>Empagliflozina 25 mg/día</span>
+          </label>
+          <label class="aps-med-option">
+            <input type="checkbox" data-aps-med="seguimiento" data-label="Empagliflozina 12,5 mg/día (½ comprimido de 25 mg; uso local por costo)" data-class="sglt2">
+            <span>Empagliflozina 12,5 mg/día (½ comprimido de 25 mg; uso local por costo)</span>
+          </label>
+          <label class="aps-med-option">
+            <input type="checkbox" data-aps-med="seguimiento" data-label="Empagliflozina/metformina 12,5/1.000 mg/día" data-class="sglt2">
+            <span>Empagliflozina/metformina 12,5/1.000 mg/día</span>
+          </label>
+          <label class="aps-med-option">
+            <input type="checkbox" data-aps-med="seguimiento" data-label="Vildagliptina 50 mg">
+            <span>Vildagliptina 50 mg</span>
+          </label>
+        </div>
+        <p class="aps-context-helper">Este registro se incorpora a la nota clínica y no modifica automáticamente el cálculo de NPH.</p>
+      </div>
+
+      <button type="button" class="btn btn-main btn-narrow section-action" onclick="prepSeg()">CONTINUAR AL REGISTRO DE GLICEMIAS</button>
+      <button type="button" class="btn btn-narrow section-action" onclick="nav(2)">VOLVER</button>
+    </section>
+
     <section id="p4" class="page page-center" aria-hidden="true">
       <div class="page-label">[P4] Seguimiento y ajuste de insulina</div>
       <h2>Seguimiento y ajuste de insulina NPH</h2>
@@ -185,6 +228,15 @@
       </div>
 
       <p class="helper-text">⚠️ Rango permitido: dosis entre 04 y 99 unidades.</p>
+
+      <div class="aps-safety-box">
+        <strong>Seguridad por hipoglicemia</strong>
+        <label class="aps-safety-option" style="margin-top:8px;">
+          <input type="checkbox" id="hipo-nivel3-evento">
+          <span>El episodio requirió ayuda de otra persona para recuperarse (hipoglicemia nivel 3).</span>
+        </label>
+        <p class="aps-context-helper" style="margin:8px 0 0;">Si se marca esta opción, Insulog no realizará un ajuste automático de NPH y generará una nota de reevaluación clínica prioritaria.</p>
+      </div>
 
       <div class="table-wrap">
         <table class="tracking-table">

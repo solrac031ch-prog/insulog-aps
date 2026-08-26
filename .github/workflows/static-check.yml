@@ -2,7 +2,7 @@ name: Insulog static checks
 
 on:
   push:
-    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache]
+    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page]
   pull_request:
     branches: [main]
 
@@ -37,7 +37,8 @@ jobs:
           aps_js = Path("aps-safety-2026.js").read_text(encoding="utf-8")
           sw = Path("sw.js").read_text(encoding="utf-8")
           required_ids = [
-              "p0", "p1", "p2", "p3", "p4", "p41", "p5", "p6",
+              "p0", "p1", "p2", "p3", "p35", "p4", "p41", "p5", "p6",
+              "tratamiento-concomitante-seguimiento", "hipo-nivel3-evento",
               "peso-paciente", "factor-dosis", "peso-seguimiento",
               "tabla-seguimiento", "nota-clinica", "pdf"
           ]
@@ -78,6 +79,16 @@ jobs:
               if required_text not in aps_js:
                   raise SystemExit(f"APS safety layer is missing: {required_text}")
 
+          for required_text in [
+              'onclick="nav(35)"',
+              "Tratamiento concomitante disponible en APS",
+              'data-aps-med="seguimiento"',
+              'onclick="prepSeg()"',
+              "CONTINUAR AL REGISTRO DE GLICEMIAS"
+          ]:
+              if required_text not in html:
+                  raise SystemExit(f"Static treatment page is missing: {required_text}")
+
           if 'aps-safety-2026.js?v=20260826-1' not in pdf_js:
               raise SystemExit("APS safety JavaScript loader is missing")
 
@@ -88,7 +99,7 @@ jobs:
               raise SystemExit("Broken follow-up navigation must not be present")
 
           for required_text in [
-              'const CACHE_NAME = "insulog-shell-20260826-atomic1"',
+              'const CACHE_NAME = "insulog-shell-20260826-atomic2"',
               'new Request(asset, { cache: "reload" })',
               'cache.match("./index.html")',
               'addEventListener("fetch"',
@@ -107,4 +118,4 @@ jobs:
               if required_asset not in sw:
                   raise SystemExit(f"Critical app-shell asset is not cached: {required_asset}")
 
-          print("Stable structure and atomic app-shell cache checks passed")
+          print("Static treatment page and atomic app-shell checks passed")
