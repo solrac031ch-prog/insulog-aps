@@ -1,1964 +1,277 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-CL">
 <head>
-  <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <link rel="manifest" href="./manifest.webmanifest?v=20260507">
-  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/icon-32.png?v=20260507">
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/icon-180.png?v=20260507">
-  <meta name="theme-color" content="#0f6f78">
-
-  <title>Insulog APS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0052cc">
+  <meta name="description" content="Herramienta de apoyo clínico para inicio, seguimiento y ajuste de insulina NPH en Atención Primaria de Salud.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Insulog APS">
+  <link rel="manifest" href="./manifest.webmanifest?v=20260826">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/icon-32.png?v=20260826">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/icon-180.png?v=20260826">
+  <link rel="stylesheet" href="./styles.css?v=20260826">
+  <title>Insulog APS | Insulinización en APS</title>
 </head>
-
-  <link rel="stylesheet" href="styles.css">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Protocolo de Insulinización APS - Dr. Herrera</title>
-
-<style>
-:root {
-  --primary:#0052cc;
-  --primary-dark:#003b99;
-  --bg:#f4f6fb;
-  --card:#ffffff;
-  --text:#172b4d;
-  --muted:#6b778c;
-
-  --danger:#ff5630;
-  --success:#36b37e;
-  --warning:#ffab00;
-
-  --radius:14px;
-  --shadow:0 8px 24px rgba(0,0,0,0.08);
-  --border:1px solid #e6e8f0;
-}
-
-body {
-  font-family: "Segoe UI", system-ui, sans-serif;
-  background: var(--bg);
-  padding: 24px;
-  color: var(--text);
-}
-
-.container {
-  max-width: 960px;
-  margin: auto;
-  background: var(--card);
-  padding: 32px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-}
-
-.page { display:none; }
-.active { display:block; }
-
-.btn {
-  width: 100%;
-  padding: 14px;
-  border-radius: 12px;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.2s;
-  font-size: 1rem;
-}
-
-.btn:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow);
-}
-
-.btn-main { background: var(--primary); color: white; }
-.btn-main:hover { background: var(--primary-dark); }
-
-.btn-danger { background: var(--danger); color:white; }
-.btn-success { background: var(--success); color:white; }
-
-input, select {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: var(--border);
-  background: white;
-  font-size: 1rem;
-  transition: 0.2s;
-}
-
-input:focus, select:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(0,82,204,0.15);
-}
-
-.nota {
-background:#091e42;
-color:#00fbff;
-padding:20px;
-border-radius:10px;
-white-space:pre-wrap;
-}
-
-table {
-width:100%;
-border-collapse:collapse;
-margin-top:10px;
-}
-
-td, th {
-border:1px solid #ccc;
-padding:6px;
-text-align:center;
-}
-
-footer {
-text-align:center;
-margin-top:20px;
-font-size:12px;
-}
-
-@media print {
-@page { size: letter; }
-.btn, footer { display:none; }
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html {
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-button,
-input,
-select {
-  -webkit-appearance: none;
-  appearance: none;
-  font-size: 16px;
-}
-
-button {
-  touch-action: manipulation;
-}
-
-.container {
-  width: 100%;
-}
-
-.p4-header-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  max-width: 820px;
-  margin: 0 auto 14px;
-}
-
-@media (max-width: 760px) {
-  body {
-    padding: 12px;
-  }
-
-  .container {
-    padding: 18px;
-    border-radius: 12px;
-  }
-
-  .criterios-grid,
-  .form-grid,
-  .p4-header-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .criterio-btn {
-    white-space: normal;
-  }
-
-  .btn {
-    min-height: 48px;
-  }
-
-  #nota-clinica {
-    font-size: 0.9rem;
-  }
-
-  .imprimible-container {
-    width: 100%;
-    padding: 18px;
-  }
-}
-
-</style>
-</head>
-
 <body>
-
-<div class="container">
-
-<!-- P0 -->
-<div id="p0" class="page active" style="text-align:center;">
-<div style="font-size:12px;color:#6b778c;margin-bottom:10px;font-weight:600;">
-[P0] Inicio / Portada
-</div>
-
-<h1 style="
-margin-bottom:10px;
-color:#0052cc;
-letter-spacing:1px;
-">
-Insulog APS
-</h1>
-
-<p style="
-font-size:1.15rem;
-font-weight:600;
-margin-bottom:25px;
-">
-Insulinización en Atención Primaria de Salud
-</p>
-
-<div style="
-max-width:550px;
-margin:0 auto 30px;
-background:#f4f5f7;
-border:2px solid #dfe1e6;
-border-radius:12px;
-padding:20px;
-text-align:left;
-line-height:1.5;
-">
-
-<p style="margin-top:0; font-weight:bold;">Bibliografía utilizada:</p>
-
-<ul style="padding-left:20px; margin-bottom:0;">
-<li>Guía ALAD 2019: Diagnóstico y tratamiento de DM2</li>
-<li>ADA Standards of Care 2024</li>
-<li>Protocolo MINSAL Chile – Insulina NPH en APS</li>
-</ul>
-
-</div>
-
-<div style="
-margin-top:20px;
-padding-top:15px;
-border-top:1px solid #eee;
-">
-
-<p style="
-font-size:1.2rem;
-font-weight:bold;
-margin-bottom:5px;
-">
-Dr. Carlos Herrera Malaver
-</p>
-
-<p style="
-color:#0052cc;
-font-weight:600;
-margin-top:0;
-letter-spacing:0.5px;
-">
-Médico Internista
-</p>
-
-</div>
-
-<button class="btn btn-main" 
-onclick="nav(1)" 
-style="
-max-width:300px;
-margin:30px auto 0;
-display:block;
-font-size:1.05rem;
-">
-INICIAR ALGORITMO
-</button>
-
-</div>
-
-<!-- P1 -->
-<div id="p1" class="page" style="text-align:center;">
-
-<div style="
-font-size:12px;
-color:#6b778c;
-margin-bottom:10px;
-font-weight:600;
-">
-[P1] Evaluación inicial (criterios de exclusión)
-</div>
-
-<h2 style="margin-bottom:20px;">Evaluación inicial</h2>
-
-<p style="
-max-width:650px;
-margin:0 auto 25px;
-font-size:1.05rem;
-line-height:1.5;
-">
-¿El paciente presenta DM tipo 1, patología pancreática (ej. pancreatitis crónica), embarazo, antecedente de cirugía pancreática o es menor de 18 años?
-</p>
-
-<div style="max-width:350px; margin:0 auto;">
-<button class="btn btn-danger" onclick="exclusion()">SÍ</button>
-<button class="btn btn-main" onclick="nav(2)">NO</button>
-</div>
-
-<div id="alerta" style="
-display:none;
-margin-top:25px;
-background:#ffe9e9;
-border:2px solid #ff5630;
-color:#7a0000;
-padding:20px;
-border-radius:12px;
-max-width:650px;
-margin-left:auto;
-margin-right:auto;
-line-height:1.5;
-font-weight:600;
-">
-
-<p style="margin-top:0; margin-bottom:10px;">
-Derivar a nivel secundario.
-</p>
-
-<p style="margin:5px 0;">
-Mientras espera atención, derivar a Medicina Interna en APS.
-</p>
-
-<p style="margin-bottom:0;">
-Este paciente puede requerir insulinas de acción rápida, análogos de insulina y un seguimiento más estricto, recursos que no se encuentran disponibles en APS.
-</p>
-
-</div>
-
-</div>
-
-<!-- P2 -->
-<div id="p2" class="page" style="text-align:center;">
-
-<div style="font-size:12px;color:#6b778c;margin-bottom:10px;font-weight:600;">
-[P2] Definición del proceso (inicio vs seguimiento)
-</div>
-<h2 style="margin-bottom:10px;">Definición del proceso</h2>
-
-<div style="
-background:#fff4e6;
-border:3px solid #ffab00;
-color:#8a5d00;
-padding:22px;
-border-radius:14px;
-font-weight:600;
-max-width:620px;
-margin:20px auto 30px;
-font-size:1.05rem;
-line-height:1.5;
-text-align:center;
-">
-
-<span style="font-size:1.2rem;">⚠️ Importante</span><br><br>
-
-Todo paciente que inicie tratamiento con insulina debe tener  
-<b style="text-decoration:underline;">glibenclamida suspendida</b>.
-
-</div>
-
-<p style="font-size:1.1rem;margin-bottom:20px;font-weight:600;">
-Seleccione el tipo de manejo
-</p>
-
-<div style="max-width:380px;margin:0 auto 25px;display:flex;flex-direction:column;gap:12px;">
-<button class="btn btn-main" onclick="mostrarInicio()">INICIO DE INSULINA</button>
-<button class="btn btn-success" onclick="prepSeg()">SEGUIMIENTO DE INSULINA</button>
-</div>
-
-<div id="criterios" style="display:none;margin-top:30px;">
-
-<div class="datos-inicio-card">
-
-<p style="font-weight:700;margin-top:0;margin-bottom:15px;text-align:center;">
-Datos disponibles para orientar esquema inicial
-</p>
-
-<div class="form-grid">
-<div>
-<label>HbA1c más reciente (%)</label>
-<input type="number" id="hba1c-inicio" placeholder="Ej: 10.5" min="4" max="20" step="0.1">
-</div>
-
-<div>
-<label>Glicemia en ayunas más alta (mg/dL)</label>
-<input type="number" id="glicemia-ayunas-inicio" placeholder="Ej: 260" min="40" max="600">
-</div>
-
-<div>
-<label>Glicemia casual / post carga / PTGO (mg/dL)</label>
-<input type="number" id="glicemia-casual-inicio" placeholder="Ej: 320" min="40" max="700">
-</div>
-</div>
-
-<p style="font-weight:700;margin:20px 0 10px;">
-Criterios clínicos y descompensación
-</p>
-
-<div class="seleccion-grid">
-<button type="button" class="btn seleccion-btn inicio-btn" data-value="Fracaso terapia oral" onclick="toggleSeleccion(this)">Fracaso terapia oral</button>
-<button type="button" class="btn seleccion-btn inicio-btn" data-value="Deseo del paciente" onclick="toggleSeleccion(this)">Deseo del paciente</button>
-<button type="button" class="btn seleccion-btn catabolico-btn" data-value="Baja de peso involuntaria" onclick="toggleSeleccion(this)">Baja de peso involuntaria</button>
-<button type="button" class="btn seleccion-btn catabolico-btn" data-value="Poliuria marcada" onclick="toggleSeleccion(this)">Poliuria marcada</button>
-<button type="button" class="btn seleccion-btn catabolico-btn" data-value="Polidipsia marcada" onclick="toggleSeleccion(this)">Polidipsia marcada</button>
-<button type="button" class="btn seleccion-btn catabolico-btn" data-value="Astenia marcada / compromiso del estado general" onclick="toggleSeleccion(this)">Astenia marcada / compromiso del estado general</button>
-<button type="button" class="btn seleccion-btn catabolico-btn" data-value="Sospecha de cetosis o cetonuria / crisis hiperglicémica reciente" onclick="toggleSeleccion(this)">Sospecha de cetosis o cetonuria / crisis hiperglicémica reciente</button>
-<button type="button" class="btn seleccion-btn catabolico-btn" data-value="Glicemias muy elevadas con síntomas" onclick="toggleSeleccion(this)">Glicemias muy elevadas con síntomas</button>
-</div>
-
-<div id="sugerencia-esquema-inicio" style="
-display:none;
-margin-top:18px;
-padding:14px;
-border-radius:10px;
-background:#e6f0ff;
-border:2px solid #0052cc;
-color:#003b99;
-font-weight:600;
-line-height:1.5;
-"></div>
-
-</div>
-
-<div class="riesgo-hipo-card">
-
-<p style="font-weight:700;margin-top:0;margin-bottom:15px;text-align:center;">
-Alto riesgo de hipoglicemia
-</p>
-
-<div class="seleccion-grid">
-<button type="button" class="btn seleccion-btn riesgo-hipo-btn" data-value="Adulto mayor frágil" onclick="toggleSeleccion(this)">Adulto mayor frágil</button>
-<button type="button" class="btn seleccion-btn riesgo-hipo-btn" data-value="Enfermedad renal crónica" onclick="toggleSeleccion(this)">Enfermedad renal crónica</button>
-<button type="button" class="btn seleccion-btn riesgo-hipo-btn" data-value="Baja ingesta o ingesta irregular" onclick="toggleSeleccion(this)">Baja ingesta o ingesta irregular</button>
-<button type="button" class="btn seleccion-btn riesgo-hipo-btn" data-value="Antecedente de hipoglicemia" onclick="toggleSeleccion(this)">Antecedente de hipoglicemia</button>
-<button type="button" class="btn seleccion-btn riesgo-hipo-btn" data-value="Vive solo o bajo soporte familiar" onclick="toggleSeleccion(this)">Vive solo o bajo soporte familiar</button>
-<button type="button" class="btn seleccion-btn riesgo-hipo-btn" data-value="Deterioro cognitivo" onclick="toggleSeleccion(this)">Deterioro cognitivo</button>
-<button type="button" class="btn seleccion-btn riesgo-hipo-btn" data-value="Consumo problemático de alcohol" onclick="toggleSeleccion(this)">Consumo problemático de alcohol</button>
-<button type="button" class="btn seleccion-btn riesgo-hipo-btn" data-value="Actividad de alto riesgo ante hipoglicemia" onclick="toggleSeleccion(this)">Actividad de alto riesgo ante hipoglicemia</button>
-</div>
-
-</div>
-
-<div style="max-width:380px; margin:30px auto;">
-<button class="btn btn-main" onclick="definirEsquemaInicio()">
-SIGUIENTE: DOSIFICACIÓN
-</button>
-</div>
-
-</div>
-
-</div>
-
-<style>
-.datos-inicio-card {
-max-width:760px;
-margin:25px auto 0;
-padding:18px;
-border:2px solid #bcd9ff;
-border-radius:12px;
-background:#f0f7ff;
-text-align:left;
-}
-
-.riesgo-hipo-card {
-max-width:760px;
-margin:18px auto 0;
-padding:18px;
-border:2px solid #ff5630;
-border-radius:12px;
-background:#ffe9e9;
-text-align:left;
-}
-
-.seleccion-grid {
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
-}
-
-.seleccion-btn {
-text-align:left;
-background:#ffffff;
-color:#172b4d;
-border:2px solid #dfe1e6;
-box-shadow:none;
-font-size:0.9rem;
-}
-
-.seleccion-btn.seleccionada {
-background:#0052cc;
-color:#ffffff;
-border-color:#0052cc;
-}
-
-@media (max-width:760px) {
-.seleccion-grid {
-grid-template-columns:1fr;
-}
-}
-</style>
-
-  
-<!-- P3 -->
-<div id="p3" class="page" style="text-align:center;">
-
- <div style="font-size:12px;color:#6b778c;margin-bottom:10px;font-weight:600;">
-[P3] Cálculo de dosis inicial
-</div> 
-<h2 style="margin-bottom:10px;">
-Dosificación de inicio de insulina
-</h2>
-
-<p style="
-max-width:650px;
-margin:0 auto 25px;
-font-size:1.05rem;
-line-height:1.5;
-">
-Ingrese el peso del paciente y seleccione el riesgo de hipoglicemia para calcular la dosis inicial de insulina NPH.
-</p>
-<div id="resumen-esquema-inicio" style="
-display:none;
-background:#e6f0ff;
-border:2px solid #0052cc;
-border-radius:12px;
-padding:16px;
-max-width:650px;
-margin:0 auto 25px;
-text-align:left;
-font-weight:600;
-line-height:1.5;
-color:#003b99;
-"></div>
-
-<div class="form-grid">
-
-<div>
-<label>Peso del paciente (kg)</label>
-<input type="number" id="peso-paciente" placeholder="Ej: 70" min="1" max="300">
-</div>
-
-<div>
-<label>Riesgo de hipoglicemia</label>
-<select id="factor-dosis">
-<option value="0.1">Alto riesgo → adulto mayor, ERC o fragilidad</option>
-<option value="0.2" selected>Riesgo estándar</option>
-<option value="0.3">Bajo riesgo → hiperglicemia marcada</option>
-</select>
-</div>
-
-</div>
-
-<!-- INFO CLÍNICA -->
-<div style="
-background:#f0f7ff;
-border:2px solid #bcd9ff;
-border-radius:12px;
-padding:20px;
-max-width:650px;
-margin:30px auto;
-text-align:left;
-font-size:0.95rem;
-line-height:1.5;
-">
-
-<b>Orientación clínica:</b><br><br>
-
-• <b>0.1 UI/kg:</b> alto riesgo de hipoglicemia (adulto mayor, ERC, fragilidad)<br>
-• <b>0.2 UI/kg:</b> paciente estándar<br>
-• <b>0.3 UI/kg:</b> hiperglicemia marcada o descompensación
-
-</div>
-
-<!-- RESULTADO PREVIO -->
-<div id="preview-dosis" style="
-display:none;
-background:#e6fcf5;
-border:2px solid #36b37e;
-border-radius:12px;
-padding:20px;
-max-width:500px;
-margin:20px auto;
-font-weight:600;
-font-size:1.05rem;
-line-height:1.5;
-">
-
-</div>
-
-<button class="btn btn-main" onclick="calcularInicioMejorado()"
-style="
-max-width:350px;
-margin:20px auto 0;
-display:block;
-font-size:1.05rem;
-">
-CALCULAR DOSIS Y GENERAR NOTA
-</button>
-
-</div>
-
-<style>
-.form-grid {
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:20px;
-max-width:600px;
-margin:0 auto;
-}
-
-label {
-display:block;
-margin-bottom:8px;
-font-weight:600;
-text-align:left;
-}
-
-input[type="number"], select {
-width:100%;
-padding:12px;
-border:2px solid #dfe1e6;
-border-radius:8px;
-font-size:1rem;
-box-sizing:border-box;
-}
-</style>
-
-<script>
-function toggleSeleccion(boton) {
-  boton.classList.toggle("seleccionada");
-}
-
-function definirEsquemaInicio() {
-  const hba1c = parseFloat(document.getElementById('hba1c-inicio').value);
-  const ayunas = parseFloat(document.getElementById('glicemia-ayunas-inicio').value);
-  const casual = parseFloat(document.getElementById('glicemia-casual-inicio').value);
-
-  const inicio = Array.from(document.querySelectorAll('.inicio-btn.seleccionada')).map(c => c.dataset.value);
-  const catabolicos = Array.from(document.querySelectorAll('.catabolico-btn.seleccionada')).map(c => c.dataset.value);
-  const riesgoHipo = Array.from(document.querySelectorAll('.riesgo-hipo-btn.seleccionada')).map(c => c.dataset.value);
-
-  const criterios = [];
-
-  if (!isNaN(hba1c) && hba1c > 9) criterios.push(`HbA1c ${hba1c}%`);
-  if (!isNaN(ayunas) && ayunas > 250) criterios.push(`Glicemia en ayunas ${ayunas} mg/dL`);
-  if (!isNaN(casual) && casual >= 300) criterios.push(`Glicemia casual/post carga/PTGO ${casual} mg/dL`);
-  criterios.push(...inicio);
-  criterios.push(...catabolicos);
-
-  if (criterios.length === 0) {
-    alert("Ingrese al menos un dato o criterio de inicio.");
-    return;
-  }
-
-  let esquema = "monodosis_pm";
-  let texto = "NPH monodosis nocturna";
-  let motivo = "Datos insuficientes para justificar doble dosis o hiperglicemia principalmente en ayunas; se sugiere inicio conservador.";
-
-  const severidadAlta =
-    (!isNaN(hba1c) && hba1c >= 11) ||
-    (!isNaN(ayunas) && ayunas >= 250) ||
-    (!isNaN(casual) && casual >= 300) ||
-    catabolicos.length > 0;
-
-  if (severidadAlta && riesgoHipo.length === 0) {
-    esquema = "doble_dosis";
-    texto = "NPH doble dosis AM + PM";
-    motivo = "HbA1c/glicemias marcadamente elevadas o síntomas catabólicos, compatible con hiperglicemia sostenida.";
-  }
-
-    if (riesgoHipo.length > 0) {
-    esquema = "monodosis_pm";
-    texto = "NPH monodosis nocturna con inicio conservador";
-    motivo = "Alto riesgo de hipoglicemia; se sugiere dosis menor, ajuste progresivo y control precoz.";
-
-    const factorDosis = document.getElementById('factor-dosis');
-    if (factorDosis) factorDosis.value = "0.1";
-  } else {
-    const factorDosis = document.getElementById('factor-dosis');
-    if (factorDosis) factorDosis.value = "0.2";
-  }
-
-  globalData.criteria = criterios.join(", ");
-  globalData.esquemaInicio = esquema;
-  globalData.textoEsquemaInicio = texto;
-  globalData.motivoEsquemaInicio = motivo;
-  globalData.catabolicos = catabolicos.join(", ");
-  globalData.riesgoHipo = riesgoHipo.join(", ");
-
-  const caja = document.getElementById('sugerencia-esquema-inicio');
-  if (caja) {
-    caja.style.display = 'block';
-    caja.innerHTML = `
-      Esquema sugerido: ${texto}<br><br>
-      Motivo: ${motivo}
-    `;
-  }
-
-  mostrarResumenEsquemaInicio();
-  nav(3);
-}
-
-function mostrarResumenEsquemaInicio() {
-  const caja = document.getElementById('resumen-esquema-inicio');
-
-  if (!caja || !globalData.textoEsquemaInicio) return;
-
-  caja.style.display = 'block';
-  caja.innerHTML = `
-    Esquema sugerido: ${globalData.textoEsquemaInicio}<br><br>
-    Motivo: ${globalData.motivoEsquemaInicio}
-  `;
-}
-
-function calcularInicioMejorado() {
-  const peso = parseFloat(document.getElementById('peso-paciente').value);
-  const factor = parseFloat(document.getElementById('factor-dosis').value);
-
-  if (!peso || peso <= 0) {
-    alert("Ingrese un peso válido.");
-    return;
-  }
-
-  if (!globalData.criteria) {
-    alert("Complete primero los datos disponibles para orientar el esquema inicial.");
-    nav(2);
-    return;
-  }
-
-  let total = Math.ceil((peso * factor) / 2) * 2;
-  total = Math.max(4, total);
-
-  let am = 0;
-  let pm = 0;
-
-  if (globalData.esquemaInicio === "doble_dosis") {
-    am = Math.ceil((total * 0.66) / 2) * 2;
-    pm = total - am;
-  } else {
-    am = 0;
-    pm = total;
-  }
-
-  globalData.am = am;
-  globalData.pm = pm;
-
-  const preview = document.getElementById('preview-dosis');
-  preview.style.display = 'block';
-  preview.innerHTML = `
-Esquema sugerido: ${globalData.textoEsquemaInicio || "NPH monodosis nocturna"}<br><br>
-Dosis total: ${total} UI/día<br><br>
-• Mañana: ${am} UI<br>
-• Noche: ${pm} UI
-`;
-
-  const nota = `INICIO
-Paciente con criterios de inicio de insulina bajo ${globalData.criteria}.
-Esquema sugerido: ${globalData.textoEsquemaInicio || "NPH monodosis nocturna"}
-Motivo: ${globalData.motivoEsquemaInicio || "Inicio conservador con NPH nocturna."}
-Se inicia insulina NPH en dosis de:
-- ${am} unidades antes del desayuno
-- ${pm} unidades antes de dormir
-
-Educación por enfermería para inicio de insulina.
-Evaluación por nutricionista.
-Control médico en 15 días con seguimiento de glicemia en ayunas y Antes de las once.`;
-
-  renderNotaClinica(nota);
-
-  setTimeout(() => {
-    nav(5); 
-  }, 600);
-}
-</script>
-
-  
-<!-- P4 -->
-<div id="p4" class="page" style="text-align:center;">
-  <div style="font-size:12px;color:#6b778c;margin-bottom:10px;font-weight:600;">
-    [P4] Seguimiento y ajuste de insulina
-  </div>
-  <h2 style="margin-bottom:8px; color:#172b4d;">
-    Seguimiento y ajuste de insulina NPH
-  </h2>
-
-  <div class="p4-header-grid">
-    <div>
-      <label style="color: var(--primary); font-size: 0.9rem;">Peso del paciente (kg)</label>
-      <input type="number" id="peso-seguimiento" placeholder="Ej: 70">
-    </div>
-    
-    <div>
-      <label style="color: var(--primary); font-size: 0.9rem;">Tipo de esquema</label>
-      <select id="tipo-esquema">
-        <option value="2" selected>2 dosis (AM + PM)</option>
-        <option value="am">Solo dosis AM</option>
-        <option value="pm">Solo dosis PM</option>
-      </select>
-    </div>
-
-    <div>
-      <label style="font-size: 0.9rem;">Dosis AM actual</label>
-      <input type="text" id="am-actual" maxlength="2" placeholder="00"
-      oninput="this.value=this.value.replace(/[^0-9]/g,'');">
-    </div>
-
-    <div>
-      <label style="font-size: 0.9rem;">Dosis PM actual</label>
-      <input type="text" id="pm-actual" maxlength="2" placeholder="00"
-      oninput="this.value=this.value.replace(/[^0-9]/g,'');">
-    </div>
-  </div>
-
-  <div style="font-size: 0.85rem; color: #6b778c; margin-bottom: 15px;">
-    ⚠️ Rango permitido: dosis entre 04 y 99 unidades.
-  </div>
-
-  <div style="overflow-x:auto; margin-top:18px;">
-    <table style="width:100%; max-width:650px; margin:auto; border-collapse:collapse; font-size:0.9rem;">
-      <thead>
-        <tr style="background:#0052cc;color:white;">
-          <th style="padding:8px;">Día</th>
-          <th>Ayunas</th>
-          <th>Antes de las once</th>
-        </tr>
-      </thead>
-      <tbody id="tabla-seguimiento"></tbody>
-    </table>
-  </div>
-<!-- BOTÓN -->
-<button class="btn btn-main" style="
-margin-top:18px;
-max-width:320px;
-font-size:1rem;
-"
-onclick="calcularSeguimientoPro()">
-AJUSTAR DOSIS (PROTOCOLO APS)
-</button>
-
-<div id="resumen-promedios" style="
-display:none;
-margin:20px auto;
-max-width:600px;
-padding:15px;
-border-radius:10px;
-background:#f4f5f7;
-font-weight:600;
-line-height:1.5;
-"></div>
-
-<div id="alerta-dosis-alta" style="display:none;"></div>
-  
-</div>
-<!-- P4.1 -->
-<div id="p41" class="page" style="text-align:center;">
-
-<div style="font-size:12px;color:#6b778c;margin-bottom:10px;font-weight:600;">
-[P4.1] Dosis alta de insulina
-</div>
-
-<h2 style="margin-bottom:10px;">
-Paciente en dosis alta de insulina
-</h2>
-
-<div style="
-background:#ffe9e9;
-border:2px solid #ff5630;
-border-radius:12px;
-padding:20px;
-max-width:700px;
-margin:20px auto;
-text-align:left;
-line-height:1.5;
-">
-
-<p style="font-weight:700; margin-top:0; margin-bottom:10px;">
-⚠️ Paciente en dosis alta de insulina (≥0.7 UI/kg/día)
-</p>
-
-<p style="margin-bottom:10px;">
-Mantener controles y seguimiento por medicina interna APS.
-</p>
-
-<p style="margin-bottom:10px;"><b>Acciones sugeridas:</b></p>
-
-<div style="display:flex;flex-direction:column;gap:10px;">
-
-<button type="button" class="btn btn-main accion-btn" data-value="Evaluar por nutricionista" onclick="toggleAccion(this)">
-1. Evaluar por nutricionista
-</button>
-
-<button type="button" class="btn btn-main accion-btn" data-value="Evaluar técnica de administración de insulina por enfermería" onclick="toggleAccion(this)">
-2. Evaluar técnica de administración de insulina por enfermería
-</button>
-
-<button type="button" class="btn btn-main accion-btn" data-value="Evaluar uso y almacenamiento de insulina por químico farmacéutico" onclick="toggleAccion(this)">
-3. Evaluar uso y almacenamiento de insulina por químico farmacéutico
-</button>
-
-<button type="button" class="btn btn-main accion-btn" data-value="Derivar a Telediabetología" onclick="toggleAccion(this)">
-4. Derivar a Telediabetología
-</button>
-
-<button type="button" class="btn btn-main accion-btn" data-value="Derivar a diabetología nivel secundario" onclick="toggleAccion(this)">
-5. Derivar a diabetología nivel secundario
-</button>
-
-</div>
-
-
-</div>
-
-<button class="btn btn-main" style="max-width:320px;margin:20px auto;"
-onclick="generarNotaDosisAlta()">
-GENERAR NOTA CLÍNICA
-</button>
-
-</div>
-
-<style>
-#tabla-seguimiento input {
-width:60px;
-padding:4px;
-text-align:center;
-font-size:0.85rem;
-border:1px solid #c1c7d0;
-border-radius:6px;
-}
-
-/* inputs glicemia 3 dígitos estrictos */
-.glicemia {
-width:65px;
-text-align:center;
-}
-
-#tabla-seguimiento tr:nth-child(even){background:#f4f5f7;}
-#tabla-seguimiento tr:hover{background:#e6f0ff;}
-
-.accion-btn {
-  text-align: left;
-  background: #f4f5f7;
-  color: #172b4d;
-  border: 2px solid #dfe1e6;
-  box-shadow: none;
-}
-
-.accion-btn.seleccionada {
-  background: #0052cc;
-  color: white;
-  border-color: #0052cc;
-}
-
-.nota-linea {
-  display: block;
-  padding: 6px 8px;
-  border-radius: 6px;
-  margin-bottom: 4px;
-}
-
-.nota-verde {
-  background: #e6fcf5;
-  color: #006644;
-}
-
-.nota-amarilla {
-  background: #fff4e6;
-  color: #8a5d00;
-}
-
-.nota-roja {
-  background: #ffe9e9;
-  color: #7a0000;
-  font-weight: 700;
-}
-
-.nota-azul {
-  background: #e6f0ff;
-  color: #003b99;
-  font-weight: 700;
-}
-
-.nota-gris {
-  background: #f4f5f7;
-  color: #172b4d;
-}
-</style>
-
-
-<script>
-/* generar tabla (SIN CAMBIOS FUNCIONALES) */
-function prepSeg() {
-const tbody = document.getElementById('tabla-seguimiento');
-tbody.innerHTML = "";
-
-for (let i = 1; i <= 15; i++) {
-tbody.innerHTML += `
-<tr>
-<td style="font-weight:600;">${i}</td>
-
-<td>
-<input class="ay glicemia" type="text" maxlength="3"
-oninput="this.value=this.value.replace(/[^0-9]/g,'');
-if(this.value>999) this.value=999;">
-</td>
-
-<td>
-<input class="pre glicemia" type="text" maxlength="3"
-oninput="this.value=this.value.replace(/[^0-9]/g,'');
-if(this.value>999) this.value=999;">
-</td>
-</tr>
-`;
-}
-
-nav(4);
-}
-
-/* PROTOCOLO APS ACTUALIZADO - AJUSTE CON SEGURIDAD HIPOGLICEMIA Y VALORES ATÍPICOS */
-function analizarGlicemias(valores, nombre) {
-  const datos = valores.filter(v => !isNaN(v));
-  const excluidos = [];
-  let usados = [...datos];
-
-  if (datos.length >= 4) {
-    usados = datos.filter((valor, index) => {
-      if (valor < 70) return true;
-
-      const resto = datos.filter((_, i) => i !== index);
-      const promedioResto = resto.reduce((a,b)=>a+b,0) / resto.length;
-
-      if (valor > promedioResto + 50) {
-        excluidos.push(`${nombre} ${valor} mg/dL`);
-        return false;
-      }
-
-      return true;
-    });
-  }
-
-  const promedio = usados.length ? usados.reduce((a,b)=>a+b,0) / usados.length : null;
-  const min = datos.length ? Math.min(...datos) : null;
-  const hipoSevera = datos.some(v => v < 54);
-  const hipo = datos.some(v => v < 70);
-
-  return {
-    datos,
-    usados,
-    promedio,
-    min,
-    hipoSevera,
-    hipo,
-    excluidos
-  };
-}
-
-function ajustePorPerfil(analisis, nombreDosis) {
-  if (!analisis || analisis.promedio === null) {
-    return {
-      ajuste: 0,
-      texto: `${nombreDosis}: sin datos suficientes para ajuste`
-    };
-  }
-
-  if (analisis.hipoSevera) {
-    return {
-      ajuste: -4,
-      texto: `${nombreDosis}: reducir 4 UI por glicemia <54 mg/dL. Considerar suspender temporalmente esta dosis hasta evaluación clínica`
-    };
-  }
-
-  if (analisis.hipo) {
-    return {
-      ajuste: -4,
-      texto: `${nombreDosis}: reducir 4 UI por glicemia <70 mg/dL`
-    };
-  }
-
-  if (analisis.promedio < 80) {
-    return {
-      ajuste: -2,
-      texto: `${nombreDosis}: reducir 2 UI por promedio 70-79 mg/dL`
-    };
-  }
-
-  if (analisis.promedio <= 130) {
-    return {
-      ajuste: 0,
-      texto: `${nombreDosis}: mantener por promedio en meta 80-130 mg/dL`
-    };
-  }
-
-  if (analisis.promedio <= 180) {
-    return {
-      ajuste: 2,
-      texto: `${nombreDosis}: aumentar 2 UI por promedio 131-180 mg/dL`
-    };
-  }
-
-  return {
-    ajuste: 4,
-    texto: `${nombreDosis}: aumentar 4 UI por promedio >180 mg/dL`
-  };
-}
-
-function calcularSeguimientoPro() {
-  const peso = parseFloat(document.getElementById('peso-seguimiento').value);
-  const tipo = document.getElementById('tipo-esquema').value;
-
-  if (!peso || peso <= 0) {
-    alert("Ingrese peso del paciente.");
-    return;
-  }
-
-  let am = parseInt(document.getElementById('am-actual').value) || 0;
-  let pm = parseInt(document.getElementById('pm-actual').value) || 0;
-
-  // Si el usuario declara monodosis, se ignora la dosis del horario no utilizado.
-  if (tipo === "am") pm = 0;
-  if (tipo === "pm") am = 0;
-
-  if (tipo === "am" && am <= 0) {
-    alert("Ingrese la dosis AM actual.");
-    return;
-  }
-
-  if (tipo === "pm" && pm <= 0) {
-    alert("Ingrese la dosis PM actual.");
-    return;
-  }
-
-  if (tipo === "2" && am <= 0 && pm <= 0) {
-    alert("Ingrese al menos una dosis actual de insulina.");
-    return;
-  }
-
-  globalData.amActual = am;
-  globalData.pmActual = pm;
-
-  const ayunasRaw = Array.from(document.querySelectorAll('.ay'))
-    .map(i => parseInt(i.value))
-    .filter(v => !isNaN(v));
-
-  const preonceRaw = Array.from(document.querySelectorAll('.pre'))
-    .map(i => parseInt(i.value))
-    .filter(v => !isNaN(v));
-
-  if (ayunasRaw.length < 3) {
-    alert("Se requieren al menos 3 glicemias en ayunas.");
-    return;
-  }
-
-  const ayunas = analizarGlicemias(ayunasRaw, "Ayunas");
-  const preonce = preonceRaw.length >= 3 ? analizarGlicemias(preonceRaw, "Pre-once") : null;
-
-  const metaAyunasAlta = 130;
-  const metaPreonceAlta = 130;
-
-  function redondearPar(valor) {
-    if (!Number.isFinite(valor)) return 0;
-    return Math.max(0, Math.ceil(valor / 2) * 2);
-  }
-
-  function calcularAjuste(analisis, nombreDosis) {
-    if (!analisis || analisis.promedio === null) {
-      return {
-        ajuste: 0,
-        texto: `${nombreDosis}: sin datos suficientes para ajuste`
-      };
-    }
-
-    if (analisis.hipoSevera) {
-      return {
-        ajuste: -4,
-        texto: `${nombreDosis}: reducir 4 UI por glicemia <54 mg/dL. Priorizar seguridad y evaluación clínica`
-      };
-    }
-
-    if (analisis.hipo) {
-      return {
-        ajuste: -4,
-        texto: `${nombreDosis}: reducir 4 UI por glicemia <70 mg/dL`
-      };
-    }
-
-    if (analisis.promedio < 80) {
-      return {
-        ajuste: -2,
-        texto: `${nombreDosis}: reducir 2 UI por promedio 70-79 mg/dL`
-      };
-    }
-
-    if (analisis.promedio <= 130) {
-      return {
-        ajuste: 0,
-        texto: `${nombreDosis}: mantener por promedio en meta 80-130 mg/dL`
-      };
-    }
-
-    if (analisis.promedio <= 180) {
-      return {
-        ajuste: 2,
-        texto: `${nombreDosis}: aumentar 2 UI por promedio 131-180 mg/dL`
-      };
-    }
-
-    return {
-      ajuste: 4,
-      texto: `${nombreDosis}: aumentar 4 UI por promedio >180 mg/dL`
-    };
-  }
-
-  function dosisSegundaDosis(pesoKg) {
-    // Inicio conservador de segunda dosis: 0,1 UI/kg, con mínimo práctico 4 UI y máximo inicial 10 UI.
-    return redondearPar(Math.min(10, Math.max(4, pesoKg * 0.1)));
-  }
-
-  const ajustePM = calcularAjuste(ayunas, "PM");
-  const ajusteAM = preonce ? calcularAjuste(preonce, "AM") : { ajuste: 0, texto: "AM: sin datos suficientes de pre-once para ajuste" };
-
-  const hayHipoAyunas = ayunas.hipo || ayunas.hipoSevera;
-  const hayHipoPreonce = preonce ? (preonce.hipo || preonce.hipoSevera) : false;
-  const hayHipo = hayHipoAyunas || hayHipoPreonce;
-
-  let nAM = am;
-  let nPM = pm;
-  let esquemaFinal = tipo;
-  const razonamiento = [];
-  const advertencias = [];
-
-  if (hayHipo) {
-    // Seguridad primero: ante hipoglicemia se reduce y NO se intensifica.
-    if (tipo === "pm") {
-      nPM = redondearPar(pm + ajustePM.ajuste);
-      razonamiento.push(ajustePM.texto);
-      razonamiento.push("No se agrega dosis AM por presencia de hipoglicemia; reevaluar causa antes de intensificar.");
-    } else if (tipo === "am") {
-      nAM = hayHipoPreonce ? redondearPar(am + ajusteAM.ajuste) : redondearPar(am - 2);
-      razonamiento.push(hayHipoPreonce ? ajusteAM.texto : "AM: reducir 2 UI por hipoglicemia registrada con monodosis AM.");
-      razonamiento.push("No se agrega dosis PM por presencia de hipoglicemia; reevaluar causa antes de intensificar.");
-    } else {
-      nPM = redondearPar(pm + ajustePM.ajuste);
-      nAM = preonce ? redondearPar(am + ajusteAM.ajuste) : am;
-      razonamiento.push(ajustePM.texto);
-      razonamiento.push(ajusteAM.texto);
-    }
-
-    advertencias.push("Hipoglicemia: priorizar seguridad. Revisar técnica de administración, horarios, ingesta, ejercicio, función renal y fragilidad.");
-  } else if (tipo === "pm") {
-    // NPH PM se ajusta por glicemia de ayunas.
-    nPM = redondearPar(pm + ajustePM.ajuste);
-    razonamiento.push(ajustePM.texto);
-
-    // Corrección clave: si pre-once/pre-cena está sobre meta, no seguir subiendo solo PM; agregar AM.
-    if (preonce && preonce.promedio > metaPreonceAlta) {
-      nAM = dosisSegundaDosis(peso);
-      esquemaFinal = "2";
-      razonamiento.push(`AM: agregar ${nAM} UI de NPH antes del desayuno por promedio pre-once ${Math.round(preonce.promedio)} mg/dL sobre meta. Se intensifica desde monodosis PM a esquema AM + PM.`);
-    } else if (preonce) {
-      razonamiento.push(`AM: no se agrega dosis matinal porque promedio pre-once ${Math.round(preonce.promedio)} mg/dL está en meta.`);
-    } else {
-      razonamiento.push("AM: no se puede evaluar intensificación a dosis matinal por falta de al menos 3 glicemias pre-once.");
-    }
-  } else if (tipo === "am") {
-    // NPH AM se ajusta por glicemia pre-once/pre-cena.
-    nAM = preonce ? redondearPar(am + ajusteAM.ajuste) : am;
-    razonamiento.push(ajusteAM.texto);
-
-    // Corrección simétrica: si ayunas está sobre meta, agregar PM.
-    if (ayunas.promedio > metaAyunasAlta) {
-      nPM = dosisSegundaDosis(peso);
-      esquemaFinal = "2";
-      razonamiento.push(`PM: agregar ${nPM} UI de NPH antes de dormir por promedio ayunas ${Math.round(ayunas.promedio)} mg/dL sobre meta. Se intensifica desde monodosis AM a esquema AM + PM.`);
-    } else {
-      razonamiento.push(`PM: no se agrega dosis nocturna porque promedio ayunas ${Math.round(ayunas.promedio)} mg/dL está en meta.`);
-    }
-  } else {
-    // Esquema AM + PM: ayunas ajusta PM; pre-once ajusta AM.
-    nPM = redondearPar(pm + ajustePM.ajuste);
-    nAM = preonce ? redondearPar(am + ajusteAM.ajuste) : am;
-    razonamiento.push(ajustePM.texto);
-    razonamiento.push(ajusteAM.texto);
-  }
-
-  nAM = Math.max(0, nAM);
-  nPM = Math.max(0, nPM);
-
-  const dosisKg = (nAM + nPM) / peso;
-
-  const excluidos = [
-    ...ayunas.excluidos,
-    ...(preonce ? preonce.excluidos : [])
-  ];
-
-  if (ayunas.hipoSevera) {
-    advertencias.push("Hipoglicemia severa en ayunas: considerar evaluación clínica precoz y reducción de NPH PM.");
-  } else if (ayunas.hipo) {
-    advertencias.push("Hipoglicemia en ayunas: reducir NPH PM y evaluar causas.");
-  }
-
-  if (preonce && preonce.hipoSevera) {
-    advertencias.push("Hipoglicemia severa pre-once: considerar evaluación clínica precoz y reducción de NPH AM.");
-  } else if (preonce && preonce.hipo) {
-    advertencias.push("Hipoglicemia pre-once: reducir NPH AM y evaluar causas.");
-  }
-
-  if (nAM === 0 && (tipo === "2" || tipo === "am")) {
-    advertencias.push("Dosis AM queda en 0 UI: interpretar como suspensión de dosis matinal.");
-  }
-
-  if (nPM === 0 && (tipo === "2" || tipo === "pm")) {
-    advertencias.push("Dosis PM queda en 0 UI: interpretar como suspensión de dosis nocturna.");
-  }
-
-  if (dosisKg >= 1) {
-    advertencias.push("Dosis ≥1 UI/kg/día: no seguir escalando automáticamente en APS sin evaluación clínica; revisar técnica, adherencia, lipohipertrofia, alimentación y considerar derivación.");
-  } else if (dosisKg >= 0.7) {
-    advertencias.push("Dosis ≥0.7 UI/kg/día: dosis alta; revisar técnica, adherencia, sitios de punción, alimentación y necesidad de evaluación por Medicina Interna APS.");
-  }
-
-  const promediosDisponibles = [
-    ayunas.promedio,
-    preonce && preonce.promedio !== null ? preonce.promedio : null
-  ].filter(v => v !== null);
-
-  const promedioGlobal = promediosDisponibles.length
-    ? promediosDisponibles.reduce((a,b)=>a+b,0) / promediosDisponibles.length
-    : null;
-
-  const hba1cEstimada = promedioGlobal !== null
-    ? ((promedioGlobal + 46.7) / 28.7).toFixed(1)
-    : 'N/A';
-
-  globalData.am = nAM;
-  globalData.pm = nPM;
-  globalData.promAy = ayunas.promedio !== null ? Math.round(ayunas.promedio) : 'N/A';
-  globalData.promPre = preonce && preonce.promedio !== null ? Math.round(preonce.promedio) : 'N/A';
-  globalData.promedioGlobal = promedioGlobal !== null ? Math.round(promedioGlobal) : 'N/A';
-  globalData.hba1cEstimada = hba1cEstimada;
-  globalData.explicacion = [
-    `Esquema final sugerido: ${esquemaFinal === "2" ? "NPH AM + PM" : esquemaFinal === "am" ? "NPH solo AM" : "NPH solo PM"}`,
-    ...razonamiento,
-    excluidos.length ? `Valores altos aislados excluidos del promedio: ${excluidos.join(", ")}` : "",
-    advertencias.length ? `Advertencias: ${advertencias.join(" ")}` : ""
-  ].filter(Boolean).join("\n");
-  globalData.dosisKg = dosisKg;
-  globalData.acciones = "";
-
-  const resumen = document.getElementById('resumen-promedios');
-  if (resumen) {
-    resumen.style.display = 'block';
-    resumen.innerHTML = `
-      <b>Promedios usados:</b><br>
-      Ayunas: ${globalData.promAy} mg/dL<br>
-      Pre-once: ${globalData.promPre} mg/dL<br>
-      Dosis total: ${nAM + nPM} UI/día (${dosisKg.toFixed(2)} UI/kg/día)<br>
-      Esquema final: ${esquemaFinal === "2" ? "NPH AM + PM" : esquemaFinal === "am" ? "NPH solo AM" : "NPH solo PM"}
-    `;
-  }
-
-  if (dosisKg >= 0.7) {
-    nav(41);
-    return;
-  }
-
-  const nota = `SEGUIMIENTO APS
-Promedios usados: Ayunas ${globalData.promAy} | Pre-once ${globalData.promPre}
-Promedio global estimado: ${globalData.promedioGlobal} mg/dL
-HbA1c estimada a 90 días si mantiene este patrón: ${globalData.hba1cEstimada}%
-Esquema actual: AM ${globalData.amActual} UI | PM ${globalData.pmActual} UI
-Nuevo Esquema sugerido: AM ${nAM} UI | PM ${nPM} UI
-Dosis total: ${nAM + nPM} UI/día (${dosisKg.toFixed(2)} UI/kg/día)
-Razonamiento:
-${globalData.explicacion}`;
-
-  renderNotaClinica(nota);
-  nav(5);
-}
-
-
-function toggleAccion(boton) {
-  boton.classList.toggle("seleccionada");
-}
-
-function generarNotaDosisAlta() {
-  const accionesSeleccionadas = Array.from(document.querySelectorAll('#p41 .accion-btn.seleccionada')).map(a => a.dataset.value);
-
-  if (accionesSeleccionadas.length > 0) {
-    accionesSeleccionadas.unshift("Evaluación y seguimiento por Medicina Interna APS");
-  }
-
-  globalData.acciones = accionesSeleccionadas.join("\n");
-
-  const nota = `SEGUIMIENTO APS
-Promedios usados: Ayunas ${globalData.promAy} | Pre-once ${globalData.promPre}
-Promedio global estimado: ${globalData.promedioGlobal} mg/dL
-HbA1c estimada a 90 días si mantiene este patrón: ${globalData.hba1cEstimada}%
-Esquema actual: AM ${globalData.amActual} UI | PM ${globalData.pmActual} UI
-Nuevo Esquema sugerido: AM ${globalData.am} UI | PM ${globalData.pm} UI
-Razonamiento: ${globalData.explicacion}
-
-ALERTA DOSIS ALTA (>0.7 UI/kg):
-${globalData.acciones || "Mantener controles y seguimiento por medicina interna APS."}`;
-
-   renderNotaClinica(nota);
-  nav(5);
-}
-</script>
-
-<!-- P5 -->
-<div id="p5" class="page" style="text-align:center;">
-<div style="font-size:12px;color:#6b778c;margin-bottom:10px;font-weight:600;">
-[P5] Nota clínica automática
-</div>
-<h2 style="margin-bottom:12px; color:#172b4d;">
-Nota clínica estructurada
-</h2>
-
-<p style="
-max-width:700px;
-margin:0 auto 15px;
-font-size:0.95rem;
-color:#42526e;
-line-height:1.4;
-">
-Resumen automático listo para copiar en ficha clínica APS.
-</p>
-
-<!-- NOTA -->
-<div id="nota-clinica" class="nota" style="
-background:#091e42;
-color:#00fbff;
-padding:20px;
-border-radius:12px;
-white-space:pre-wrap;
-text-align:left;
-max-width:750px;
-margin:0 auto;
-font-size:0.95rem;
-line-height:1.5;
-"></div>
-
-<!-- BOTÓN COPIAR -->
-<button class="btn btn-success" style="max-width:320px;margin:20px auto;"
-onclick="copiarNota()">
-COPIAR NOTA A FICHA CLÍNICA
-</button>
-
-<!-- DECISIÓN CLÍNICA -->
-<div style="
-max-width:750px;
-margin:20px auto;
-padding:18px;
-border-radius:12px;
-border:2px solid #dfe1e6;
-background:#f4f5f7;
-text-align:center;
-">
-
-<p style="font-weight:700;margin-bottom:12px;">
-Decisión de seguimiento
-</p>
-
-<p style="margin-bottom:15px;color:#42526e;">
-Seleccione conducta final del paciente
-</p>
-
-<div style="
-display:flex;
-gap:12px;
-justify-content:center;
-flex-wrap:wrap;
-">
-
-<button class="btn btn-main" style="max-width:320px;" onclick="generarPDF(true)">
-SEGUIMIENTO Y AJUSTE
-</button>
-
-<button class="btn btn-success" style="max-width:320px;" onclick="generarPDF(false)">
-CONTROL EN PROGRAMA CV
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-<script>
-function escaparHTML(texto) {
-  return texto
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-function claseNota(linea) {
-  const l = linea.toLowerCase();
-
-  if (l.includes("alerta") || l.includes("hipoglicemia") || l.includes("<54") || l.includes("<70") || l.includes("suspensión")) {
-    return "nota-roja";
-  }
-
-  if (l.includes("hba1c estimada")) {
-    const valor = parseFloat(linea.replace(",", ".").match(/[\d.]+/)?.[0]);
-    if (!isNaN(valor)) {
-      if (valor <= 7) return "nota-verde";
-      if (valor < 9) return "nota-amarilla";
-      return "nota-roja";
-    }
-  }
-
-  if (l.includes("nuevo esquema") || l.includes("dosis sugerida")) {
-    return "nota-azul";
-  }
-
-  if (l.includes("esquema actual") || l.includes("promedios usados") || l.includes("promedio global")) {
-    return "nota-gris";
-  }
-
-  return "";
-}
-
-function renderNotaClinica(texto) {
-  const html = texto.split("\n").map(linea => {
-    const clase = claseNota(linea);
-    const contenido = escaparHTML(linea) || "&nbsp;";
-    return clase
-      ? `<span class="nota-linea ${clase}">${contenido}</span>`
-      : `<span class="nota-linea">${contenido}</span>`;
-  }).join("");
-
-  document.getElementById('nota-clinica').innerHTML = html;
-}
-
-function copiarNota(){
-
-const text = document.getElementById('nota-clinica').innerText;
-
-if (navigator.clipboard && window.isSecureContext) {
-  navigator.clipboard.writeText(text).then(() => {
-    alert("Nota copiada en portapapeles");
-  }).catch(() => {
-    copiarNotaFallback(text);
-  });
-} else {
-  copiarNotaFallback(text);
-}
-}
-
-function copiarNotaFallback(text) {
-  const area = document.createElement("textarea");
-  area.value = text;
-  area.style.position = "fixed";
-  area.style.left = "-9999px";
-  area.style.top = "0";
-  document.body.appendChild(area);
-  area.focus();
-  area.select();
-
-  try {
-    document.execCommand("copy");
-    alert("Nota copiada en portapapeles");
-  } catch (e) {
-    alert("No se pudo copiar automáticamente. Mantenga presionada la nota y seleccione copiar.");
-  }
-
-  document.body.removeChild(area);
-}
-
-</script>
-
-<div id="p6" class="page" style="text-align:center;">
-<div style="font-size:12px;color:#6b778c;margin-bottom:10px;font-weight:600;">
-[P6] Generación de documento / impresión
-</div>
-  <h2 style="margin-bottom:10px;">Informe clínico Insulog APS</h2>
-
-  <div style="max-width:500px;margin:10px auto;text-align:left;">
-    <label>Nombre del paciente</label>
-    <input type="text" id="nombre-paciente" placeholder="Escriba o pegue nombre completo">
-  </div>
-
-  <div style="margin:10px 0;font-weight:600;">
-    Fecha: <span id="fecha-hoy"></span>
-  </div>
-
-  <button class="btn btn-main" style="max-width:320px;margin:10px auto;" onclick="generarDocumento('inicio')">
-    INICIO DE INSULINA
-  </button>
-
-  <button class="btn btn-main" style="max-width:320px;margin:10px auto;" onclick="generarDocumento('seguimiento')">
-    SEGUIMIENTO Y AJUSTE
-  </button>
-
-  <button class="btn btn-success" style="max-width:320px;margin:10px auto;" onclick="generarDocumento('pscv')">
-    CONTROL PROGRAMA CV
-  </button>
-
-  <div id="pdf" class="imprimible-container"></div>
-
-  <div style="margin-top:20px;">
-    <button class="btn btn-main" onclick="window.print()" style="max-width:320px;">
-      IMPRIMIR
-    </button>
-
-    <button class="btn btn-danger" onclick="finalizar()" style="max-width:320px;">
-      FINALIZAR (VOLVER AL INICIO)
-    </button>
-  </div>
-
-</div>
-
-<style>
-/* ESTILOS DE DISEÑO PREMIUM PARA P6 */
-.imprimible-container {
-  margin: 10px auto;
-  background: white;
-  padding: 20px 30px; /* Reducido el padding vertical para ganar espacio */
-  border: 1px solid #dcdfe6;
-  text-align: left;
-  font-family: "Segoe UI", Arial, sans-serif;
-  color: #2c3e50;
-  max-width: 800px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  box-sizing: border-box; /* Asegura márgenes laterales iguales */
-  width: 95%;
-}
-
-/* TABLA ESTILO CLÍNICO PROFESIONAL */
-.tabla-registro {
-  width: 100% !important; /* Obliga a la tabla a respetar los márgenes del contenedor */
-  border-collapse: collapse;
-  margin: 15px 0;
-  table-layout: fixed;
-  border: 1.5px solid #333;
-}
-
-.tabla-registro th {
-  background-color: #f8f9fa;
-  color: #1a2b3c;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  border: 1px solid #333;
-  padding: 10px 4px;
-}
-
-.tabla-registro td {
-  border: 1px solid #666;
-  height: 24px; /* Altura optimizada para página única */
-}
-
-.col-fecha { width: 18%; }
-.col-hora  { width: 12%; }
-.col-glic  { width: 35%; }
-
-/* CONFIGURACIÓN DE IMPRESIÓN MEJORADA */
-@media print {
-  @page {
-    size: letter;
-    margin: 1cm;
-  }
-
-  body { background: white; }
-
-  .container > *:not(#p6), 
-  #p6 > *:not(#pdf),
-  .btn, footer {
-    display: none !important;
-  }
-
-.imprimible-container {
-    border: none !important;
-    padding: 0.5cm 1cm !important; /* Margen simétrico: 1cm a la izquierda y 1cm a la derecha */
-    margin: 0 !important;
-    width: 100% !important;
-    box-shadow: none !important;
-    box-sizing: border-box !important;
-  }
-
-  .imprimible-container * {
-    color: #000 !important;
-  }
-}
-
-/* CONFIGURACIÓN DE IMPRESIÓN ESTRICTA PARA PÁGINA ÚNICA */
-@media print {
-  @page {
-    size: letter;
-    margin: 0.5cm; /* Margen pequeño para evitar saltos de página */
-  }
-
-  body {
-    background: white;
-    padding: 0;
-  }
-
-  .container {
-    box-shadow: none;
-    border: none;
-    padding: 0;
-    margin: 0;
-    max-width: 100%;
-  }
-
-  .container > *:not(#p6), 
-  #p6 > *:not(#pdf),
-  .btn, footer {
-    display: none !important;
-  }
-
-  #p6 { margin: 0; padding: 0; }
-
-  .imprimible-container {
-    border: none;
-    margin: 0 !important;
-    padding: 0.5cm 1.5cm !important; /* Reducido para que quepa en iOS */
-    width: 100%;
-    max-width: none;
-    font-size: 11px; /* Fuente ligeramente más pequeña */
-  }
-
-  .tabla-registro td {
-    height: 22px; /* Celdas más bajas para ahorrar espacio vertical */
-  }
-
-  .footer-impresion {
-    margin-top: 5px;
-    position: relative;
-    page-break-inside: avoid;
-  }
-}
-</style>
-
-<script>
-document.getElementById("fecha-hoy").innerText = new Date().toLocaleDateString("es-CL");
-
-function generarDocumento(tipo){
-  const nombre = document.getElementById("nombre-paciente").value || "_________________________________";
-  const fecha = new Date().toLocaleDateString("es-CL");
-  
-  // 1. Título dinámico según selección
-  let tituloDoc = "";
-  if(tipo === "inicio") tituloDoc = "INICIO DE INSULINA NPH";
-  if(tipo === "seguimiento") tituloDoc = "SEGUIMIENTO Y AJUSTE DE INSULINA NPH";
-  if(tipo === "pscv") tituloDoc = "CONTROL EN PROGRAMA DE SALUD CARDIOVASCULAR";
-
-  const am = globalData.am || 0;
-const pm = globalData.pm || 0;
-
-const dosis = `
-    <div style="margin: 15px 0; padding: 15px; border: 2px solid #0052cc; border-radius: 10px; background: #f0f7ff;">
-      <b style="font-size:14px; color:#0052cc; text-transform: uppercase; letter-spacing: 0.5px;">Dosis Actual Indicada</b>
-      <div style="margin-top:10px; display: flex; justify-content: space-around; align-items: center;">
-        <div style="text-align:center;">
-          <span style="font-size:11px; color:#555;">MAÑANA (AM)</span><br>
-          <b style="font-size:24px;">${globalData.am} <small style="font-size:14px;">UI</small></b>
-        </div>
-        <div style="height: 40px; border-left: 1px solid #bcd9ff;"></div>
-        <div style="text-align:center;">
-          <span style="font-size:11px; color:#555;">NOCHE (PM)</span><br>
-          <b style="font-size:24px;">${globalData.pm} <small style="font-size:14px;">UI</small></b>
-        </div>
-      </div>
-    </div>
-  `;
-
-  const tabla = `
-    <div style="margin-top:15px; margin-bottom:5px;">
-      <b style="font-size:12px; color:#1a2b3c;">REGISTRO DE CONTROL (15 DÍAS)</b>
-    </div>
-    <table class="tabla-registro">
-      <thead>
-        <tr>
-          <th class="col-fecha">Fecha</th>
-          <th class="col-hora">Hora</th>
-          <th class="col-glic">Glicemia Ayunas</th>
-          <th class="col-glic">Antes de las once</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${Array.from({length:15},()=>`<tr><td></td><td></td><td></td><td></td></tr>`).join("")}
-      </tbody>
-    </table>
-  `;
-
-  let contenidoHeader = `
-    <div style="border-bottom: 2px solid #0052cc; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end;">
-      <div>
-        <b style="font-size:18px; color:#0052cc;">${tituloDoc}</b><br>
-        <span style="font-size:12px; color:#666;">Plataforma de Apoyo Clínico Insulog APS</span>
-      </div>
-      <div style="text-align: right; font-size: 12px;">
-        <b>Fecha:</b> ${fecha}
-      </div>
-    </div>
-    <div style="margin-bottom:15px; font-size:14px;">
-      <b>Paciente:</b> <span style="border-bottom: 1px dotted #333;">${nombre}</span>
-    </div>
-  `;
-
-  let contenidoCuerpo = "";
-
-  if(tipo === "inicio"){
-    contenidoCuerpo = `
-      ${dosis}
-      <div style="margin: 15px 0;">
-        <b style="font-size:12px; text-transform: uppercase;">Indicaciones del Facultativo:</b>
-        <ul style="margin-top:5px; padding-left:20px; font-size:12px; line-height: 1.5;">
-          <li><b>Educación:</b> Coordinar con enfermería técnica de administración y sitios de punción.</li>
-          <li><b>Nutrición:</b> Evaluación por nutricionista para ajuste de plan alimentario.</li>
-          <li><b>Seguimiento:</b> Control médico en 15 días con este registro completo.</li>
+  <main class="container" id="app" aria-live="polite">
+    <section id="p0" class="page active page-center" aria-hidden="false">
+      <div class="page-label">[P0] Inicio / Portada</div>
+      <h1 class="brand-title">Insulog APS</h1>
+      <p class="brand-subtitle">Insulinización en Atención Primaria de Salud</p>
+
+      <div class="card bibliography-card">
+        <p class="card-title">Bibliografía utilizada</p>
+        <ul>
+          <li>Guía ALAD 2019: Diagnóstico y tratamiento de DM2</li>
+          <li>ADA Standards of Care 2024</li>
+          <li>Protocolo MINSAL Chile – Insulina NPH en APS</li>
         </ul>
       </div>
-      ${tabla}
-      <div style="display:flex; justify-content: space-between; margin-top:15px; font-size:12px;">
-        <div style="background: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px solid #eee;">
-          <b>Próximo Control:</b> ____/____/____<br>
-          <b>Hora:</b> ________
+
+      <div class="author-block">
+        <p class="author-name">Dr. Carlos Herrera Malaver</p>
+        <p class="author-role">Médico Internista</p>
+      </div>
+
+      <button type="button" class="btn btn-main btn-narrow" onclick="nav(1)">INICIAR ALGORITMO</button>
+    </section>
+
+    <section id="p1" class="page page-center" aria-hidden="true">
+      <div class="page-label">[P1] Evaluación inicial (criterios de exclusión)</div>
+      <h2>Evaluación inicial</h2>
+      <p class="lead">¿El paciente presenta DM tipo 1, patología pancreática (ej. pancreatitis crónica), embarazo, antecedente de cirugía pancreática o es menor de 18 años?</p>
+
+      <div class="stack-actions narrow-actions">
+        <button type="button" class="btn btn-danger" onclick="exclusion()">SÍ</button>
+        <button type="button" class="btn btn-main" onclick="nav(2)">NO</button>
+      </div>
+
+      <div id="alerta" class="alert alert-danger is-hidden" role="alert">
+        <p><strong>Derivar a nivel secundario.</strong></p>
+        <p>Mientras espera atención, derivar a Medicina Interna en APS.</p>
+        <p>Este paciente puede requerir insulinas de acción rápida, análogos de insulina y un seguimiento más estricto, recursos que no se encuentran disponibles en APS.</p>
+      </div>
+    </section>
+
+    <section id="p2" class="page page-center" aria-hidden="true">
+      <div class="page-label">[P2] Definición del proceso (inicio vs seguimiento)</div>
+      <h2>Definición del proceso</h2>
+
+      <div class="alert alert-warning">
+        <strong>⚠️ Importante</strong>
+        <p>Todo paciente que inicie tratamiento con insulina debe tener <u>glibenclamida suspendida</u>.</p>
+      </div>
+
+      <p class="section-prompt">Seleccione el tipo de manejo</p>
+      <div class="stack-actions narrow-actions">
+        <button type="button" class="btn btn-main" onclick="mostrarInicio()">INICIO DE INSULINA</button>
+        <button type="button" class="btn btn-success" onclick="prepSeg()">SEGUIMIENTO DE INSULINA</button>
+      </div>
+
+      <div id="criterios" class="is-hidden">
+        <div class="card card-blue text-left">
+          <p class="card-title text-center">Datos disponibles para orientar esquema inicial</p>
+          <div class="form-grid">
+            <div class="field">
+              <label for="hba1c-inicio">HbA1c más reciente (%)</label>
+              <input type="number" inputmode="decimal" id="hba1c-inicio" placeholder="Ej: 10.5" min="4" max="20" step="0.1">
+            </div>
+            <div class="field">
+              <label for="glicemia-ayunas-inicio">Glicemia en ayunas más alta (mg/dL)</label>
+              <input type="number" inputmode="numeric" id="glicemia-ayunas-inicio" placeholder="Ej: 260" min="40" max="600">
+            </div>
+            <div class="field">
+              <label for="glicemia-casual-inicio">Glicemia casual / post carga / PTGO (mg/dL)</label>
+              <input type="number" inputmode="numeric" id="glicemia-casual-inicio" placeholder="Ej: 320" min="40" max="700">
+            </div>
+          </div>
+
+          <p class="card-title criteria-heading">Criterios clínicos y descompensación</p>
+          <div class="selection-grid">
+            <button type="button" class="btn selection-btn inicio-btn" data-value="Fracaso terapia oral" onclick="toggleSeleccion(this)">Fracaso terapia oral</button>
+            <button type="button" class="btn selection-btn inicio-btn" data-value="Deseo del paciente" onclick="toggleSeleccion(this)">Deseo del paciente</button>
+            <button type="button" class="btn selection-btn catabolico-btn" data-value="Baja de peso involuntaria" onclick="toggleSeleccion(this)">Baja de peso involuntaria</button>
+            <button type="button" class="btn selection-btn catabolico-btn" data-value="Poliuria marcada" onclick="toggleSeleccion(this)">Poliuria marcada</button>
+            <button type="button" class="btn selection-btn catabolico-btn" data-value="Polidipsia marcada" onclick="toggleSeleccion(this)">Polidipsia marcada</button>
+            <button type="button" class="btn selection-btn catabolico-btn" data-value="Astenia marcada / compromiso del estado general" onclick="toggleSeleccion(this)">Astenia marcada / compromiso del estado general</button>
+            <button type="button" class="btn selection-btn catabolico-btn" data-value="Sospecha de cetosis o cetonuria / crisis hiperglicémica reciente" onclick="toggleSeleccion(this)">Sospecha de cetosis o cetonuria / crisis hiperglicémica reciente</button>
+            <button type="button" class="btn selection-btn catabolico-btn" data-value="Glicemias muy elevadas con síntomas" onclick="toggleSeleccion(this)">Glicemias muy elevadas con síntomas</button>
+          </div>
+
+          <div id="sugerencia-esquema-inicio" class="alert alert-info is-hidden"></div>
         </div>
-        <div style="text-align:center; width:200px; border-top:1px solid #000; margin-top:35px; padding-top: 5px;">
-          <b>Firma y Timbre Médico</b>
+
+        <div class="card card-red text-left">
+          <p class="card-title text-center">Alto riesgo de hipoglicemia</p>
+          <div class="selection-grid">
+            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Adulto mayor frágil" onclick="toggleSeleccion(this)">Adulto mayor frágil</button>
+            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Enfermedad renal crónica" onclick="toggleSeleccion(this)">Enfermedad renal crónica</button>
+            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Baja ingesta o ingesta irregular" onclick="toggleSeleccion(this)">Baja ingesta o ingesta irregular</button>
+            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Antecedente de hipoglicemia" onclick="toggleSeleccion(this)">Antecedente de hipoglicemia</button>
+            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Vive solo o bajo soporte familiar" onclick="toggleSeleccion(this)">Vive solo o bajo soporte familiar</button>
+            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Deterioro cognitivo" onclick="toggleSeleccion(this)">Deterioro cognitivo</button>
+            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Consumo problemático de alcohol" onclick="toggleSeleccion(this)">Consumo problemático de alcohol</button>
+            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Actividad de alto riesgo ante hipoglicemia" onclick="toggleSeleccion(this)">Actividad de alto riesgo ante hipoglicemia</button>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-main btn-narrow section-action" onclick="definirEsquemaInicio()">SIGUIENTE: DOSIFICACIÓN</button>
+      </div>
+    </section>
+
+    <section id="p3" class="page page-center" aria-hidden="true">
+      <div class="page-label">[P3] Cálculo de dosis inicial</div>
+      <h2>Dosificación de inicio de insulina</h2>
+      <p class="lead">Ingrese el peso del paciente y seleccione el riesgo de hipoglicemia para calcular la dosis inicial de insulina NPH.</p>
+
+      <div id="resumen-esquema-inicio" class="alert alert-info text-left is-hidden"></div>
+
+      <div class="form-grid form-grid-2">
+        <div class="field">
+          <label for="peso-paciente">Peso del paciente (kg)</label>
+          <input type="number" inputmode="decimal" id="peso-paciente" placeholder="Ej: 70" min="1" max="300" step="0.1">
+        </div>
+        <div class="field">
+          <label for="factor-dosis">Riesgo de hipoglicemia</label>
+          <select id="factor-dosis">
+            <option value="0.1">Alto riesgo → adulto mayor, ERC o fragilidad</option>
+            <option value="0.2" selected>Riesgo estándar</option>
+            <option value="0.3">Bajo riesgo → hiperglicemia marcada</option>
+          </select>
         </div>
       </div>
-    `;
-  }
 
-  if(tipo === "seguimiento"){
-    contenidoCuerpo = `
-      ${dosis}
-      <div style="margin: 15px 0;">
-        <b style="font-size:12px; text-transform: uppercase;">Indicaciones de Continuidad:</b>
-        <ul style="margin-top:5px; padding-left:20px; font-size:12px; line-height: 1.5;">
-          <li>Mantener rotación estricta de sitios de punción (abdomen, muslos, brazos).</li>
-          <li><b>Registro:</b> Glicemias capilares en ayunas y antes de la cena (antes de las once).</li>
-          ${globalData.acciones ? globalData.acciones.split("\n").map(a => `<li>${a.replace("- ","")}</li>`).join("") : ""}
+      <div class="card card-blue text-left compact-card">
+        <strong>Orientación clínica:</strong>
+        <ul class="compact-list">
+          <li><strong>0.1 UI/kg:</strong> alto riesgo de hipoglicemia (adulto mayor, ERC, fragilidad)</li>
+          <li><strong>0.2 UI/kg:</strong> paciente estándar</li>
+          <li><strong>0.3 UI/kg:</strong> hiperglicemia marcada o descompensación</li>
         </ul>
       </div>
-      ${tabla}
-      <div style="display:flex; justify-content: space-between; margin-top:15px; font-size:12px;">
-        <div style="background: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px solid #eee;">
-          <b>Próximo Control:</b> ____/____/____<br>
-          <b>Hora:</b> ________
-        </div>
-        <div style="text-align:center; width:200px; border-top:1px solid #000; margin-top:35px; padding-top: 5px;">
-          <b>Firma y Timbre Médico</b>
-        </div>
-      </div>
-    `;
-  }
 
-  if(tipo === "pscv"){
-    contenidoCuerpo = `
-      ${dosis}
-      <div style="background:#fff4e6; padding:15px; border:1px solid #ffd8a8; border-radius:8px; margin:20px 0; font-size:13px; color: #856404;">
-        <b>⚠️ INDICACIÓN IMPORTANTE:</b><br>
-        Si el glucómetro es propiedad del CESFAM, favor devolverlo en la oficina de dirección (2do piso) con la encargada Susan al finalizar este ciclo.
-      </div>
-      <p style="font-size:13px; line-height: 1.5;"><b>CONTROL DE PROGRAMA:</b> El paciente se encuentra compensado. Continuar controles regulares según cronograma en su Programa de Salud Cardiovascular (PSCV).</p>
-      <div style="text-align:center; width:220px; border-top:1.5px solid #000; margin:60px auto 0; padding-top: 5px;">
-        <b style="font-size:13px;">Firma y Timbre Médico</b>
-      </div>
-    `;
-  }
+      <div id="preview-dosis" class="alert alert-success is-hidden"></div>
+      <button type="button" class="btn btn-main btn-narrow section-action" onclick="calcularInicioMejorado()">CALCULAR DOSIS Y GENERAR NOTA</button>
+    </section>
 
-  const piePagina = `
-    <div style="margin-top: 28px; border-top: 1px solid #eee; padding-top: 10px;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;">
-        <div style="font-size:11px; color:#555; line-height:1.35;">
-          <b>Vacunatorio:</b> COVID, Influenza, Neumococo (Verificar vigencia).<br>
-          Ajuste clínico basado en normas MINSAL, ADA 2024 y ALAD.<br>
-          <i>Documento generado por Insulog APS ®</i>
+    <section id="p4" class="page page-center" aria-hidden="true">
+      <div class="page-label">[P4] Seguimiento y ajuste de insulina</div>
+      <h2>Seguimiento y ajuste de insulina NPH</h2>
+
+      <div class="p4-header-grid">
+        <div class="field">
+          <label for="peso-seguimiento">Peso del paciente (kg)</label>
+          <input type="number" inputmode="decimal" id="peso-seguimiento" placeholder="Ej: 70" min="1" max="300" step="0.1">
         </div>
-        <div style="text-align: right; font-size: 11px; color: #1a2b3c; min-width: 190px;">
-          <b>Autor de la aplicación:</b><br>
-          Dr. Carlos Herrera Malaver<br>
-          Médico Internista
+        <div class="field">
+          <label for="tipo-esquema">Tipo de esquema</label>
+          <select id="tipo-esquema">
+            <option value="2" selected>2 dosis (AM + PM)</option>
+            <option value="am">Solo dosis AM</option>
+            <option value="pm">Solo dosis PM</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="am-actual">Dosis AM actual</label>
+          <input type="text" inputmode="numeric" id="am-actual" maxlength="2" placeholder="00" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="pm-actual">Dosis PM actual</label>
+          <input type="text" inputmode="numeric" id="pm-actual" maxlength="2" placeholder="00" autocomplete="off">
         </div>
       </div>
-    </div>
-  `;
-  
-document.getElementById("pdf").innerHTML = contenidoHeader + contenidoCuerpo + piePagina;
-  
-  // SCROLL AUTOMÁTICO
-  const pdfElement = document.getElementById("pdf");
-  if (pdfElement) {
-    pdfElement.scrollIntoView({ behavior: 'smooth' });
-  }
-}
 
-// Función para volver al inicio y limpiar los datos del paciente anterior
-function finalizar() {
-  if (confirm("¿Desea finalizar el caso actual? Se borrarán los datos para un nuevo paciente.")) {
-    globalData = {am:0, pm:0, criteria:'', acciones:''};
-    
-    document.querySelectorAll('input').forEach(input => input.value = '');
-    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-    
-    document.getElementById('alerta').style.display = 'none';
-    document.getElementById('criterios').style.display = 'none';
-    document.getElementById('preview-dosis').style.display = 'none';
-    document.getElementById('resumen-promedios').style.display = 'none';
-    document.getElementById('alerta-dosis-alta').style.display = 'none';
+      <p class="helper-text">⚠️ Rango permitido: dosis entre 04 y 99 unidades.</p>
 
-    nav(0);
-  }
-}
-</script>
-</div> <footer>
-  <p>Insulog APS - Herramienta de Apoyo Clínico</p>
-  <p>Basado en protocolos vigentes para el manejo de DM2 en Chile.</p>
-</footer>
-<script>
-// Objeto global para almacenar las dosis y criterios calculados
-const globalData = {};
+      <div class="table-wrap">
+        <table class="tracking-table">
+          <thead>
+            <tr>
+              <th scope="col">Día</th>
+              <th scope="col">Ayunas</th>
+              <th scope="col">Antes de las once</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-seguimiento"></tbody>
+        </table>
+      </div>
 
-// Función principal para cambiar de página
-function nav(pagina) {
-  // Oculta todas las páginas
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  // Muestra solo la página solicitada
-  document.getElementById('p' + pagina).classList.add('active');
-  // Sube la vista al inicio de la pantalla
-  window.scrollTo(0, 0);
-}
+      <button type="button" class="btn btn-main btn-narrow section-action" onclick="calcularSeguimientoPro()">AJUSTAR DOSIS (PROTOCOLO APS)</button>
+      <div id="resumen-promedios" class="card compact-card is-hidden"></div>
+    </section>
 
-// Función para mostrar la alerta de exclusión en P1
-function exclusion() {
-  document.getElementById('alerta').style.display = 'block';
-}
+    <section id="p41" class="page page-center" aria-hidden="true">
+      <div class="page-label">[P4.1] Dosis alta de insulina</div>
+      <h2>Paciente en dosis alta de insulina</h2>
 
-// Función para desplegar los criterios de inicio en P2
-function mostrarInicio() {
-  document.getElementById('criterios').style.display = 'block';
-}
+      <div class="alert alert-danger text-left">
+        <p><strong>⚠️ Paciente en dosis alta de insulina (≥0.7 UI/kg/día)</strong></p>
+        <p>Mantener controles y seguimiento por medicina interna APS.</p>
+        <p><strong>Acciones sugeridas:</strong></p>
+        <div class="stack-actions">
+          <button type="button" class="btn action-btn" data-value="Evaluar por nutricionista" onclick="toggleAccion(this)">1. Evaluar por nutricionista</button>
+          <button type="button" class="btn action-btn" data-value="Evaluar técnica de administración de insulina por enfermería" onclick="toggleAccion(this)">2. Evaluar técnica de administración de insulina por enfermería</button>
+          <button type="button" class="btn action-btn" data-value="Evaluar uso y almacenamiento de insulina por químico farmacéutico" onclick="toggleAccion(this)">3. Evaluar uso y almacenamiento de insulina por químico farmacéutico</button>
+          <button type="button" class="btn action-btn" data-value="Derivar a Telediabetología" onclick="toggleAccion(this)">4. Derivar a Telediabetología</button>
+          <button type="button" class="btn action-btn" data-value="Derivar a diabetología nivel secundario" onclick="toggleAccion(this)">5. Derivar a diabetología nivel secundario</button>
+        </div>
+      </div>
 
-// Función para avanzar a la pantalla de impresión (P6) desde P5
-function generarPDF(esSeguimiento) {
-  nav(6);
-}
+      <button type="button" class="btn btn-main btn-narrow section-action" onclick="generarNotaDosisAlta()">GENERAR NOTA CLÍNICA</button>
+    </section>
 
-// Función para resetear el algoritmo al finalizar
-function finalizar() {
-  location.reload(); // Recarga la página limpiando los datos y volviendo a P0
-}
-</script>
+    <section id="p5" class="page page-center" aria-hidden="true">
+      <div class="page-label">[P5] Nota clínica automática</div>
+      <h2>Nota clínica estructurada</h2>
+      <p class="lead small-lead">Resumen automático listo para copiar en ficha clínica APS.</p>
+
+      <div id="nota-clinica" class="nota" role="region" aria-label="Nota clínica generada"></div>
+      <button type="button" class="btn btn-success btn-narrow section-action" onclick="copiarNota()">COPIAR NOTA A FICHA CLÍNICA</button>
+      <div id="copy-status" class="copy-status" role="status" aria-live="polite"></div>
+
+      <div class="card decision-card">
+        <p class="card-title">Decisión de seguimiento</p>
+        <p class="helper-text">Seleccione conducta final del paciente</p>
+        <div class="decision-actions">
+          <button type="button" class="btn btn-main" onclick="abrirDocumento('seguimiento')">SEGUIMIENTO Y AJUSTE</button>
+          <button type="button" class="btn btn-success" onclick="abrirDocumento('pscv')">CONTROL EN PROGRAMA CV</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="p6" class="page page-center" aria-hidden="true">
+      <div class="page-label no-print">[P6] Generación de documento / impresión</div>
+      <h2 class="no-print">Informe clínico Insulog APS</h2>
+
+      <div class="field patient-field no-print">
+        <label for="nombre-paciente">Nombre del paciente</label>
+        <input type="text" id="nombre-paciente" placeholder="Escriba o pegue nombre completo" autocomplete="off">
+      </div>
+
+      <div class="date-row no-print">Fecha: <span id="fecha-hoy"></span></div>
+
+      <div class="document-actions no-print">
+        <button type="button" class="btn btn-main" onclick="generarDocumento('inicio')">INICIO DE INSULINA</button>
+        <button type="button" class="btn btn-main" onclick="generarDocumento('seguimiento')">SEGUIMIENTO Y AJUSTE</button>
+        <button type="button" class="btn btn-success" onclick="generarDocumento('pscv')">CONTROL PROGRAMA CV</button>
+      </div>
+
+      <div id="pdf" class="imprimible-container" aria-live="polite"></div>
+
+      <div class="decision-actions no-print">
+        <button type="button" class="btn btn-main" onclick="window.print()">IMPRIMIR</button>
+        <button type="button" class="btn btn-danger" onclick="finalizar()">FINALIZAR (VOLVER AL INICIO)</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Insulog APS - Herramienta de Apoyo Clínico</p>
+    <p>Basado en protocolos vigentes para el manejo de DM2 en Chile.</p>
+  </footer>
+
+  <script src="./app.js?v=20260826"></script>
 </body>
 </html>
