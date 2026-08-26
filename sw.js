@@ -13,6 +13,10 @@ const STATIC_ASSETS = [
   "./assets/icons/icon-512.png?v=20260826"
 ];
 
+const STATIC_PATHS = new Set(
+  STATIC_ASSETS.map((asset) => new URL(asset, self.location.href).pathname)
+);
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -41,14 +45,19 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put("./index.html", copy));
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put("./index.html", copy));
+          }
           return response;
         })
         .catch(() => caches.match("./index.html"))
     );
     return;
   }
+
+  // Solo se cachean archivos estáticos conocidos. Insulog no persiste datos clínicos del paciente.
+  if (!STATIC_PATHS.has(url.pathname)) return;
 
   event.respondWith(
     caches.match(request).then((cached) => {
