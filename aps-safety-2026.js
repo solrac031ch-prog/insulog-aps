@@ -4,9 +4,10 @@
   const MEDICAMENTOS_APS = [
     { value: "metformina850", label: "Metformina 850 mg" },
     { value: "metforminaXR1000", label: "Metformina XR 1.000 mg (si intolerancia/RAM a metformina convencional)" },
-    { value: "dapagliflozina10", label: "Dapagliflozina 10 mg/día" },
-    { value: "empagliflozina12_5", label: "Empagliflozina 12,5 mg/día (½ comprimido de 25 mg; uso local por costo)" },
-    { value: "empaMet12_5_1000", label: "Empagliflozina/metformina 12,5/1.000 mg/día" },
+    { value: "dapagliflozina10", label: "Dapagliflozina 10 mg/día", className: "sglt2" },
+    { value: "empagliflozina25", label: "Empagliflozina 25 mg/día", className: "sglt2" },
+    { value: "empagliflozina12_5", label: "Empagliflozina 12,5 mg/día (½ comprimido de 25 mg; uso local por costo)", className: "sglt2" },
+    { value: "empaMet12_5_1000", label: "Empagliflozina/metformina 12,5/1.000 mg/día", className: "sglt2" },
     { value: "vildagliptina50", label: "Vildagliptina 50 mg" }
   ];
 
@@ -34,7 +35,7 @@
 
     const opciones = MEDICAMENTOS_APS.map((med) => `
       <label class="aps-med-option">
-        <input type="checkbox" data-aps-med="${scope}" data-label="${med.label}">
+        <input type="checkbox" data-aps-med="${scope}" data-label="${med.label}"${med.className ? ` data-class="${med.className}"` : ""}>
         <span>${med.label}</span>
       </label>`).join("");
 
@@ -45,6 +46,18 @@
       <div class="aps-reference-note">Insulog mantiene la insulinización NPH y el control cada 15 días según el flujo MINSAL/APS. ADA 2026 se usa como apoyo de seguridad e individualización.</div>`;
 
     return card;
+  }
+
+  function activarExclusividadFarmacologica() {
+    document.querySelectorAll('input[data-class="sglt2"]').forEach((input) => {
+      input.addEventListener("change", () => {
+        if (!input.checked) return;
+        const scope = input.dataset.apsMed;
+        document.querySelectorAll(`input[data-aps-med="${scope}"][data-class="sglt2"]`).forEach((otro) => {
+          if (otro !== input) otro.checked = false;
+        });
+      });
+    });
   }
 
   function insertarTarjetas() {
@@ -70,6 +83,8 @@
       card.appendChild(safety);
       tableWrap.insertAdjacentElement("beforebegin", card);
     }
+
+    activarExclusividadFarmacologica();
   }
 
   function actualizarTerminologia() {
