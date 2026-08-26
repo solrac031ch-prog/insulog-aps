@@ -2,7 +2,7 @@ name: Insulog static checks
 
 on:
   push:
-    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable]
+    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception]
   pull_request:
     branches: [main]
 
@@ -21,6 +21,7 @@ jobs:
           node --check app.js
           node --check pdf-enhancements.js
           node --check aps-safety-2026.js
+          node --check sw.js
 
       - name: Validate manifest JSON
         run: python -m json.tool manifest.webmanifest > /dev/null
@@ -83,13 +84,13 @@ jobs:
           if 'aps-safety-2026.css?v=20260826-1' not in pdf_js:
               raise SystemExit("APS safety CSS loader is missing")
 
-          if 'followup-flow-2026.js' in pdf_js:
-              raise SystemExit("Broken follow-up navigation loader must not be present")
+          if 'followup-flow-2026.js' in pdf_js or 'followup-flow-2026.js' in sw:
+              raise SystemExit("Broken follow-up navigation must not be present")
 
-          if 'followup-flow-2026.js' in sw:
-              raise SystemExit("Broken follow-up navigation must not be cached")
+          if 'addEventListener("fetch"' in sw:
+              raise SystemExit("Minimal service worker must not intercept network requests")
 
-          if 'aps-safety-2026.js?v=20260826-1' not in sw:
-              raise SystemExit("APS safety JavaScript is not cached")
+          if 'caches.keys()' not in sw or 'caches.delete' not in sw:
+              raise SystemExit("Minimal service worker must clear legacy PWA caches")
 
-          print("Stable recovery checks passed")
+          print("Stable structure and minimal service worker checks passed")
