@@ -69,30 +69,11 @@
     document.head.appendChild(link);
   }
 
-  const flowSrc = "./followup-flow-2026.js?v=20260826-2";
-  const cargarFlujoSeguimiento = () => {
-    if (document.querySelector(`script[src="${flowSrc}"]`)) return;
-    const flowScript = document.createElement("script");
-    flowScript.src = flowSrc;
-    flowScript.async = false;
-    document.body.appendChild(flowScript);
-  };
-
   const scriptSrc = "./aps-safety-2026.js?v=20260826-1";
-  const existente = document.querySelector(`script[src="${scriptSrc}"]`);
-
-  if (existente) {
-    if (document.getElementById("tratamiento-concomitante-seguimiento")) {
-      cargarFlujoSeguimiento();
-    } else {
-      existente.addEventListener("load", cargarFlujoSeguimiento, { once: true });
-    }
-    return;
+  if (!document.querySelector(`script[src="${scriptSrc}"]`)) {
+    const script = document.createElement("script");
+    script.src = scriptSrc;
+    script.defer = true;
+    document.body.appendChild(script);
   }
-
-  const script = document.createElement("script");
-  script.src = scriptSrc;
-  script.async = false;
-  script.addEventListener("load", cargarFlujoSeguimiento, { once: true });
-  document.body.appendChild(script);
 })();
