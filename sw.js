@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "insulog-static-20260826-followup-hotfix2";
+const CACHE_NAME = "insulog-static-20260826-recovery3";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -10,7 +10,6 @@ const STATIC_ASSETS = [
   "./app.js?v=20260826",
   "./pdf-enhancements.js?v=20260826-2",
   "./aps-safety-2026.js?v=20260826-1",
-  "./followup-flow-2026.js?v=20260826-2",
   "./manifest.webmanifest?v=20260826",
   "./assets/icons/icon-32.png?v=20260826",
   "./assets/icons/icon-180.png?v=20260826",
@@ -61,10 +60,9 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Solo archivos estáticos conocidos. Los datos clínicos nunca se persisten.
+  // Solo se cachean archivos estáticos conocidos. Insulog no persiste datos clínicos del paciente.
   if (!STATIC_PATHS.has(url.pathname)) return;
 
-  // Network-first evita que una versión antigua de JS rompa el flujo tras una actualización.
   event.respondWith(
     fetch(request)
       .then((response) => {
