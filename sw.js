@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "insulog-static-20260826-recovery3";
+const CACHE_NAME = "insulog-static-20260826-fast-start1";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -45,17 +45,24 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  // App shell: abrir inmediatamente desde caché y actualizar en segundo plano.
   if (request.mode === "navigate") {
+    const networkUpdate = fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put("./index.html", copy));
+        }
+        return response;
+      })
+      .catch(() => null);
+
+    event.waitUntil(networkUpdate.then(() => undefined));
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put("./index.html", copy));
-          }
-          return response;
-        })
-        .catch(() => caches.match("./index.html"))
+      caches.match("./index.html").then((cached) => {
+        if (cached) return cached;
+        return networkUpdate.then((response) => response || caches.match("./index.html"));
+      })
     );
     return;
   }
@@ -63,15 +70,22 @@ self.addEventListener("fetch", (event) => {
   // Solo se cachean archivos estáticos conocidos. Insulog no persiste datos clínicos del paciente.
   if (!STATIC_PATHS.has(url.pathname)) return;
 
+  // Recursos versionados: responder desde caché sin bloquear la apertura y refrescar detrás.
+  const networkUpdate = fetch(request)
+    .then((response) => {
+      if (response.ok) {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+      }
+      return response;
+    })
+    .catch(() => null);
+
+  event.waitUntil(networkUpdate.then(() => undefined));
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-        }
-        return response;
-      })
-      .catch(() => caches.match(request))
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+      return networkUpdate.then((response) => response || caches.match(request));
+    })
   );
 });
