@@ -1,0 +1,71 @@
+.tabla-registro-hgt {
+  table-layout: fixed;
+}
+
+.tabla-registro-hgt th,
+.tabla-registro-hgt td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.tabla-registro-hgt .grupo-mediciones th {
+  background: #eef3fb;
+  font-size: 10px;
+  letter-spacing: 0.2px;
+}
+
+.tabla-registro-hgt .col-fecha {
+  width: 18%;
+}
+
+.tabla-registro-hgt .col-hora-medicion {
+  width: 17%;
+}
+
+.tabla-registro-hgt .col-hgt {
+  width: 24%;
+}
+
+.tabla-registro-hgt .unidad-tabla {
+  font-size: 8px;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.tabla-registro-hgt tbody td {
+  height: 24px;
+}
+
+.registro-hgt-ayuda {
+  margin: 4px 0 7px;
+  padding: 5px 8px;
+  border-left: 3px solid #0052cc;
+  background: #f5f8ff;
+  color: #344563;
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+@media print {
+  .tabla-registro-hgt {
+    margin-top: 7px;
+  }
+
+  .tabla-registro-hgt th {
+    padding: 4px 2px;
+    font-size: 9px;
+    line-height: 1.1;
+  }
+
+  .tabla-registro-hgt tbody td {
+    height: 21px;
+  }
+
+  .registro-hgt-ayuda {
+    margin: 2px 0 5px;
+    padding: 3px 6px;
+    border-left: 2px solid #000;
+    background: #fff;
+    font-size: 9px;
+  }
+}
