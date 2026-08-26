@@ -59,3 +59,21 @@
     return resultado;
   };
 })();
+
+(() => {
+  const cssHref = "./aps-safety-2026.css?v=20260826-1";
+  if (!document.querySelector(`link[href="${cssHref}"]`)) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = cssHref;
+    document.head.appendChild(link);
+  }
+
+  const scriptSrc = "./aps-safety-2026.js?v=20260826-1";
+  if (!document.querySelector(`script[src="${scriptSrc}"]`)) {
+    const script = document.createElement("script");
+    script.src = scriptSrc;
+    script.defer = true;
+    document.body.appendChild(script);
+  }
+})();
