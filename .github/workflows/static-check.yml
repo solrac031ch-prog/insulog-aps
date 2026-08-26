@@ -2,7 +2,7 @@ name: Insulog static checks
 
 on:
   push:
-    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026]
+    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, move-treatment-before-followup]
   pull_request:
     branches: [main]
 
@@ -21,6 +21,7 @@ jobs:
           node --check app.js
           node --check pdf-enhancements.js
           node --check aps-safety-2026.js
+          node --check followup-flow-2026.js
 
       - name: Validate manifest JSON
         run: python -m json.tool manifest.webmanifest > /dev/null
@@ -34,6 +35,7 @@ jobs:
           html = Path("index.html").read_text(encoding="utf-8")
           pdf_js = Path("pdf-enhancements.js").read_text(encoding="utf-8")
           aps_js = Path("aps-safety-2026.js").read_text(encoding="utf-8")
+          followup_js = Path("followup-flow-2026.js").read_text(encoding="utf-8")
           sw = Path("sw.js").read_text(encoding="utf-8")
           required_ids = [
               "p0", "p1", "p2", "p3", "p4", "p41", "p5", "p6",
@@ -77,13 +79,19 @@ jobs:
               if required_text not in aps_js:
                   raise SystemExit(f"APS safety layer is missing: {required_text}")
 
-          if 'aps-safety-2026.js?v=20260826-1' not in pdf_js:
-              raise SystemExit("APS safety JavaScript loader is missing")
+          for required_text in [
+              'pantalla.id = "p35"',
+              "Tratamiento actual del paciente",
+              "CONTINUAR A REGISTRO DE HEMOGLUCOTESTS",
+              "window.prepSeg = function prepSegConPasoPrevio"
+          ]:
+              if required_text not in followup_js:
+                  raise SystemExit(f"Follow-up flow is missing: {required_text}")
 
-          if 'aps-safety-2026.css?v=20260826-1' not in pdf_js:
-              raise SystemExit("APS safety CSS loader is missing")
+          if 'followup-flow-2026.js?v=20260826-1' not in pdf_js:
+              raise SystemExit("Follow-up flow JavaScript loader is missing")
 
-          if 'aps-safety-2026.js?v=20260826-1' not in sw:
-              raise SystemExit("APS safety JavaScript is not cached")
+          if 'followup-flow-2026.js?v=20260826-1' not in sw:
+              raise SystemExit("Follow-up flow JavaScript is not cached")
 
           print("Static structure checks passed")
