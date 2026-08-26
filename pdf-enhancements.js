@@ -69,7 +69,7 @@
     document.head.appendChild(link);
   }
 
-  const flowSrc = "./followup-flow-2026.js?v=20260826-1";
+  const flowSrc = "./followup-flow-2026.js?v=20260826-2";
   const cargarFlujoSeguimiento = () => {
     if (document.querySelector(`script[src="${flowSrc}"]`)) return;
     const flowScript = document.createElement("script");

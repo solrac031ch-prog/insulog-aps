@@ -2,7 +2,7 @@ name: Insulog static checks
 
 on:
   push:
-    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, move-treatment-before-followup]
+    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, move-treatment-before-followup, hotfix-static-followup-screen]
   pull_request:
     branches: [main]
 
@@ -83,15 +83,20 @@ jobs:
               'pantalla.id = "p35"',
               "Tratamiento actual del paciente",
               "CONTINUAR A REGISTRO DE HEMOGLUCOTESTS",
-              "window.prepSeg = function prepSegConPasoPrevio"
+              "prepararRegistroSeguimiento",
+              "window.prepSeg = abrirSeguimientoSeguro",
+              "nunca dejar la aplicación sin una página activa"
           ]:
               if required_text not in followup_js:
-                  raise SystemExit(f"Follow-up flow is missing: {required_text}")
+                  raise SystemExit(f"Follow-up hotfix is missing: {required_text}")
 
-          if 'followup-flow-2026.js?v=20260826-1' not in pdf_js:
-              raise SystemExit("Follow-up flow JavaScript loader is missing")
+          if 'followup-flow-2026.js?v=20260826-2' not in pdf_js:
+              raise SystemExit("Follow-up hotfix loader is missing")
 
-          if 'followup-flow-2026.js?v=20260826-1' not in sw:
-              raise SystemExit("Follow-up flow JavaScript is not cached")
+          if 'followup-flow-2026.js?v=20260826-2' not in sw:
+              raise SystemExit("Follow-up hotfix is not cached")
+
+          if 'Network-first' not in sw:
+              raise SystemExit("Service worker must refresh static assets from network first")
 
           print("Static structure checks passed")
