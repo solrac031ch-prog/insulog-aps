@@ -16,20 +16,27 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install --disable-pip-version-check requests beautifulsoup4
-      - name: Inspect raw empag search rows
+      - name: Validate final live pharmacy JSON
         run: |
+          python scripts/update_farmacia_cerro_navia.py
           python - <<'PY'
-          import runpy
-          import requests
-          ns = runpy.run_path('scripts/update_farmacia_cerro_navia.py')
-          session = requests.Session()
-          session.headers.update(ns['HTTP_HEADERS'])
-          initial = session.get(ns['SOURCE_URL'], timeout=45)
-          initial.raise_for_status()
-          headers, rows = ns['query_filtered_rows'](session, 'empag')
-          print('HEADERS=', headers)
-          for i, row in enumerate(rows, 1):
-              print('ROW', i, repr(row))
-              print('  empag_match=', ns['is_match']('empagliflozina', row))
-              print('  combo_match=', ns['is_match']('empaMet12_5_1000', row))
+          import json
+          from pathlib import Path
+          data = json.loads(Path('data/farmacia-cerro-navia.json').read_text(encoding='utf-8'))
+          empa = data['medications']['empagliflozina']['matches']
+          combo = data['medications']['empaMet12_5_1000']['matches']
+          empa_variants = {x['variant'] for x in empa}
+          combo_variants = {x['variant'] for x in combo}
+          products = [x['product'] for x in empa + combo]
+          print('query_rows=', data.get('query_rows'))
+          print('empagliflozina=', empa)
+          print('combinaciones=', combo)
+          assert {'10', '25'} <= empa_variants, empa_variants
+          assert {'12.5/850', '12.5/1000'} <= combo_variants, combo_variants
+          assert any('JARDIANCE 10' in x for x in products), products
+          assert any('JARDIANCE 25' in x for x in products), products
+          assert any('12,5/850' in x for x in products), products
+          assert any('12,5/1000' in x for x in products), products
+          assert all(x['price'] for x in empa + combo), 'Missing price'
+          assert all(x['stock'] is not None and x['stock'] > 0 for x in empa + combo), 'Missing stock'
           PY
