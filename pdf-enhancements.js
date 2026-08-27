@@ -66,6 +66,7 @@
   if (!p4 || !alerta) return;
 
   alerta.id = "alerta-hipoglicemia-ada";
+  alerta.classList.add("is-hidden");
   alerta.classList.remove("hypo-visible");
   alerta.setAttribute("role", "alert");
   alerta.setAttribute("aria-live", "polite");
@@ -91,6 +92,7 @@
     const descripcion = document.getElementById("hipo-ada-descripcion");
 
     if (!valoresHipo.length) {
+      alerta.classList.add("is-hidden");
       alerta.classList.remove("hypo-visible");
       if (nivel3) nivel3.checked = false;
       if (titulo) titulo.textContent = "";
@@ -98,6 +100,7 @@
       return;
     }
 
+    alerta.classList.remove("is-hidden");
     alerta.classList.add("hypo-visible");
     const minimo = Math.min(...valoresHipo);
 
