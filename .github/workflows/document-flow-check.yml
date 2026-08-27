@@ -1,0 +1,84 @@
+name: Document preparation and PDF preview checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "document-flow.js"
+      - "document-flow.css"
+      - "sw.js"
+      - ".github/workflows/document-flow-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate document flow JavaScript
+        run: node --check document-flow.js
+
+      - name: Validate P6 to P7 separation
+        shell: python
+        run: |
+          from pathlib import Path
+
+          html = Path("index.html").read_text(encoding="utf-8")
+          js = Path("document-flow.js").read_text(encoding="utf-8")
+          css = Path("document-flow.css").read_text(encoding="utf-8")
+          sw = Path("sw.js").read_text(encoding="utf-8")
+
+          if 'id="p6"' not in html or 'id="p7"' not in html:
+              raise SystemExit("P6 preparation and P7 preview pages must both exist")
+
+          p6 = html.split('id="p6"', 1)[1].split('id="p7"', 1)[0]
+          p7 = html.split('id="p7"', 1)[1].split('</section>', 1)[0]
+
+          if 'id="pdf"' in p6:
+              raise SystemExit("P6 must stop at the three document buttons and must not contain the PDF preview")
+          if 'id="pdf"' not in p7:
+              raise SystemExit("P7 must own the PDF preview")
+
+          for action in [
+              "mostrarDocumento('inicio')",
+              "mostrarDocumento('seguimiento')",
+              "mostrarDocumento('pscv')"
+          ]:
+              if action not in p6:
+                  raise SystemExit(f"Missing P6 document action: {action}")
+
+          if p6.count('mostrarDocumento(') != 3:
+              raise SystemExit("P6 must contain exactly three document-generation buttons")
+
+          for marker in [
+              'window.mostrarDocumento',
+              'nav(7)',
+              'Ingrese el nombre del paciente antes de generar el documento.',
+              'window.generarDocumento(tipo)',
+              'window.volverPreparacionDocumento'
+          ]:
+              if marker not in js:
+                  raise SystemExit(f"Missing document flow behavior: {marker}")
+
+          for marker in [
+              '.container > #p7.page',
+              '.container > .page:not(#p7)',
+              '#p7 > *:not(#pdf)'
+          ]:
+              if marker not in css:
+                  raise SystemExit(f"Missing P7 print rule: {marker}")
+
+          for asset in [
+              './document-flow.css?v=20260827-1',
+              './document-flow.js?v=20260827-1'
+          ]:
+              if asset not in html or asset not in sw:
+                  raise SystemExit(f"Document flow asset must be loaded and cached: {asset}")
+
+          print("P6 preparation and P7 PDF preview separation checks passed")
