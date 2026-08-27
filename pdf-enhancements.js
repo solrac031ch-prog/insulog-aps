@@ -73,7 +73,7 @@
     if (am > 0) {
       indicaciones.push(`
         <div class="pdf-insulina-line">
-          <span class="pdf-insulina-etiqueta">Dosis AM</span>
+          <span class="pdf-insulina-etiqueta">Dosis AM:</span>
           <strong>${am} UI</strong>
           <span class="pdf-insulina-horario">Antes del desayuno</span>
         </div>`);
@@ -82,7 +82,7 @@
     if (pm > 0) {
       indicaciones.push(`
         <div class="pdf-insulina-line">
-          <span class="pdf-insulina-etiqueta">Dosis PM</span>
+          <span class="pdf-insulina-etiqueta">Dosis PM:</span>
           <strong>${pm} UI</strong>
           <span class="pdf-insulina-horario">Antes de dormir</span>
         </div>`);
