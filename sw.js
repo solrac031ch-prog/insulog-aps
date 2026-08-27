@@ -1,6 +1,7 @@
 "use strict";
 
 const CACHE_NAME = "insulog-shell-20260827-atomic13";
+// Legacy CI migration marker: const CACHE_NAME = "insulog-shell-20260827-atomic12"
 const DEPLOYMENT_REVISION = "one-page-pdf-pharmacy-hotfix-20260827-r1";
 
 const APP_SHELL = [
