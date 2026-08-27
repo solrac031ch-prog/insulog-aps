@@ -12,7 +12,8 @@
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/icon-32.png?v=20260826">
   <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/icon-180.png?v=20260826">
   <link rel="stylesheet" href="./styles.css?v=20260826">
-  <link rel="stylesheet" href="./pdf-enhancements.css?v=20260826-2">
+  <link rel="stylesheet" href="./pdf-enhancements.css?v=20260827-3">
+  <link rel="stylesheet" href="./aps-safety-2026.css?v=20260827-2">
   <title>Insulog APS | Insulinización en APS</title>
 </head>
 <body>
@@ -26,7 +27,7 @@
         <p class="card-title">Bibliografía utilizada</p>
         <ul>
           <li>Guía ALAD 2019: Diagnóstico y tratamiento de DM2</li>
-          <li>ADA Standards of Care 2024</li>
+          <li>ADA Standards of Care 2026</li>
           <li>Protocolo MINSAL Chile – Insulina NPH en APS</li>
         </ul>
       </div>
@@ -229,15 +230,6 @@
 
       <p class="helper-text">⚠️ Rango permitido: dosis entre 04 y 99 unidades.</p>
 
-      <div class="aps-safety-box is-hidden">
-        <strong>Seguridad por hipoglicemia</strong>
-        <label class="aps-safety-option" style="margin-top:8px;">
-          <input type="checkbox" id="hipo-nivel3-evento">
-          <span>El episodio requirió ayuda de otra persona para recuperarse (hipoglicemia nivel 3).</span>
-        </label>
-        <p class="aps-context-helper" style="margin:8px 0 0;">Si se marca esta opción, Insulog no realizará un ajuste automático de NPH y generará una nota de reevaluación clínica prioritaria.</p>
-      </div>
-
       <div class="table-wrap">
         <table class="tracking-table">
           <thead>
@@ -251,7 +243,19 @@
         </table>
       </div>
 
-      <button type="button" class="btn btn-main btn-narrow section-action" onclick="calcularSeguimientoPro()">AJUSTAR DOSIS (PROTOCOLO APS)</button>
+      <button id="ajustar-seguimiento-btn" type="button" class="btn btn-main btn-narrow section-action" onclick="calcularSeguimientoPro()">AJUSTAR DOSIS (PROTOCOLO APS)</button>
+
+      <div id="alerta-hipoglicemia-ada" class="aps-safety-box is-hidden" role="alert" aria-live="polite" aria-hidden="true">
+        <strong id="hipo-ada-titulo"></strong>
+        <p id="hipo-ada-descripcion" class="aps-context-helper"></p>
+        <p class="aps-hypo-question">¿Alguno de los episodios requirió ayuda de otra persona para tratar la hipoglicemia?</p>
+        <div class="aps-hypo-actions">
+          <button id="hipo-sin-ayuda" type="button" class="btn btn-main">NO, NO REQUIRIÓ AYUDA</button>
+          <button id="hipo-con-ayuda" type="button" class="btn btn-danger">SÍ, REQUIRIÓ AYUDA</button>
+        </div>
+        <p class="aps-context-helper aps-hypo-footnote">Si requirió asistencia, ADA 2026 clasifica el evento como hipoglicemia nivel 3 independientemente del valor de glucosa.</p>
+      </div>
+
       <div id="resumen-promedios" class="card compact-card is-hidden"></div>
     </section>
 
@@ -326,6 +330,7 @@
   </footer>
 
   <script src="./app.js?v=20260826"></script>
-  <script src="./pdf-enhancements.js?v=20260826-2"></script>
+  <script src="./pdf-enhancements.js?v=20260827-3"></script>
+  <script src="./aps-safety-2026.js?v=20260827-2"></script>
 </body>
 </html>
