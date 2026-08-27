@@ -2,75 +2,89 @@
 
 (() => {
   const NOTA_EFICACIA = "* pp = puntos porcentuales. Descensos orientativos de HbA1c observados en estudios poblacionales; varían con HbA1c basal, dosis, adherencia, función renal y tratamiento previo. No sumar cifras de forma mecánica ni usarlas para calcular la dosis de NPH.";
-  const NOTA_DOSIS = "Dosis: Table 9.3 ADA 2026 se usa como guía de presentación y dosis diaria máxima aprobada en EE. UU.; no es una tabla de titulación. Vildagliptina no está incluida en Table 9.3 y sus opciones se basan en la ficha técnica oficial EMA de Galvus. Las dosis locales se identifican explícitamente.";
+  const NOTA_ARSENAL = "Arsenal disponible en APS: Metformina 850 mg, Metformina XR 1.000 mg, Dapagliflozina 10 mg, Vildagliptina 50 mg e Insulina NPH.";
 
   const MEDICAMENTOS_APS = [
     {
       value: "metformina850",
-      label: "Metformina 850 mg (IR)",
-      aliases: ["Metformina 850 mg"],
+      label: "Metformina 850 mg",
+      availability: "aps",
+      groups: ["metformina-simple"],
       efficacy: "HbA1c: metformina suele ↓≈1 pp* con dosis terapéuticas; el efecto depende de la dosis total diaria.",
-      doses: [
-        "850 mg/día",
-        "1.700 mg/día",
-        "2.550 mg/día (máx. ADA Table 9.3)"
-      ],
-      safety: "Contraindicada con eGFR <30 mL/min/1,73 m². ADA aconseja no iniciarla si eGFR <45; si ya está en uso, reducir dosis cuando eGFR cae <45 y suspender <30. Vigilar RAM gastrointestinales y déficit de vitamina B12."
+      doses: ["850 mg/día", "1.700 mg/día", "2.550 mg/día (máx.)"],
+      safety: "Contraindicada con eGFR <30 mL/min/1,73 m². No iniciar si eGFR <45; si ya está en uso, reevaluar/reducir dosis cuando eGFR cae <45. Vigilar RAM gastrointestinales y déficit de vitamina B12."
     },
     {
       value: "metforminaXR1000",
       label: "Metformina XR 1.000 mg",
-      aliases: ["Metformina XR 1.000 mg (si intolerancia/RAM a metformina convencional)"],
+      availability: "aps",
+      groups: ["metformina-simple"],
       efficacy: "HbA1c: ↓≈0,7 pp* con 1.000 mg/día; la formulación XR mantiene eficacia glucémica comparable.",
-      doses: [
-        "1.000 mg/día",
-        "2.000 mg/día (máx. ADA Table 9.3)"
-      ],
-      safety: "Preferible si hay intolerancia gastrointestinal a formulación convencional. Contraindicada con eGFR <30; no iniciar si eGFR <45. Vigilar RAM gastrointestinales y vitamina B12."
+      doses: ["1.000 mg/día", "2.000 mg/día (máx.)"],
+      safety: "Útil cuando existe intolerancia gastrointestinal a formulación convencional. Contraindicada con eGFR <30; no iniciar si eGFR <45. Vigilar RAM gastrointestinales y vitamina B12."
     },
     {
       value: "dapagliflozina10",
       label: "Dapagliflozina",
-      aliases: ["Dapagliflozina 10 mg/día"],
-      className: "sglt2",
+      availability: "aps",
+      groups: ["sglt2"],
       efficacy: "HbA1c: ↓≈0,7 pp*; referencia comparativa ≈0,73 pp.",
-      doses: ["10 mg/día (máx. ADA Table 9.3)"],
-      safety: "Evitar en enfermedad grave, cetonemia/cetonuria, ayuno prolongado y período perioperatorio; suspender 3–4 días antes de cirugía programada. Riesgo de DKA/euglucémica, infecciones genitourinarias y depleción de volumen. El efecto glucémico disminuye con eGFR <45; el beneficio cardiorrenal puede justificar uso con eGFR >20 según contexto."
-    },
-    {
-      value: "empagliflozina",
-      label: "Empagliflozina",
-      aliases: [
-        "Empagliflozina 25 mg/día",
-        "Empagliflozina 12,5 mg/día (½ comprimido de 25 mg; uso local por costo)"
-      ],
-      className: "sglt2",
-      efficacy: "HbA1c: ↓≈0,7–0,8 pp*; referencia comparativa con 25 mg ≈0,77 pp. La dosis 12,5 mg es una adaptación local y no tiene una estimación estándar propia.",
-      doses: [
-        "12,5 mg/día (½ de 25 mg; uso local)",
-        "25 mg/día (máx. ADA Table 9.3)"
-      ],
-      safety: "Evitar en enfermedad grave, cetonemia/cetonuria, ayuno prolongado y período perioperatorio; suspender 3–4 días antes de cirugía programada. Riesgo de DKA/euglucémica, infecciones genitourinarias y depleción de volumen. El efecto glucémico disminuye con eGFR <45; el beneficio cardiorrenal puede justificar uso con eGFR >20 según contexto."
-    },
-    {
-      value: "empaMet12_5_1000",
-      label: "Empagliflozina/metformina",
-      aliases: ["Empagliflozina/metformina 12,5/1.000 mg/día"],
-      className: "sglt2",
-      efficacy: "HbA1c: efecto combinado variable y generalmente mayor que cada componente aislado; no es correcto sumar sus cifras de forma automática.",
-      doses: ["12,5/1.000 mg/día (esquema local)"],
-      safety: "Aplican precauciones de ambos componentes: metformina contraindicada con eGFR <30 y no iniciar si eGFR <45; por iSGLT2 considerar DKA/euglucémica, infecciones genitourinarias, depleción de volumen y suspensión 3–4 días antes de cirugía o durante ayuno/enfermedad grave."
+      doses: ["10 mg/día"],
+      safety: "Evitar en enfermedad grave, cetonemia/cetonuria, ayuno prolongado y período perioperatorio; suspender 3–4 días antes de cirugía programada. Riesgo de DKA/euglucémica, infecciones genitourinarias y depleción de volumen. El efecto glucémico disminuye con deterioro de función renal."
     },
     {
       value: "vildagliptina50",
       label: "Vildagliptina 50 mg",
-      aliases: ["Vildagliptina 50 mg"],
+      availability: "aps",
+      groups: ["vildagliptina"],
       efficacy: "HbA1c: ↓≈0,5–0,8 pp* para la clase DPP-4; depende del esquema total y la frecuencia utilizada.",
-      doses: [
-        "50 mg cada 24 h (50 mg/día)",
-        "50 mg cada 12 h (100 mg/día; EMA, p. ej. con metformina o insulina)"
-      ],
-      safety: "No incluida en ADA Table 9.3. EMA: contraindicación formal por hipersensibilidad; no usar con hepatopatía o ALT/AST >3× LSN y controlar función hepática. En insuficiencia renal moderada-grave se recomienda 50 mg/día. No usar en DM1 ni para tratar DKA. Para DPP-4 se ha reportado pancreatitis; suspender si se sospecha."
+      doses: ["50 mg cada 24 h", "50 mg cada 12 h"],
+      safety: "Evitar con hepatopatía o ALT/AST >3× LSN y controlar función hepática. En insuficiencia renal moderada-grave suele requerirse reducción de dosis. No usar en DM1 ni para tratar DKA. Suspender si se sospecha pancreatitis."
+    },
+    {
+      value: "metformina500",
+      label: "Metformina 500 mg",
+      availability: "particular",
+      groups: ["metformina-simple"],
+      efficacy: "HbA1c: metformina suele ↓≈1 pp* con dosis terapéuticas; el efecto depende de la dosis total diaria.",
+      doses: ["500 mg/día", "1.000 mg/día", "1.500 mg/día", "2.000 mg/día", "2.500 mg/día"],
+      safety: "Contraindicada con eGFR <30 mL/min/1,73 m². No iniciar si eGFR <45; si ya está en uso, reevaluar/reducir dosis cuando eGFR cae <45. Vigilar RAM gastrointestinales y déficit de vitamina B12."
+    },
+    {
+      value: "metformina750",
+      label: "Metformina 750 mg",
+      availability: "particular",
+      groups: ["metformina-simple"],
+      efficacy: "HbA1c: metformina suele ↓≈1 pp* con dosis terapéuticas; el efecto depende de la dosis total diaria.",
+      doses: ["750 mg/día", "1.500 mg/día", "2.250 mg/día"],
+      safety: "Contraindicada con eGFR <30 mL/min/1,73 m². No iniciar si eGFR <45; si ya está en uso, reevaluar/reducir dosis cuando eGFR cae <45. Vigilar RAM gastrointestinales y déficit de vitamina B12."
+    },
+    {
+      value: "empagliflozina",
+      label: "Empagliflozina",
+      availability: "particular",
+      groups: ["sglt2"],
+      efficacy: "HbA1c: ↓≈0,7–0,8 pp*; referencia comparativa con 25 mg ≈0,77 pp. El efecto depende de la dosis y la función renal.",
+      doses: ["12,5 mg/día", "25 mg/día"],
+      safety: "Evitar en enfermedad grave, cetonemia/cetonuria, ayuno prolongado y período perioperatorio; suspender 3–4 días antes de cirugía programada. Riesgo de DKA/euglucémica, infecciones genitourinarias y depleción de volumen. El efecto glucémico disminuye con deterioro de función renal."
+    },
+    {
+      value: "empaMet12_5_1000",
+      label: "Empagliflozina/metformina",
+      availability: "particular",
+      groups: ["sglt2"],
+      efficacy: "HbA1c: efecto combinado variable y generalmente mayor que cada componente aislado; no es correcto sumar sus cifras de forma automática.",
+      doses: ["12,5/1.000 mg/día"],
+      safety: "Aplican precauciones de ambos componentes: por metformina considerar función renal, tolerancia gastrointestinal y vitamina B12; por iSGLT2 considerar DKA/euglucémica, infecciones genitourinarias, depleción de volumen y suspensión 3–4 días antes de cirugía o durante ayuno/enfermedad grave."
+    },
+    {
+      value: "vildaMet",
+      label: "Vildagliptina/metformina",
+      availability: "particular",
+      groups: ["vildagliptina", "metformina-simple"],
+      efficacy: "HbA1c: efecto combinado variable y habitualmente mayor que cada componente aislado; depende de HbA1c basal y dosis utilizada.",
+      doses: ["50/500 mg", "50/850 mg", "50/1.000 mg"],
+      safety: "Aplican precauciones de ambos componentes: revisar función renal y tolerancia a metformina; evitar vildagliptina con hepatopatía o ALT/AST >3× LSN, controlar función hepática y suspender si se sospecha pancreatitis."
     }
   ];
 
@@ -83,11 +97,8 @@
 
   function buscarMedicamento(input) {
     if (!input) return null;
-    if (input.dataset.medKey) {
-      return MEDICAMENTOS_APS.find((med) => med.value === input.dataset.medKey) || null;
-    }
-    const etiqueta = input.dataset.label || "";
-    return MEDICAMENTOS_APS.find((med) => med.label === etiqueta || med.aliases?.includes(etiqueta)) || null;
+    const key = input.dataset.medKey;
+    return MEDICAMENTOS_APS.find((med) => med.value === key) || null;
   }
 
   function obtenerSeleccionados(scope) {
@@ -102,7 +113,9 @@
   }
 
   function opcionesDosisHTML(med) {
-    return med.doses.map((dose, index) => `<option value="${dose}"${index === 0 ? " selected" : ""}>${dose}</option>`).join("");
+    return med.doses
+      .map((dose, index) => `<option value="${dose}"${index === 0 ? " selected" : ""}>${dose}</option>`)
+      .join("");
   }
 
   function contenidoMedicamento(med, scope) {
@@ -118,6 +131,22 @@
       </span>`;
   }
 
+  function opcionMedicamentoHTML(med, scope) {
+    return `
+      <label class="aps-med-option">
+        <input type="checkbox" data-aps-med="${scope}" data-med-key="${med.value}" data-label="${med.label}">
+        ${contenidoMedicamento(med, scope)}
+      </label>`;
+  }
+
+  function grupoMedicamentosHTML(titulo, meds, tipo) {
+    return `
+      <section class="aps-med-section aps-med-section-${tipo}">
+        <div class="aps-med-section-title">${titulo}</div>
+        <div class="aps-med-grid">${meds.map((med) => opcionMedicamentoHTML(med, tipo.includes("aps") ? "__SCOPE__" : "__SCOPE__")).join("")}</div>
+      </section>`;
+  }
+
   function sincronizarSelectorDosis(input) {
     const med = buscarMedicamento(input);
     const label = input?.closest("label");
@@ -125,7 +154,6 @@
     if (!med || !select) return;
 
     select.disabled = !input.checked;
-    input.dataset.medKey = med.value;
     input.dataset.baseLabel = med.label;
     input.dataset.label = input.checked ? `${med.label}: ${select.value}` : med.label;
   }
@@ -138,11 +166,9 @@
       }
 
       const med = buscarMedicamento(input);
-      const label = input.closest("label");
-      const select = label?.querySelector(".aps-med-dose");
+      const select = input.closest("label")?.querySelector(".aps-med-dose");
       if (!med || !select) return;
 
-      input.dataset.medKey = med.value;
       input.dataset.doseSelectorActivo = "true";
       select.addEventListener("change", () => sincronizarSelectorDosis(input));
       input.addEventListener("change", () => sincronizarSelectorDosis(input));
@@ -150,74 +176,70 @@
     });
   }
 
-  function completarContenidoMedicamento(label, input, med) {
-    if (!label || !input || !med) return;
+  function comparteGrupo(medA, medB) {
+    if (!medA || !medB) return false;
+    return medA.groups.some((grupo) => medB.groups.includes(grupo));
+  }
 
-    input.dataset.medKey = med.value;
-    const spanActual = Array.from(label.children).find((child) => child.tagName === "SPAN" && !child.classList.contains("aps-med-copy"));
-    let copy = label.querySelector(".aps-med-copy");
+  function desmarcarConflictos(input) {
+    if (!input.checked) return;
+    const med = buscarMedicamento(input);
+    const scope = input.dataset.apsMed;
+    if (!med || !scope) return;
 
-    if (!copy) {
-      copy = document.createElement("span");
-      copy.className = "aps-med-copy";
-      if (spanActual) spanActual.replaceWith(copy);
-      else label.appendChild(copy);
-    }
+    document.querySelectorAll(`input[data-aps-med="${scope}"]:checked`).forEach((otro) => {
+      if (otro === input) return;
+      const medOtro = buscarMedicamento(otro);
+      if (!comparteGrupo(med, medOtro)) return;
+      otro.checked = false;
+      sincronizarSelectorDosis(otro);
+    });
+  }
 
-    copy.innerHTML = `
-      <span class="aps-med-name">${med.label}</span>
-      <small class="aps-med-efficacy">${med.efficacy}</small>
-      <span class="aps-med-dose-row">
-        <span class="aps-med-dose-label">Dosis</span>
-        <select class="aps-med-dose" data-med-dose="${med.value}" disabled>${opcionesDosisHTML(med)}</select>
-      </span>
-      <small class="aps-med-safety"><strong>Precauciones / evitar:</strong> ${med.safety}</small>`;
+  function activarExclusividadFarmacologica(root = document) {
+    root.querySelectorAll('input[data-aps-med]').forEach((input) => {
+      if (input.dataset.exclusividadActiva === "true") return;
+      input.dataset.exclusividadActiva = "true";
+      input.addEventListener("change", () => desmarcarConflictos(input));
+    });
+  }
+
+  function llenarTarjetaMedicamentos(card, scope, { mostrarTitulo = true } = {}) {
+    const aps = MEDICAMENTOS_APS.filter((med) => med.availability === "aps");
+    const particulares = MEDICAMENTOS_APS.filter((med) => med.availability === "particular");
+
+    card.className = "card card-blue text-left aps-context-card";
+    card.id = `tratamiento-concomitante-${scope}`;
+    card.innerHTML = `
+      ${mostrarTitulo ? '<p class="card-title text-center">Tratamiento concomitante</p>' : ""}
+      <p class="aps-context-helper">Marque los medicamentos que el paciente utiliza actualmente y seleccione la dosis. Insulog evita duplicar metforminas simples, iSGLT2 y vildagliptina.</p>
+      <div class="aps-formulary-note"><strong>Disponible en APS:</strong> Metformina 850 mg · Metformina XR 1.000 mg · Dapagliflozina 10 mg · Vildagliptina 50 mg · Insulina NPH</div>
+      <section class="aps-med-section">
+        <div class="aps-med-section-title">Disponible en APS</div>
+        <div class="aps-med-grid">${aps.map((med) => opcionMedicamentoHTML(med, scope)).join("")}</div>
+      </section>
+      <section class="aps-med-section aps-med-section-secondary">
+        <div class="aps-med-section-title">Otras opciones / compra particular</div>
+        <div class="aps-med-grid">${particulares.map((med) => opcionMedicamentoHTML(med, scope)).join("")}</div>
+      </section>
+      <p class="aps-efficacy-note">${NOTA_EFICACIA}</p>`;
   }
 
   function crearTarjetaMedicamentos(scope, { mostrarTitulo = true } = {}) {
     const card = document.createElement("div");
-    card.className = "card card-blue text-left aps-context-card";
-    card.id = `tratamiento-concomitante-${scope}`;
-
-    const opciones = MEDICAMENTOS_APS.map((med) => `
-      <label class="aps-med-option">
-        <input type="checkbox" data-aps-med="${scope}" data-med-key="${med.value}" data-label="${med.label}"${med.className ? ` data-class="${med.className}"` : ""}>
-        ${contenidoMedicamento(med, scope)}
-      </label>`).join("");
-
-    card.innerHTML = `
-      ${mostrarTitulo ? '<p class="card-title text-center">Tratamiento concomitante disponible en APS</p>' : ""}
-      <p class="aps-context-helper">Marque los fármacos que el paciente utiliza actualmente y seleccione la dosis. Este registro <strong>no modifica automáticamente</strong> el cálculo de NPH.</p>
-      <div class="aps-med-grid">${opciones}</div>
-      <p class="aps-efficacy-note">${NOTA_EFICACIA}<br>${NOTA_DOSIS}</p>`;
-
+    llenarTarjetaMedicamentos(card, scope, { mostrarTitulo });
     return card;
   }
 
   function enriquecerTratamientoSeguimiento() {
     const card = document.getElementById("tratamiento-concomitante-seguimiento");
     if (!card) return;
-
-    card.querySelectorAll('input[data-aps-med="seguimiento"]').forEach((input) => {
-      if (input.dataset.label === "Empagliflozina 12,5 mg/día (½ comprimido de 25 mg; uso local por costo)") {
-        input.closest("label")?.remove();
-      }
-    });
-
-    card.querySelectorAll('input[data-aps-med="seguimiento"]').forEach((input) => {
-      const med = buscarMedicamento(input);
-      const label = input.closest("label");
-      if (!med || !label) return;
-      completarContenidoMedicamento(label, input, med);
-    });
-
-    let note = card.querySelector(".aps-efficacy-note");
-    if (!note) {
-      note = document.createElement("p");
-      note.className = "aps-efficacy-note";
-      card.appendChild(note);
-    }
-    note.innerHTML = `${NOTA_EFICACIA}<br>${NOTA_DOSIS}`;
+    const page = document.getElementById("p35");
+    const heading = page?.querySelector("h2");
+    const lead = page?.querySelector(".lead");
+    if (heading) heading.textContent = "Tratamiento concomitante";
+    if (lead) lead.textContent = "Marque los medicamentos que el paciente utiliza actualmente antes de registrar sus glicemias de seguimiento.";
+    llenarTarjetaMedicamentos(card, "seguimiento", { mostrarTitulo: false });
   }
 
   function insertarPaginaTratamientoInicio() {
@@ -232,7 +254,7 @@
     page.setAttribute("aria-hidden", "true");
     page.innerHTML = `
       <div class="page-label">[P2.5] Tratamiento concomitante antes de dosificación</div>
-      <h2>Tratamiento concomitante disponible en APS</h2>
+      <h2>Tratamiento concomitante</h2>
       <p class="lead">Marque los medicamentos que el paciente utiliza actualmente y seleccione la dosis antes de calcular la dosis inicial de insulina NPH.</p>
       <div data-inicio-med-host></div>
       <button id="continuar-dosificacion-inicio" type="button" class="btn btn-main btn-narrow section-action">CONTINUAR A DOSIFICACIÓN NPH</button>
@@ -248,24 +270,6 @@
     });
 
     page.querySelector("#volver-criterios-inicio")?.addEventListener("click", () => nav(2));
-  }
-
-  function activarExclusividadFarmacologica() {
-    document.querySelectorAll('input[data-class="sglt2"]').forEach((input) => {
-      if (input.dataset.exclusividadActiva === "true") return;
-      input.dataset.exclusividadActiva = "true";
-
-      input.addEventListener("change", () => {
-        if (!input.checked) return;
-        const scope = input.dataset.apsMed;
-        document.querySelectorAll(`input[data-aps-med="${scope}"][data-class="sglt2"]`).forEach((otro) => {
-          if (otro !== input) {
-            otro.checked = false;
-            sincronizarSelectorDosis(otro);
-          }
-        });
-      });
-    });
   }
 
   function actualizarTerminologia() {
