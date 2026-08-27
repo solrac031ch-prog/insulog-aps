@@ -1,7 +1,34 @@
 {
-  "status": "pending",
+  "status": "ok",
   "farmacia": "Cerro Navia",
   "source_url": "https://farmaciapopularonline.cl/consultor?farmacia=cerro%20navia",
-  "updated_at": null,
-  "medications": {}
+  "updated_at": "2026-08-27T16:03:17.791867+00:00",
+  "source_note": "El consultor oficial indica que no muestra medicamentos con stock cero.",
+  "medications": {
+    "metformina500": {
+      "available": false,
+      "best_price": null,
+      "matches": []
+    },
+    "metformina750": {
+      "available": false,
+      "best_price": null,
+      "matches": []
+    },
+    "empagliflozina": {
+      "available": false,
+      "best_price": null,
+      "matches": []
+    },
+    "empaMet12_5_1000": {
+      "available": false,
+      "best_price": null,
+      "matches": []
+    },
+    "vildaMet": {
+      "available": false,
+      "best_price": null,
+      "matches": []
+    }
+  }
 }
