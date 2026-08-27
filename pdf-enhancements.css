@@ -46,14 +46,6 @@
   line-height: 1.25;
 }
 
-#p4 > .aps-safety-box {
-  display: none;
-}
-
-#p4 > .aps-safety-box.hypo-visible {
-  display: block;
-}
-
 @media print {
   .tabla-registro-hgt {
     margin-top: 7px;
