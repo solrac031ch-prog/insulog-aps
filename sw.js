@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "insulog-shell-20260827-atomic10";
+const CACHE_NAME = "insulog-shell-20260827-atomic11";
 
 const APP_SHELL = [
   "./index.html",
