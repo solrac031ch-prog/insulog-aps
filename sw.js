@@ -1,7 +1,7 @@
 "use strict";
 
 const CACHE_NAME = "insulog-shell-20260827-atomic12";
-const DEPLOYMENT_REVISION = "pdf-polish-20260827-r1";
+const DEPLOYMENT_REVISION = "empagliflozina-card-20260827-r2";
 
 const APP_SHELL = [
   "./index.html",
@@ -24,12 +24,29 @@ const STATIC_PATHS = new Set(
   APP_SHELL.map((asset) => new URL(asset, self.location.href).pathname)
 );
 
+async function normalizarAssetClinico(request, response) {
+  const url = new URL(request.url || request, self.location.href);
+  if (!url.pathname.endsWith("/aps-safety-2026.js")) return response;
+
+  const texto = await response.text();
+  const normalizado = texto.replace(
+    'label: "Empagliflozina 10 mg"',
+    'label: "Empagliflozina"'
+  );
+
+  return new Response(normalizado, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers
+  });
+}
+
 async function fetchFresh(request) {
   const response = await fetch(new Request(request, { cache: "reload" }));
   if (!response.ok) {
     throw new Error(`No se pudo actualizar ${request.url || request}: HTTP ${response.status}`);
   }
-  return response;
+  return normalizarAssetClinico(request, response);
 }
 
 async function precacheFreshShell() {
