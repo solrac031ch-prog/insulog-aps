@@ -14,6 +14,36 @@
   line-height: 1.4;
 }
 
+.aps-formulary-note {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid #c9d8ee;
+  border-radius: 9px;
+  background: #f4f8ff;
+  color: #28496f;
+  font-size: 0.79rem;
+  line-height: 1.45;
+}
+
+.aps-med-section + .aps-med-section {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #dfe5ee;
+}
+
+.aps-med-section-title {
+  margin-bottom: 9px;
+  color: #193a63;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.aps-med-section-secondary .aps-med-section-title {
+  color: #5b6472;
+}
+
 .aps-med-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -110,7 +140,7 @@
 }
 
 .aps-efficacy-note {
-  margin: 14px 0 0;
+  margin: 16px 0 0;
   padding: 10px 12px;
   border-left: 3px solid #8da9d4;
   border-radius: 6px;
@@ -193,8 +223,16 @@
   .aps-med-efficacy,
   .aps-med-dose-row,
   .aps-med-safety,
-  .aps-efficacy-note {
+  .aps-formulary-note,
+  .aps-efficacy-note,
+  .aps-med-section-title {
     display: none !important;
+  }
+
+  .aps-med-section + .aps-med-section {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
   }
 
   .tratamiento-pdf {
