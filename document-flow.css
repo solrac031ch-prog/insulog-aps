@@ -23,8 +23,34 @@
 }
 
 @media print {
+  @page {
+    size: Letter portrait;
+    margin: 0.3cm;
+  }
+
+  html,
+  body {
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .container {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
   .container > #p7.page {
     display: block !important;
+    width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
   }
@@ -38,7 +64,51 @@
 
   #p7 {
     display: block !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
+  }
+
+  /* El contenedor de pantalla no debe sumar márgenes ni padding al documento impreso. */
+  #pdf.imprimible-container {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+
+  /*
+   * Reserva de seguridad para Chromium/Edge: mantiene las 15 filas y todo el
+   * contenido dentro de una sola hoja Letter sin recortar información.
+   * El ancho compensa el zoom para seguir usando toda el área imprimible.
+   */
+  #pdf.pdf-carta-una-pagina {
+    width: 108.7% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0.08cm 0.32cm 0.06cm !important;
+    zoom: 0.92;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    orphans: 1 !important;
+    widows: 1 !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .tabla-registro-hgt,
+  #pdf.pdf-carta-una-pagina .pdf-insulina-paciente,
+  #pdf.pdf-carta-una-pagina .pdf-medicamentos-paciente,
+  #pdf.pdf-carta-una-pagina .pdf-indicaciones,
+  #pdf.pdf-carta-una-pagina .pdf-firma-control {
+    page-break-inside: avoid !important;
+    break-inside: avoid-page !important;
   }
 }

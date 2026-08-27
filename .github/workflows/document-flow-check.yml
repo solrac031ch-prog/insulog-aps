@@ -24,7 +24,7 @@ jobs:
       - name: Validate document flow JavaScript
         run: node --check document-flow.js
 
-      - name: Validate P6 to P7 separation
+      - name: Validate P6 to P7 separation and one-page print guard
         shell: python
         run: |
           from pathlib import Path
@@ -61,7 +61,10 @@ jobs:
               'nav(7)',
               'Ingrese el nombre del paciente antes de generar el documento.',
               'window.generarDocumento(tipo)',
-              'window.volverPreparacionDocumento'
+              'window.volverPreparacionDocumento',
+              'asegurarFarmaciaPopular',
+              './farmacia-popular.js?v=20260827-4',
+              './farmacia-popular.css?v=20260827-2'
           ]:
               if marker not in js:
                   raise SystemExit(f"Missing document flow behavior: {marker}")
@@ -69,16 +72,30 @@ jobs:
           for marker in [
               '.container > #p7.page',
               '.container > .page:not(#p7)',
-              '#p7 > *:not(#pdf)'
+              '#p7 > *:not(#pdf)',
+              '#pdf.imprimible-container',
+              '#pdf.pdf-carta-una-pagina',
+              'size: Letter portrait',
+              'zoom: 0.92',
+              'page-break-inside: auto !important',
+              'break-inside: auto !important'
           ]:
               if marker not in css:
-                  raise SystemExit(f"Missing P7 print rule: {marker}")
+                  raise SystemExit(f"Missing P7 one-page print rule: {marker}")
+
+          if 'overflow: hidden' in css:
+              raise SystemExit("P7 must not force one page by clipping content")
 
           for asset in [
-              './document-flow.css?v=20260827-1',
-              './document-flow.js?v=20260827-1'
+              './document-flow.css?v=20260827-2',
+              './document-flow.js?v=20260827-2',
+              './farmacia-popular.css?v=20260827-2',
+              './farmacia-popular.js?v=20260827-4'
           ]:
-              if asset not in html or asset not in sw:
-                  raise SystemExit(f"Document flow asset must be loaded and cached: {asset}")
+              if asset not in sw:
+                  raise SystemExit(f"Current app-shell asset missing: {asset}")
 
-          print("P6 preparation and P7 PDF preview separation checks passed")
+          if 'insulog-shell-20260827-atomic13' not in sw:
+              raise SystemExit("Hotfix must force a fresh PWA shell")
+
+          print("P6/P7 separation, one-page Letter print and pharmacy fallback checks passed")
