@@ -1,14 +1,48 @@
 "use strict";
 
 (() => {
+  const NOTA_EFICACIA = "* pp = puntos porcentuales. Descensos orientativos de HbA1c observados en estudios poblacionales; varían con HbA1c basal, dosis, adherencia, función renal y tratamiento previo. No sumar cifras de forma mecánica ni usarlas para calcular la dosis de NPH.";
+
   const MEDICAMENTOS_APS = [
-    { value: "metformina850", label: "Metformina 850 mg" },
-    { value: "metforminaXR1000", label: "Metformina XR 1.000 mg (si intolerancia/RAM a metformina convencional)" },
-    { value: "dapagliflozina10", label: "Dapagliflozina 10 mg/día", className: "sglt2" },
-    { value: "empagliflozina25", label: "Empagliflozina 25 mg/día", className: "sglt2" },
-    { value: "empagliflozina12_5", label: "Empagliflozina 12,5 mg/día (½ comprimido de 25 mg; uso local por costo)", className: "sglt2" },
-    { value: "empaMet12_5_1000", label: "Empagliflozina/metformina 12,5/1.000 mg/día", className: "sglt2" },
-    { value: "vildagliptina50", label: "Vildagliptina 50 mg" }
+    {
+      value: "metformina850",
+      label: "Metformina 850 mg",
+      efficacy: "HbA1c: metformina suele ↓≈1 pp* con dosis terapéuticas; el efecto depende de la dosis total diaria."
+    },
+    {
+      value: "metforminaXR1000",
+      label: "Metformina XR 1.000 mg (si intolerancia/RAM a metformina convencional)",
+      efficacy: "HbA1c: ↓≈0,7 pp* con 1.000 mg/día; la formulación XR mantiene eficacia glucémica comparable."
+    },
+    {
+      value: "dapagliflozina10",
+      label: "Dapagliflozina 10 mg/día",
+      className: "sglt2",
+      efficacy: "HbA1c: ↓≈0,7 pp*; referencia comparativa ≈0,73 pp."
+    },
+    {
+      value: "empagliflozina25",
+      label: "Empagliflozina 25 mg/día",
+      className: "sglt2",
+      efficacy: "HbA1c: ↓≈0,7–0,8 pp*; referencia comparativa ≈0,77 pp."
+    },
+    {
+      value: "empagliflozina12_5",
+      label: "Empagliflozina 12,5 mg/día (½ comprimido de 25 mg; uso local por costo)",
+      className: "sglt2",
+      efficacy: "HbA1c: referencia de clase SGLT2 ↓≈0,6–0,8 pp*; 12,5 mg/día es uso local y no tiene una estimación estándar propia."
+    },
+    {
+      value: "empaMet12_5_1000",
+      label: "Empagliflozina/metformina 12,5/1.000 mg/día",
+      className: "sglt2",
+      efficacy: "HbA1c: efecto combinado variable y generalmente mayor que cada componente aislado; no es correcto sumar sus cifras de forma automática."
+    },
+    {
+      value: "vildagliptina50",
+      label: "Vildagliptina 50 mg",
+      efficacy: "HbA1c: ↓≈0,5–0,8 pp* para la clase DPP-4; depende del esquema total y la frecuencia utilizada."
+    }
   ];
 
   const safetyState = {
@@ -29,7 +63,15 @@
     return seleccionados.length ? seleccionados.join("; ") : "No registrado";
   }
 
-  function crearTarjetaMedicamentos(scope) {
+  function contenidoMedicamento(med) {
+    return `
+      <span class="aps-med-copy">
+        <span class="aps-med-name">${med.label}</span>
+        <small class="aps-med-efficacy">${med.efficacy}</small>
+      </span>`;
+  }
+
+  function crearTarjetaMedicamentos(scope, { mostrarTitulo = true } = {}) {
     const card = document.createElement("div");
     card.className = "card card-blue text-left aps-context-card";
     card.id = `tratamiento-concomitante-${scope}`;
@@ -37,19 +79,85 @@
     const opciones = MEDICAMENTOS_APS.map((med) => `
       <label class="aps-med-option">
         <input type="checkbox" data-aps-med="${scope}" data-label="${med.label}"${med.className ? ` data-class="${med.className}"` : ""}>
-        <span>${med.label}</span>
+        ${contenidoMedicamento(med)}
       </label>`).join("");
 
     card.innerHTML = `
-      <p class="card-title text-center">Tratamiento concomitante disponible en APS</p>
+      ${mostrarTitulo ? '<p class="card-title text-center">Tratamiento concomitante disponible en APS</p>' : ""}
       <p class="aps-context-helper">Marque los fármacos que el paciente utiliza actualmente. Este registro <strong>no modifica automáticamente</strong> el cálculo de NPH.</p>
-      <div class="aps-med-grid">${opciones}</div>`;
+      <div class="aps-med-grid">${opciones}</div>
+      <p class="aps-efficacy-note">${NOTA_EFICACIA}</p>`;
 
     return card;
   }
 
+  function enriquecerEficaciaSeguimiento() {
+    const card = document.getElementById("tratamiento-concomitante-seguimiento");
+    if (!card) return;
+
+    card.querySelectorAll('input[data-aps-med="seguimiento"]').forEach((input) => {
+      const med = MEDICAMENTOS_APS.find((item) => item.label === input.dataset.label);
+      const label = input.closest("label");
+      if (!med || !label || label.querySelector(".aps-med-efficacy")) return;
+
+      const name = Array.from(label.children).find((child) => child.tagName === "SPAN");
+      if (!name) return;
+
+      name.classList.add("aps-med-name");
+      const copy = document.createElement("span");
+      copy.className = "aps-med-copy";
+      name.replaceWith(copy);
+      copy.appendChild(name);
+
+      const detail = document.createElement("small");
+      detail.className = "aps-med-efficacy";
+      detail.textContent = med.efficacy;
+      copy.appendChild(detail);
+    });
+
+    if (!card.querySelector(".aps-efficacy-note")) {
+      const note = document.createElement("p");
+      note.className = "aps-efficacy-note";
+      note.textContent = NOTA_EFICACIA;
+      card.appendChild(note);
+    }
+  }
+
+  function insertarPaginaTratamientoInicio() {
+    if (document.getElementById("p25")) return;
+
+    const p2 = document.getElementById("p2");
+    if (!p2) return;
+
+    const page = document.createElement("section");
+    page.id = "p25";
+    page.className = "page page-center";
+    page.setAttribute("aria-hidden", "true");
+    page.innerHTML = `
+      <div class="page-label">[P2.5] Tratamiento concomitante antes de dosificación</div>
+      <h2>Tratamiento concomitante disponible en APS</h2>
+      <p class="lead">Marque los medicamentos que el paciente utiliza actualmente antes de calcular la dosis inicial de insulina NPH.</p>
+      <div data-inicio-med-host></div>
+      <button id="continuar-dosificacion-inicio" type="button" class="btn btn-main btn-narrow section-action">CONTINUAR A DOSIFICACIÓN NPH</button>
+      <button id="volver-criterios-inicio" type="button" class="btn btn-narrow section-action">VOLVER</button>`;
+
+    const host = page.querySelector("[data-inicio-med-host]");
+    host?.replaceWith(crearTarjetaMedicamentos("inicio", { mostrarTitulo: false }));
+    p2.insertAdjacentElement("afterend", page);
+
+    page.querySelector("#continuar-dosificacion-inicio")?.addEventListener("click", () => {
+      globalData.tratamientoConcomitante = tratamientoTexto("inicio");
+      nav(3);
+    });
+
+    page.querySelector("#volver-criterios-inicio")?.addEventListener("click", () => nav(2));
+  }
+
   function activarExclusividadFarmacologica() {
     document.querySelectorAll('input[data-class="sglt2"]').forEach((input) => {
+      if (input.dataset.exclusividadActiva === "true") return;
+      input.dataset.exclusividadActiva = "true";
+
       input.addEventListener("change", () => {
         if (!input.checked) return;
         const scope = input.dataset.apsMed;
@@ -58,14 +166,6 @@
         });
       });
     });
-  }
-
-  function insertarTarjetaInicio() {
-    const p3 = document.getElementById("p3");
-    const preview = document.getElementById("preview-dosis");
-    if (p3 && preview && !document.getElementById("tratamiento-concomitante-inicio")) {
-      preview.insertAdjacentElement("beforebegin", crearTarjetaMedicamentos("inicio"));
-    }
   }
 
   function actualizarTerminologia() {
@@ -280,6 +380,16 @@
     return true;
   }
 
+  const definirEsquemaInicioBase = window.definirEsquemaInicio;
+  if (typeof definirEsquemaInicioBase === "function") {
+    window.definirEsquemaInicio = function definirEsquemaInicioConTratamiento() {
+      const resultado = definirEsquemaInicioBase();
+      const paginaDosisActiva = document.getElementById("p3")?.classList.contains("active");
+      if (paginaDosisActiva && document.getElementById("p25")) nav(25);
+      return resultado;
+    };
+  }
+
   const calcularInicioBase = window.calcularInicioMejorado;
   if (typeof calcularInicioBase === "function") {
     window.calcularInicioMejorado = function calcularInicioConContexto() {
@@ -391,7 +501,8 @@
     };
   }
 
-  insertarTarjetaInicio();
+  insertarPaginaTratamientoInicio();
+  enriquecerEficaciaSeguimiento();
   activarExclusividadFarmacologica();
   configurarRevisionHipoglicemia();
   actualizarTerminologia();
