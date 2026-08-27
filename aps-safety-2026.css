@@ -17,26 +17,66 @@
 .aps-med-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 12px;
+  gap: 10px 12px;
 }
 
 .aps-med-option {
   display: flex;
-  gap: 9px;
+  gap: 10px;
   align-items: flex-start;
-  padding: 9px 10px;
+  padding: 11px 12px;
   border: 1px solid #dfe3e8;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #fff;
   text-align: left;
   line-height: 1.25;
+}
+
+.aps-med-option:hover {
+  border-color: #b8c7dc;
+  background: #fbfcff;
 }
 
 .aps-med-option input {
   width: auto;
   min-width: 18px;
   min-height: 18px;
-  margin-top: 1px;
+  margin-top: 2px;
+}
+
+.aps-med-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.aps-med-name {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.aps-med-efficacy {
+  display: block;
+  color: #526581;
+  font-size: 0.76rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.aps-efficacy-note {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid #8da9d4;
+  border-radius: 6px;
+  background: #f7f9fc;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+#p25 .aps-context-card {
+  margin-top: 8px;
 }
 
 .aps-safety-box {
@@ -97,6 +137,11 @@
 
 @media print {
   .aps-safety-box {
+    display: none !important;
+  }
+
+  .aps-med-efficacy,
+  .aps-efficacy-note {
     display: none !important;
   }
 
