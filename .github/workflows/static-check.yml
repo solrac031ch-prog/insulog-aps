@@ -2,7 +2,7 @@ name: Insulog static checks
 
 on:
   push:
-    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry, refresh-shell-without-slow-start]
+    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry, refresh-shell-without-slow-start, inicio-treatment-page-a1c-efficacy]
   pull_request:
     branches: [main]
 
@@ -124,13 +124,35 @@ jobs:
               raise SystemExit("Hypoglycemia review must not react while glucose values are being typed")
 
           for required_text in [
+              "insertarPaginaTratamientoInicio",
+              'page.id = "p25"',
+              "definirEsquemaInicioConTratamiento",
+              "enriquecerEficaciaSeguimiento",
+              "NOTA_EFICACIA",
+              "aps-med-efficacy",
+              "0,73 pp",
+              "0,77 pp",
+              "0,5–0,8 pp",
+              'document.getElementById("p25")'
+          ]:
+              if required_text not in aps_js:
+                  raise SystemExit(f"Initiation medication page/A1c reference is missing: {required_text}")
+
+          if "insertarTarjetaInicio" in aps_js:
+              raise SystemExit("Initiation medications must not be injected into the NPH dose page")
+
+          for required_text in [
               ".aps-hypo-actions",
               ".aps-hypo-question",
               ".aps-safety-box",
+              ".aps-med-copy",
+              ".aps-med-efficacy",
+              ".aps-efficacy-note",
+              "#p25",
               "grid-template-columns"
           ]:
               if required_text not in aps_css:
-                  raise SystemExit(f"Final hypoglycemia review styling is missing: {required_text}")
+                  raise SystemExit(f"APS clinical UI styling is missing: {required_text}")
 
           for required_text in [
               'onclick="nav(35)"',
@@ -140,13 +162,13 @@ jobs:
               "CONTINUAR AL REGISTRO DE GLICEMIAS"
           ]:
               if required_text not in html:
-                  raise SystemExit(f"Static treatment page is missing: {required_text}")
+                  raise SystemExit(f"Static follow-up treatment page is missing: {required_text}")
 
           if 'followup-flow-2026.js' in html or 'followup-flow-2026.js' in sw:
               raise SystemExit("Broken follow-up navigation must not be present")
 
           for required_text in [
-              'const CACHE_NAME = "insulog-shell-20260827-atomic6"',
+              'const CACHE_NAME = "insulog-shell-20260827-atomic7"',
               'new Request(asset, { cache: "reload" })',
               'cache.match("./index.html")',
               'addEventListener("fetch"',
@@ -170,4 +192,4 @@ jobs:
               if required_asset not in sw:
                   raise SystemExit(f"Critical app-shell asset is not cached: {required_asset}")
 
-          print("Post-entry ADA hypoglycemia review and self-refreshing atomic app-shell checks passed")
+          print("Initiation treatment page, HbA1c references, post-entry hypo review and atomic app-shell checks passed")
