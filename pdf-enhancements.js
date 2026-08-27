@@ -75,7 +75,7 @@
         <div class="pdf-insulina-line">
           <span class="pdf-insulina-etiqueta">Dosis AM:</span>
           <strong>${am} UI</strong>
-          <span class="pdf-insulina-horario">Antes del desayuno</span>
+          <span class="pdf-insulina-horario">antes del desayuno</span>
         </div>`);
     }
 
@@ -84,7 +84,7 @@
         <div class="pdf-insulina-line">
           <span class="pdf-insulina-etiqueta">Dosis PM:</span>
           <strong>${pm} UI</strong>
-          <span class="pdf-insulina-horario">Antes de dormir</span>
+          <span class="pdf-insulina-horario">antes de dormir</span>
         </div>`);
     }
 
