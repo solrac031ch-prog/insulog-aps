@@ -1,8 +1,9 @@
 {
   "status": "ok",
+  "schema_version": 2,
   "farmacia": "Cerro Navia",
   "source_url": "https://farmaciapopularonline.cl/consultor?farmacia=cerro%20navia",
-  "updated_at": "2026-08-27T16:51:40.930487+00:00",
+  "updated_at": "2026-08-27T18:08:45.225453+00:00",
   "source_mode": "server_search",
   "base_rows": 11,
   "source_rows": 16,
@@ -120,7 +121,7 @@
           "principle": "EMPAGLIFOZINA 25MG",
           "brand": "BOEHRINGER INGELHEIM",
           "botica": "Igualdad 150",
-          "stock": 301,
+          "stock": 299,
           "unit": "COMPRIMIDOS",
           "price": 31559,
           "laboratory": "BOEHRINGER INGELHEIM",
@@ -159,7 +160,7 @@
           "principle": "Empagliflozina/Metformina",
           "brand": "LABORATORIO BAGÓ DE CHILE",
           "botica": "Igualdad 150",
-          "stock": 52,
+          "stock": 51,
           "unit": "COMPRIMIDOS",
           "price": 33344,
           "laboratory": "LABORATORIO BAGÓ DE CHILE",
@@ -209,7 +210,7 @@
           "principle": "Vildagliptina 50 mg/Metformina 1000 mg",
           "brand": "HETERO",
           "botica": "Igualdad 150",
-          "stock": 14,
+          "stock": 13,
           "unit": "COMPRIMIDOS",
           "price": 9941,
           "laboratory": "HETERO",
@@ -250,5 +251,38 @@
         }
       ]
     }
+  },
+  "discovery": {
+    "monitored_families": [
+      "metformina",
+      "empagliflozina",
+      "empagliflozina_metformina",
+      "vildagliptina_metformina"
+    ],
+    "requires_clinical_review": true,
+    "unrecognized_presentations": [
+      {
+        "family": "metformina",
+        "product": "GLIMEFOR 1000 X 30 COMP REC",
+        "principle": "Metformina",
+        "brand": "ASCEND",
+        "botica": "Igualdad 150",
+        "stock": 10,
+        "price": 3208,
+        "laboratory": "ASCEND",
+        "reason": "Presentación o dosis de una familia monitorizada que aún no está mapeada en Insulog."
+      },
+      {
+        "family": "metformina",
+        "product": "GLIMEFOR 1000 X 30 COMP REC",
+        "principle": "Metformina",
+        "brand": "ASCEND",
+        "botica": "Mapocho 8265",
+        "stock": 20,
+        "price": 3396,
+        "laboratory": "ASCEND",
+        "reason": "Presentación o dosis de una familia monitorizada que aún no está mapeada en Insulog."
+      }
+    ]
   }
 }
