@@ -14,7 +14,8 @@
   const safetyState = {
     discordantes: [],
     clasificacionHipo: "",
-    scope: "seguimiento"
+    scope: "seguimiento",
+    revisionHipo: null
   };
 
   function obtenerSeleccionados(scope) {
@@ -42,8 +43,7 @@
     card.innerHTML = `
       <p class="card-title text-center">Tratamiento concomitante disponible en APS</p>
       <p class="aps-context-helper">Marque los fármacos que el paciente utiliza actualmente. Este registro <strong>no modifica automáticamente</strong> el cálculo de NPH.</p>
-      <div class="aps-med-grid">${opciones}</div>
-      <div class="aps-reference-note">Insulog mantiene la insulinización NPH y el control cada 15 días según el flujo MINSAL/APS. ADA 2026 se usa como apoyo de seguridad e individualización.</div>`;
+      <div class="aps-med-grid">${opciones}</div>`;
 
     return card;
   }
@@ -60,31 +60,12 @@
     });
   }
 
-  function insertarTarjetas() {
+  function insertarTarjetaInicio() {
     const p3 = document.getElementById("p3");
     const preview = document.getElementById("preview-dosis");
     if (p3 && preview && !document.getElementById("tratamiento-concomitante-inicio")) {
       preview.insertAdjacentElement("beforebegin", crearTarjetaMedicamentos("inicio"));
     }
-
-    const p4 = document.getElementById("p4");
-    const tableWrap = p4?.querySelector(".table-wrap");
-    if (p4 && tableWrap && !document.getElementById("tratamiento-concomitante-seguimiento")) {
-      const card = crearTarjetaMedicamentos("seguimiento");
-      const safety = document.createElement("div");
-      safety.className = "aps-safety-box";
-      safety.innerHTML = `
-        <strong>Seguridad por hipoglicemia</strong>
-        <label class="aps-safety-option" style="margin-top:8px;">
-          <input type="checkbox" id="hipo-nivel3-evento">
-          <span>El episodio requirió ayuda de otra persona para recuperarse (hipoglicemia nivel 3).</span>
-        </label>
-        <p class="aps-context-helper" style="margin:8px 0 0;">Si se marca esta opción, Insulog no realizará un ajuste automático de NPH y generará una nota de reevaluación clínica prioritaria.</p>`;
-      card.appendChild(safety);
-      tableWrap.insertAdjacentElement("beforebegin", card);
-    }
-
-    activarExclusividadFarmacologica();
   }
 
   function actualizarTerminologia() {
@@ -133,20 +114,88 @@
     console.warn("Insulog APS: no se encontró analizarGlicemias base.");
   }
 
-  function clasificarHipoglicemiaDesdeInputs() {
-    const valores = Array.from(document.querySelectorAll("#p4 .glicemia"))
+  function inputsGlicemiaSeguimiento() {
+    return Array.from(document.querySelectorAll("#p4 .glicemia"));
+  }
+
+  function firmaRegistroGlicemias() {
+    return inputsGlicemiaSeguimiento()
+      .map((input) => input.value.trim())
+      .join("|");
+  }
+
+  function evaluarHipoglicemiaADA() {
+    const valores = inputsGlicemiaSeguimiento()
       .map((input) => parseInt(input.value, 10))
       .filter((value) => Number.isFinite(value));
 
-    if (valores.some((value) => value < 54)) {
-      return "Hipoglicemia nivel 2 detectada (<54 mg/dL): requiere acción inmediata y reevaluación del tratamiento.";
+    const valoresHipo = valores.filter((value) => value < 70);
+    if (!valoresHipo.length) return null;
+
+    const minimo = Math.min(...valoresHipo);
+    if (minimo < 54) {
+      return {
+        nivel: 2,
+        minimo,
+        nota: "Hipoglicemia nivel 2 detectada (<54 mg/dL): requiere acción inmediata y reevaluación del tratamiento."
+      };
     }
 
-    if (valores.some((value) => value < 70)) {
-      return "Hipoglicemia nivel 1 detectada (<70 y ≥54 mg/dL): revisar causas y reforzar prevención.";
+    return {
+      nivel: 1,
+      minimo,
+      nota: "Hipoglicemia nivel 1 detectada (<70 y ≥54 mg/dL): revisar causas y reforzar prevención."
+    };
+  }
+
+  function ocultarRevisionHipoglicemia() {
+    const alerta = document.getElementById("alerta-hipoglicemia-ada");
+    if (!alerta) return;
+    alerta.classList.add("is-hidden");
+    alerta.setAttribute("aria-hidden", "true");
+  }
+
+  function mostrarRevisionHipoglicemia(evento) {
+    const alerta = document.getElementById("alerta-hipoglicemia-ada");
+    const titulo = document.getElementById("hipo-ada-titulo");
+    const descripcion = document.getElementById("hipo-ada-descripcion");
+    if (!alerta || !titulo || !descripcion) return;
+
+    titulo.textContent = `⚠️ Hipoglicemia ADA nivel ${evento.nivel}`;
+    descripcion.textContent = evento.nivel === 2
+      ? `Se registró al menos un HGT <54 mg/dL (mínimo ${evento.minimo} mg/dL). Antes de ajustar la NPH, confirme si alguno de los episodios requirió asistencia de otra persona.`
+      : `Se registró al menos un HGT entre 54 y 69 mg/dL (mínimo ${evento.minimo} mg/dL). Antes de ajustar la NPH, confirme si alguno de los episodios requirió asistencia de otra persona.`;
+
+    alerta.classList.remove("is-hidden");
+    alerta.setAttribute("aria-hidden", "false");
+    alerta.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function configurarRevisionHipoglicemia() {
+    const sinAyuda = document.getElementById("hipo-sin-ayuda");
+    const conAyuda = document.getElementById("hipo-con-ayuda");
+
+    sinAyuda?.addEventListener("click", () => resolverRevisionHipoglicemia(false));
+    conAyuda?.addEventListener("click", () => resolverRevisionHipoglicemia(true));
+    ocultarRevisionHipoglicemia();
+  }
+
+  function resolverRevisionHipoglicemia(requirioAyuda) {
+    const evento = evaluarHipoglicemiaADA();
+
+    if (!evento) {
+      safetyState.revisionHipo = null;
+      ocultarRevisionHipoglicemia();
+      window.calcularSeguimientoPro();
+      return;
     }
 
-    return "";
+    safetyState.revisionHipo = {
+      firma: firmaRegistroGlicemias(),
+      requirioAyuda
+    };
+
+    window.calcularSeguimientoPro();
   }
 
   function normalizarNotaSeguimiento() {
@@ -247,21 +296,62 @@
     };
   }
 
+  const prepSegBase = window.prepSeg;
+  if (typeof prepSegBase === "function") {
+    window.prepSeg = function prepSegConSeguridadLimpia() {
+      safetyState.revisionHipo = null;
+      safetyState.clasificacionHipo = "";
+      ocultarRevisionHipoglicemia();
+      return prepSegBase();
+    };
+  }
+
   const calcularSeguimientoBase = window.calcularSeguimientoPro;
   if (typeof calcularSeguimientoBase === "function") {
     window.calcularSeguimientoPro = function calcularSeguimientoConSeguridad() {
       globalData.tratamientoConcomitante = tratamientoTexto("seguimiento");
       safetyState.discordantes = [];
       safetyState.scope = "seguimiento";
-      safetyState.clasificacionHipo = clasificarHipoglicemiaDesdeInputs();
 
-      if (document.getElementById("hipo-nivel3-evento")?.checked) {
-        return manejarHipoglicemiaNivel3();
+      const eventoHipo = evaluarHipoglicemiaADA();
+      safetyState.clasificacionHipo = eventoHipo?.nota || "";
+
+      if (!eventoHipo) {
+        safetyState.revisionHipo = null;
+        ocultarRevisionHipoglicemia();
+        const resultado = calcularSeguimientoBase();
+        if (document.getElementById("p5")?.classList.contains("active")) {
+          normalizarNotaSeguimiento();
+        }
+        return resultado;
+      }
+
+      const firmaActual = firmaRegistroGlicemias();
+      const revisionValida = safetyState.revisionHipo?.firma === firmaActual;
+
+      if (!revisionValida) {
+        safetyState.revisionHipo = null;
+        mostrarRevisionHipoglicemia(eventoHipo);
+        return undefined;
+      }
+
+      ocultarRevisionHipoglicemia();
+
+      if (safetyState.revisionHipo.requirioAyuda) {
+        safetyState.clasificacionHipo = "Hipoglicemia nivel 3 referida: el episodio requirió asistencia de otra persona para su tratamiento.";
+        const resultado = manejarHipoglicemiaNivel3();
+        if (document.getElementById("p5")?.classList.contains("active")) {
+          safetyState.revisionHipo = null;
+        }
+        return resultado;
       }
 
       const resultado = calcularSeguimientoBase();
       if (document.getElementById("p5")?.classList.contains("active")) {
         normalizarNotaSeguimiento();
+        safetyState.revisionHipo = null;
+      } else if (!document.getElementById("p4")?.classList.contains("active")) {
+        safetyState.revisionHipo = null;
       }
       return resultado;
     };
@@ -301,6 +391,8 @@
     };
   }
 
-  insertarTarjetas();
+  insertarTarjetaInicio();
+  activarExclusividadFarmacologica();
+  configurarRevisionHipoglicemia();
   actualizarTerminologia();
 })();

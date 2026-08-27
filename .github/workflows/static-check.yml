@@ -2,7 +2,7 @@ name: Insulog static checks
 
 on:
   push:
-    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default]
+    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry]
   pull_request:
     branches: [main]
 
@@ -36,11 +36,14 @@ jobs:
           pdf_js = Path("pdf-enhancements.js").read_text(encoding="utf-8")
           pdf_css = Path("pdf-enhancements.css").read_text(encoding="utf-8")
           aps_js = Path("aps-safety-2026.js").read_text(encoding="utf-8")
+          aps_css = Path("aps-safety-2026.css").read_text(encoding="utf-8")
           sw = Path("sw.js").read_text(encoding="utf-8")
+
           required_ids = [
               "p0", "p1", "p2", "p3", "p35", "p4", "p41", "p5", "p6",
-              "tratamiento-concomitante-seguimiento", "hipo-nivel3-evento",
-              "peso-paciente", "factor-dosis", "peso-seguimiento",
+              "tratamiento-concomitante-seguimiento", "alerta-hipoglicemia-ada",
+              "hipo-ada-titulo", "hipo-ada-descripcion", "hipo-sin-ayuda", "hipo-con-ayuda",
+              "ajustar-seguimiento-btn", "peso-paciente", "factor-dosis", "peso-seguimiento",
               "tabla-seguimiento", "nota-clinica", "pdf"
           ]
 
@@ -54,45 +57,48 @@ jobs:
           if len(re.findall(r"</head>", html, re.I)) != 1:
               raise SystemExit("index.html must contain exactly one </head>")
 
-          if './app.js?v=20260826' not in html:
-              raise SystemExit("Optimized app.js is not loaded from index.html")
+          required_html_assets = [
+              './app.js?v=20260826',
+              './pdf-enhancements.js?v=20260827-3',
+              './aps-safety-2026.js?v=20260827-2',
+              './pdf-enhancements.css?v=20260827-3',
+              './aps-safety-2026.css?v=20260827-2'
+          ]
+          for asset in required_html_assets:
+              if asset not in html:
+                  raise SystemExit(f"Direct application asset is not loaded: {asset}")
 
-          if './pdf-enhancements.js?v=20260826-2' not in html:
-              raise SystemExit("PDF enhancement JavaScript is not loaded")
-
-          if './pdf-enhancements.css?v=20260826-2' not in html:
-              raise SystemExit("PDF enhancement CSS is not loaded")
+          script_order = [
+              html.index('./app.js?v=20260826'),
+              html.index('./pdf-enhancements.js?v=20260827-3'),
+              html.index('./aps-safety-2026.js?v=20260827-2')
+          ]
+          if script_order != sorted(script_order):
+              raise SystemExit("JavaScript load order must be app -> PDF -> APS safety")
 
           if 'class="aps-safety-box is-hidden"' not in html:
-              raise SystemExit("Hypoglycemia alert must be hidden directly in HTML")
+              raise SystemExit("Hypoglycemia review must be hidden directly in HTML")
+
+          adjust_pos = html.index('id="ajustar-seguimiento-btn"')
+          hipo_pos = html.index('id="alerta-hipoglicemia-ada"')
+          if hipo_pos <= adjust_pos:
+              raise SystemExit("Hypoglycemia review must appear after the final Adjust button")
 
           for required_text in ["Preonce / Precena", "col-hora-medicion", "col-hgt"]:
               if required_text not in pdf_js:
                   raise SystemExit(f"PDF glucose log is missing: {required_text}")
 
-          for required_text in [
-              "alerta-hipoglicemia-ada",
-              "Hipoglicemia ADA nivel 1",
-              "Hipoglicemia ADA nivel 2",
-              "Hipoglicemia ADA nivel 3",
-              "value < 70",
-              "minimo < 54",
-              "hipo-nivel3-evento",
+          for forbidden_text in [
               "actualizarAlertaHipoglicemia",
-              'alerta.classList.add("is-hidden")',
-              'alerta.classList.remove("is-hidden")'
+              'addEventListener("input"',
+              'createElement("script")',
+              'aps-safety-2026.js?v='
           ]:
-              if required_text not in pdf_js:
-                  raise SystemExit(f"Dynamic ADA hypoglycemia alert is missing: {required_text}")
+              if forbidden_text in pdf_js:
+                  raise SystemExit(f"PDF layer contains unrelated runtime safety logic: {forbidden_text}")
 
-          for required_text in [
-              "#p4 > .aps-safety-box",
-              ".aps-safety-box.hypo-visible",
-              "display: none",
-              "display: block"
-          ]:
-              if required_text not in pdf_css:
-                  raise SystemExit(f"Hypoglycemia alert visibility CSS is missing: {required_text}")
+          if "#p4 > .aps-safety-box" in pdf_css or "hypo-visible" in pdf_css:
+              raise SystemExit("PDF stylesheet must not control clinical safety visibility")
 
           for required_text in [
               "Metformina XR 1.000 mg",
@@ -102,10 +108,29 @@ jobs:
               "Vildagliptina 50 mg",
               "sobreinsulinización",
               "HIPOGLICEMIA NIVEL 3",
-              "Promedio capilar global del registro"
+              "Promedio capilar global del registro",
+              "evaluarHipoglicemiaADA",
+              "firmaRegistroGlicemias",
+              "mostrarRevisionHipoglicemia",
+              "resolverRevisionHipoglicemia",
+              "revisionHipo",
+              "hipo-sin-ayuda",
+              "hipo-con-ayuda"
           ]:
               if required_text not in aps_js:
                   raise SystemExit(f"APS safety layer is missing: {required_text}")
+
+          if 'addEventListener("input"' in aps_js or '.glicemia")) actualizar' in aps_js:
+              raise SystemExit("Hypoglycemia review must not react while glucose values are being typed")
+
+          for required_text in [
+              ".aps-hypo-actions",
+              ".aps-hypo-question",
+              ".aps-safety-box",
+              "grid-template-columns"
+          ]:
+              if required_text not in aps_css:
+                  raise SystemExit(f"Final hypoglycemia review styling is missing: {required_text}")
 
           for required_text in [
               'onclick="nav(35)"',
@@ -117,17 +142,11 @@ jobs:
               if required_text not in html:
                   raise SystemExit(f"Static treatment page is missing: {required_text}")
 
-          if 'aps-safety-2026.js?v=20260826-1' not in pdf_js:
-              raise SystemExit("APS safety JavaScript loader is missing")
-
-          if 'aps-safety-2026.css?v=20260826-1' not in pdf_js:
-              raise SystemExit("APS safety CSS loader is missing")
-
-          if 'followup-flow-2026.js' in pdf_js or 'followup-flow-2026.js' in sw:
+          if 'followup-flow-2026.js' in html or 'followup-flow-2026.js' in sw:
               raise SystemExit("Broken follow-up navigation must not be present")
 
           for required_text in [
-              'const CACHE_NAME = "insulog-shell-20260827-atomic4"',
+              'const CACHE_NAME = "insulog-shell-20260827-atomic5"',
               'new Request(asset, { cache: "reload" })',
               'cache.match("./index.html")',
               'addEventListener("fetch"',
@@ -140,10 +159,12 @@ jobs:
               './index.html',
               './styles.css?v=20260826',
               './app.js?v=20260826',
-              './pdf-enhancements.js?v=20260826-2',
-              './aps-safety-2026.js?v=20260826-1'
+              './pdf-enhancements.css?v=20260827-3',
+              './aps-safety-2026.css?v=20260827-2',
+              './pdf-enhancements.js?v=20260827-3',
+              './aps-safety-2026.js?v=20260827-2'
           ]:
               if required_asset not in sw:
                   raise SystemExit(f"Critical app-shell asset is not cached: {required_asset}")
 
-          print("Hidden-by-default ADA hypoglycemia alert and atomic app-shell checks passed")
+          print("Post-entry ADA hypoglycemia review and atomic app-shell checks passed")
