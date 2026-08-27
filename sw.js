@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "insulog-shell-20260827-atomic5";
+const CACHE_NAME = "insulog-shell-20260827-atomic6";
 
 const APP_SHELL = [
   "./index.html",
@@ -21,18 +21,21 @@ const STATIC_PATHS = new Set(
   APP_SHELL.map((asset) => new URL(asset, self.location.href).pathname)
 );
 
+async function fetchFresh(request) {
+  const response = await fetch(new Request(request, { cache: "reload" }));
+  if (!response.ok) {
+    throw new Error(`No se pudo actualizar ${request.url || request}: HTTP ${response.status}`);
+  }
+  return response;
+}
+
 async function precacheFreshShell() {
   const cache = await caches.open(CACHE_NAME);
 
   await Promise.all(APP_SHELL.map(async (asset) => {
     const request = new Request(asset, { cache: "reload" });
-    const response = await fetch(request);
-
-    if (!response.ok) {
-      throw new Error(`No se pudo precargar ${asset}: HTTP ${response.status}`);
-    }
-
-    await cache.put(asset, response);
+    const response = await fetchFresh(request);
+    await cache.put(asset, response.clone());
   }));
 }
 
@@ -60,19 +63,37 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {
+    const refreshIndex = caches.open(CACHE_NAME)
+      .then(async (cache) => {
+        const response = await fetchFresh(new Request("./index.html", { cache: "reload" }));
+        await cache.put("./index.html", response.clone());
+        return response;
+      });
+
+    event.waitUntil(refreshIndex.catch(() => undefined));
     event.respondWith(
       caches.open(CACHE_NAME)
         .then((cache) => cache.match("./index.html"))
-        .then((cached) => cached || fetch(request))
+        .then((cached) => cached || refreshIndex)
+        .catch(() => fetch(request))
     );
     return;
   }
 
   if (!STATIC_PATHS.has(url.pathname)) return;
 
+  const refreshAsset = caches.open(CACHE_NAME)
+    .then(async (cache) => {
+      const response = await fetchFresh(request);
+      await cache.put(request, response.clone());
+      return response;
+    });
+
+  event.waitUntil(refreshAsset.catch(() => undefined));
   event.respondWith(
     caches.open(CACHE_NAME)
       .then((cache) => cache.match(request))
-      .then((cached) => cached || fetch(request))
+      .then((cached) => cached || refreshAsset)
+      .catch(() => fetch(request))
   );
 });
