@@ -62,8 +62,7 @@
   function elegirCoincidencias(registro, key, dosis) {
     const matches = Array.isArray(registro?.matches) ? [...registro.matches] : [];
     const variante = varianteDeseada(key, dosis);
-    const filtrados = variante ? matches.filter((item) => item.variant === variante) : matches;
-    const candidatos = filtrados.length ? filtrados : matches;
+    const candidatos = variante ? matches.filter((item) => item.variant === variante) : matches;
     return candidatos.sort((a, b) => {
       const precioA = Number.isFinite(Number(a.price)) ? Number(a.price) : Number.MAX_SAFE_INTEGER;
       const precioB = Number.isFinite(Number(b.price)) ? Number(b.price) : Number.MAX_SAFE_INTEGER;
@@ -100,15 +99,20 @@
     panel.classList.remove("is-hidden", "farmacia-popular-loading", "farmacia-popular-ok");
     panel.classList.add("farmacia-popular-unavailable");
     panel.innerHTML = `
-      <strong>Farmacia Popular Cerro Navia:</strong> sin presentación coincidente publicada en la última sincronización.<br>
+      <strong>Farmacia Popular Cerro Navia:</strong> no aparece una presentación que coincida con la dosis seleccionada en la última sincronización.<br>
       <span>Actualizado ${fechaLocal(data?.updated_at)}. El consultor oficial no publica productos con stock cero.</span>
       <a href="${SOURCE_URL}" target="_blank" rel="noopener noreferrer">Verificar disponibilidad</a>`;
   }
 
   function renderDisponible(panel, data, matches) {
     const primero = matches[0];
-    const boticas = [...new Set(matches.slice(0, 3).map((item) => item.botica).filter(Boolean))];
-    const stockTotal = matches.reduce((sum, item) => sum + (Number(item.stock) || 0), 0);
+    const mismaOferta = matches.filter((item) =>
+      item.product === primero.product && Number(item.price) === Number(primero.price)
+    );
+    const stockPorBotica = mismaOferta
+      .filter((item) => item.botica)
+      .map((item) => `${item.botica}: ${Number.isFinite(Number(item.stock)) ? Number(item.stock) : "disponible"}`);
+    const otrasPresentaciones = Math.max(0, matches.length - mismaOferta.length);
     const antiguedadHoras = data?.updated_at ? (Date.now() - new Date(data.updated_at).getTime()) / 36e5 : Infinity;
 
     panel.classList.remove("is-hidden", "farmacia-popular-loading", "farmacia-popular-unavailable", "farmacia-popular-stale");
@@ -120,12 +124,10 @@
         <strong>Farmacia Popular Cerro Navia</strong>
         <span class="farmacia-popular-badge">Disponible</span>
       </div>
-      <div class="farmacia-popular-price">Desde ${precioCLP(primero.price)} <span>precio referencial de venta</span></div>
-      <div class="farmacia-popular-meta">
-        ${boticas.length ? `Botica: ${boticas.join(" · ")}` : ""}
-        ${stockTotal ? `${boticas.length ? " · " : ""}Stock publicado: ${stockTotal}` : ""}
-      </div>
+      <div class="farmacia-popular-price">${precioCLP(primero.price)} <span>precio referencial de venta</span></div>
       <div class="farmacia-popular-product">${primero.product || "Presentación disponible"}</div>
+      ${stockPorBotica.length ? `<div class="farmacia-popular-meta">Stock publicado · ${stockPorBotica.join(" · ")}</div>` : ""}
+      ${otrasPresentaciones ? `<div class="farmacia-popular-meta">Otras ofertas coincidentes: ${otrasPresentaciones}</div>` : ""}
       <div class="farmacia-popular-updated">Actualizado ${fechaLocal(data.updated_at)}${antiguedadHoras > 48 ? " · dato con más de 48 h" : ""}</div>
       <a href="${SOURCE_URL}" target="_blank" rel="noopener noreferrer">Abrir consultor oficial</a>`;
   }
