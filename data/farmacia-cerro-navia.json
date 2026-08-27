@@ -2,13 +2,13 @@
   "status": "ok",
   "farmacia": "Cerro Navia",
   "source_url": "https://farmaciapopularonline.cl/consultor?farmacia=cerro%20navia",
-  "updated_at": "2026-08-27T16:31:47.293318+00:00",
+  "updated_at": "2026-08-27T16:51:40.930487+00:00",
   "source_mode": "server_search",
   "base_rows": 11,
   "source_rows": 16,
   "query_rows": {
     "metfor": 7,
-    "empa": 8,
+    "empag": 8,
     "vilda": 5
   },
   "source_headers": [
@@ -38,7 +38,7 @@
       "price",
       "laboratory"
     ],
-    "empa": [
+    "empag": [
       "bio equivalente",
       "requiere receta",
       "product",
@@ -90,14 +90,81 @@
       "matches": []
     },
     "empagliflozina": {
-      "available": false,
-      "best_price": null,
-      "matches": []
+      "available": true,
+      "best_price": 23955,
+      "matches": [
+        {
+          "product": "JARDIANCE 10 MG X 30 COMP REC",
+          "principle": "EMPAGLIFOZINA 10MG",
+          "brand": "BOEHRINGER INGELHEIM",
+          "botica": "Igualdad 150",
+          "stock": 88,
+          "unit": "COMPRIMIDOS",
+          "price": 23955,
+          "laboratory": "BOEHRINGER INGELHEIM",
+          "variant": "10"
+        },
+        {
+          "product": "JARDIANCE 10 MG X 30 COMP REC",
+          "principle": "EMPAGLIFOZINA 10MG",
+          "brand": "BOEHRINGER INGELHEIM",
+          "botica": "Mapocho 8265",
+          "stock": 93,
+          "unit": "COMPRIMIDOS",
+          "price": 25863,
+          "laboratory": "BOEHRINGER INGELHEIM",
+          "variant": "10"
+        },
+        {
+          "product": "JARDIANCE 25 MG X 30 COMP REC",
+          "principle": "EMPAGLIFOZINA 25MG",
+          "brand": "BOEHRINGER INGELHEIM",
+          "botica": "Igualdad 150",
+          "stock": 301,
+          "unit": "COMPRIMIDOS",
+          "price": 31559,
+          "laboratory": "BOEHRINGER INGELHEIM",
+          "variant": "25"
+        },
+        {
+          "product": "JARDIANCE 25 MG X 30 COMP REC",
+          "principle": "EMPAGLIFOZINA 25MG",
+          "brand": "BOEHRINGER INGELHEIM",
+          "botica": "Mapocho 8265",
+          "stock": 6,
+          "unit": "COMPRIMIDOS",
+          "price": 31559,
+          "laboratory": "BOEHRINGER INGELHEIM",
+          "variant": "25"
+        }
+      ]
     },
     "empaMet12_5_1000": {
       "available": true,
-      "best_price": 34129,
+      "best_price": 33344,
       "matches": [
+        {
+          "product": "ENCLYNA DUO 12,5/850 MG X 60 COMP REC",
+          "principle": "Empagliflozina/Metformina",
+          "brand": "LABORATORIO BAGÓ DE CHILE",
+          "botica": "Mapocho 8265",
+          "stock": 88,
+          "unit": "COMPRIMIDOS",
+          "price": 33344,
+          "laboratory": "LABORATORIO BAGÓ DE CHILE",
+          "variant": "12.5/850"
+        },
+        {
+          "product": "ENCLYNA DUO 12,5/850 MG X 60 COMP REC",
+          "principle": "Empagliflozina/Metformina",
+          "brand": "LABORATORIO BAGÓ DE CHILE",
+          "botica": "Igualdad 150",
+          "stock": 52,
+          "unit": "COMPRIMIDOS",
+          "price": 33344,
+          "laboratory": "LABORATORIO BAGÓ DE CHILE",
+          "variant": "12.5/850"
+        },
         {
           "product": "ENCLYNA DUO 12,5/1000 MG X 60 COMP REC",
           "principle": "Empagliflozina/Metformina",
