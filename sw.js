@@ -1,13 +1,14 @@
 "use strict";
 
 const CACHE_NAME = "insulog-shell-20260827-atomic12";
-const DEPLOYMENT_REVISION = "farmacia-direct-loader-20260827-r6";
+const DEPLOYMENT_REVISION = "patient-pdf-design-20260827-r1";
 
 const APP_SHELL = [
   "./index.html",
   "./styles.css?v=20260826",
   "./pdf-enhancements.css?v=20260827-3",
   "./pdf-enhancements.css?v=20260827-4",
+  "./pdf-design-2026.css?v=20260827-1",
   "./aps-safety-2026.css?v=20260827-2",
   "./farmacia-popular.css?v=20260827-1",
   "./app.js?v=20260826",
@@ -47,6 +48,13 @@ async function normalizarAsset(request, response) {
       texto = texto.replace(
         "</head>",
         '  <link rel="stylesheet" href="./farmacia-popular.css?v=20260827-1">\n</head>'
+      );
+    }
+
+    if (!texto.includes("./pdf-design-2026.css?v=20260827-1")) {
+      texto = texto.replace(
+        "</head>",
+        '  <link rel="stylesheet" href="./pdf-design-2026.css?v=20260827-1">\n</head>'
       );
     }
 
