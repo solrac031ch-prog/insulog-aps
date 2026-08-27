@@ -1,0 +1,66 @@
+name: Patient PDF design checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - "pdf-design-2026.css"
+      - "sw.js"
+      - ".github/workflows/pdf-design-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate one-page Letter design contract
+        shell: python
+        run: |
+          from pathlib import Path
+
+          css = Path("pdf-design-2026.css").read_text(encoding="utf-8")
+          sw = Path("sw.js").read_text(encoding="utf-8")
+
+          required_css = [
+              "size: Letter portrait",
+              "margin: 0.4cm",
+              ".pdf-carta-una-pagina",
+              ".pdf-doc-header::after",
+              ".pdf-patient-row",
+              ".pdf-insulina-paciente",
+              ".pdf-insulina-line strong",
+              ".pdf-medicamentos-paciente",
+              ".pdf-indicaciones",
+              ".tabla-registro-hgt .grupo-mediciones th",
+              ".pdf-firma-control",
+              ".pdf-doc-footer",
+              ".pdf-densidad-amplia",
+              ".pdf-densidad-compacta",
+              "height: 20.2px !important",
+              "height: 17.5px !important",
+              "page-break-inside: avoid !important",
+              "break-inside: avoid-page !important"
+          ]
+          for token in required_css:
+              if token not in css:
+                  raise SystemExit(f"Missing patient PDF design marker: {token}")
+
+          if "overflow: hidden" in css:
+              raise SystemExit("Patient PDF must never force one page by clipping content")
+
+          for token in [
+              './pdf-design-2026.css?v=20260827-1',
+              'texto.includes("./pdf-design-2026.css?v=20260827-1")',
+              'href="./pdf-design-2026.css?v=20260827-1"'
+          ]:
+              if token not in sw:
+                  raise SystemExit(f"New PDF design is not wired into the app shell: {token}")
+
+          print("Patient PDF design keeps the Letter one-page contract without clipping")
