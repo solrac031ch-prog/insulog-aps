@@ -2,8 +2,15 @@
   "status": "ok",
   "farmacia": "Cerro Navia",
   "source_url": "https://farmaciapopularonline.cl/consultor?farmacia=cerro%20navia",
-  "updated_at": "2026-08-27T16:07:24.972770+00:00",
-  "source_rows": 11,
+  "updated_at": "2026-08-27T16:31:47.293318+00:00",
+  "source_mode": "server_search",
+  "base_rows": 11,
+  "source_rows": 16,
+  "query_rows": {
+    "metfor": 7,
+    "empa": 8,
+    "vilda": 5
+  },
   "source_headers": [
     "bio equivalente",
     "requiere receta",
@@ -17,12 +24,65 @@
     "price",
     "laboratory"
   ],
+  "query_headers": {
+    "metfor": [
+      "bio equivalente",
+      "requiere receta",
+      "product",
+      "principle",
+      "brand",
+      "botica",
+      "stock",
+      "unit",
+      "unit_price",
+      "price",
+      "laboratory"
+    ],
+    "empa": [
+      "bio equivalente",
+      "requiere receta",
+      "product",
+      "principle",
+      "brand",
+      "botica",
+      "stock",
+      "unit",
+      "unit_price",
+      "price",
+      "laboratory"
+    ],
+    "vilda": [
+      "bio equivalente",
+      "requiere receta",
+      "product",
+      "principle",
+      "brand",
+      "botica",
+      "stock",
+      "unit",
+      "unit_price",
+      "price",
+      "laboratory"
+    ]
+  },
   "source_note": "El consultor oficial indica que no muestra medicamentos con stock cero.",
   "medications": {
     "metformina500": {
-      "available": false,
-      "best_price": null,
-      "matches": []
+      "available": true,
+      "best_price": 3402,
+      "matches": [
+        {
+          "product": "GLUCOPHAGE 500 MG X 30 COMP REC",
+          "principle": "Metformina",
+          "brand": "MERCK",
+          "botica": "Mapocho 8265",
+          "stock": 1,
+          "unit": "COMPRIMIDOS",
+          "price": 3402,
+          "laboratory": "MERCK",
+          "variant": ""
+        }
+      ]
     },
     "metformina750": {
       "available": false,
@@ -35,14 +95,93 @@
       "matches": []
     },
     "empaMet12_5_1000": {
-      "available": false,
-      "best_price": null,
-      "matches": []
+      "available": true,
+      "best_price": 34129,
+      "matches": [
+        {
+          "product": "ENCLYNA DUO 12,5/1000 MG X 60 COMP REC",
+          "principle": "Empagliflozina/Metformina",
+          "brand": "LABORATORIO BAGÓ DE CHILE",
+          "botica": "Mapocho 8265",
+          "stock": 18,
+          "unit": "COMPRIMIDOS",
+          "price": 34129,
+          "laboratory": "LABORATORIO BAGÓ DE CHILE",
+          "variant": "12.5/1000"
+        },
+        {
+          "product": "ENCLYNA DUO 12,5/1000 MG X 60 COMP REC",
+          "principle": "Empagliflozina/Metformina",
+          "brand": "LABORATORIO BAGÓ DE CHILE",
+          "botica": "Igualdad 150",
+          "stock": 2,
+          "unit": "COMPRIMIDOS",
+          "price": 34129,
+          "laboratory": "LABORATORIO BAGÓ DE CHILE",
+          "variant": "12.5/1000"
+        }
+      ]
     },
     "vildaMet": {
-      "available": false,
-      "best_price": null,
-      "matches": []
+      "available": true,
+      "best_price": 9941,
+      "matches": [
+        {
+          "product": "VIDARON M 50/1000 MG X 60 COMP REC",
+          "principle": "Vildagliptina 50 mg/Metformina 1000 mg",
+          "brand": "HETERO",
+          "botica": "Mapocho 8265",
+          "stock": 39,
+          "unit": "COMPRIMIDOS",
+          "price": 9941,
+          "laboratory": "HETERO",
+          "variant": "50/1000"
+        },
+        {
+          "product": "VIDARON M 50/1000 MG X 60 COMP REC",
+          "principle": "Vildagliptina 50 mg/Metformina 1000 mg",
+          "brand": "HETERO",
+          "botica": "Igualdad 150",
+          "stock": 14,
+          "unit": "COMPRIMIDOS",
+          "price": 9941,
+          "laboratory": "HETERO",
+          "variant": "50/1000"
+        },
+        {
+          "product": "VILDAVITAE PLUS 50/1000 X 60 COMP REC",
+          "principle": "Vildagliptina/Metformina",
+          "brand": "GALENICUM",
+          "botica": "Mapocho 8265",
+          "stock": 1,
+          "unit": "COMPRIMIDOS",
+          "price": 13823,
+          "laboratory": "GALENICUM",
+          "variant": "50/1000"
+        },
+        {
+          "product": "VILZERMET 50MG/500 MG X 60 COMP",
+          "principle": "Vildagliptina/Metformina",
+          "brand": "TECNOFARMA",
+          "botica": "Igualdad 150",
+          "stock": 36,
+          "unit": "COMPRIMIDOS",
+          "price": 27775,
+          "laboratory": "TECNOFARMA",
+          "variant": "50/500"
+        },
+        {
+          "product": "VILZERMET 50MG/500 MG X 60 COMP",
+          "principle": "Vildagliptina/Metformina",
+          "brand": "TECNOFARMA",
+          "botica": "Mapocho 8265",
+          "stock": 19,
+          "unit": "COMPRIMIDOS",
+          "price": 27775,
+          "laboratory": "TECNOFARMA",
+          "variant": "50/500"
+        }
+      ]
     }
   }
 }
