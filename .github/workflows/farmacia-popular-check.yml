@@ -1,0 +1,66 @@
+name: Farmacia Popular feature checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - "farmacia-popular.js"
+      - "farmacia-popular.css"
+      - "scripts/update_farmacia_cerro_navia.py"
+      - "data/farmacia-cerro-navia.json"
+      - ".github/workflows/sync-farmacia-cerro-navia.yml"
+      - "sw.js"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate JavaScript
+        run: node --check farmacia-popular.js
+
+      - name: Validate scraper syntax
+        run: python -m py_compile scripts/update_farmacia_cerro_navia.py
+
+      - name: Validate seed/data JSON
+        run: python -m json.tool data/farmacia-cerro-navia.json > /dev/null
+
+      - name: Validate integration markers
+        shell: python
+        run: |
+          from pathlib import Path
+
+          js = Path("farmacia-popular.js").read_text(encoding="utf-8")
+          sw = Path("sw.js").read_text(encoding="utf-8")
+          workflow = Path(".github/workflows/sync-farmacia-cerro-navia.yml").read_text(encoding="utf-8")
+          scraper = Path("scripts/update_farmacia_cerro_navia.py").read_text(encoding="utf-8")
+
+          for token in [
+              "farmaciapopularonline.cl/consultor?farmacia=cerro%20navia",
+              "metformina500", "metformina750", "empagliflozina", "empaMet12_5_1000", "vildaMet",
+              "farmacia-popular-status", "cache: \"no-store\""
+          ]:
+              if token not in js:
+                  raise SystemExit(f"Missing Farmacia Popular UI marker: {token}")
+
+          for asset in [
+              "./farmacia-popular.css?v=20260827-1",
+              "./farmacia-popular.js?v=20260827-1"
+          ]:
+              if asset not in sw:
+                  raise SystemExit(f"Farmacia Popular app-shell asset missing: {asset}")
+
+          if "schedule:" not in workflow or "workflow_dispatch:" not in workflow:
+              raise SystemExit("Daily pharmacy sync must support schedule and manual dispatch")
+
+          if "No se encontró la tabla de medicamentos de Cerro Navia" not in scraper:
+              raise SystemExit("Scraper table validation is missing")
+
+          print("Farmacia Popular daily-price integration checks passed")
