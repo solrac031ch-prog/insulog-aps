@@ -1,7 +1,7 @@
 "use strict";
 
 const CACHE_NAME = "insulog-shell-20260827-atomic12";
-const DEPLOYMENT_REVISION = "farmacia-empagliflozin-20260827-r5";
+const DEPLOYMENT_REVISION = "farmacia-direct-loader-20260827-r6";
 
 const APP_SHELL = [
   "./index.html",
@@ -26,23 +26,56 @@ const STATIC_PATHS = new Set(
   APP_SHELL.map((asset) => new URL(asset, self.location.href).pathname)
 );
 
-async function normalizarAssetClinico(request, response) {
-  const url = new URL(request.url || request, self.location.href);
-  if (!url.pathname.endsWith("/aps-safety-2026.js")) return response;
-
-  const texto = await response.text();
-  const normalizado = texto.replace(
-    'label: "Empagliflozina 10 mg"',
-    'label: "Empagliflozina"'
-  );
-
-  const farmaciaLoader = `\n;(() => {\n  if (!document.querySelector('link[data-farmacia-popular]')) {\n    const link = document.createElement('link');\n    link.rel = 'stylesheet';\n    link.href = './farmacia-popular.css?v=20260827-1';\n    link.dataset.farmaciaPopular = 'true';\n    document.head.appendChild(link);\n  }\n  if (!document.querySelector('script[data-farmacia-popular]')) {\n    const script = document.createElement('script');\n    script.src = './farmacia-popular.js?v=20260827-3';\n    script.dataset.farmaciaPopular = 'true';\n    document.body.appendChild(script);\n  }\n})();\n`;
-
-  return new Response(normalizado + farmaciaLoader, {
+function respuestaTexto(response, texto) {
+  const headers = new Headers(response.headers);
+  headers.delete("content-length");
+  headers.delete("content-encoding");
+  return new Response(texto, {
     status: response.status,
     statusText: response.statusText,
-    headers: response.headers
+    headers
   });
+}
+
+async function normalizarAsset(request, response) {
+  const url = new URL(request.url || request, self.location.href);
+
+  if (url.pathname.endsWith("/index.html")) {
+    let texto = await response.text();
+
+    if (!texto.includes("./farmacia-popular.css?v=20260827-1")) {
+      texto = texto.replace(
+        "</head>",
+        '  <link rel="stylesheet" href="./farmacia-popular.css?v=20260827-1">\n</head>'
+      );
+    }
+
+    if (!texto.includes("./farmacia-popular.js?v=20260827-3")) {
+      texto = texto.replace(
+        "</body>",
+        '  <script src="./farmacia-popular.js?v=20260827-3"></script>\n</body>'
+      );
+    }
+
+    return respuestaTexto(response, texto);
+  }
+
+  if (url.pathname.endsWith("/aps-safety-2026.js")) {
+    const texto = await response.text();
+    const normalizado = texto
+      .replace(
+        'label: "Empagliflozina 10 mg"',
+        'label: "Empagliflozina"'
+      )
+      .replace(
+        'doses: ["12,5/1.000 mg/día"]',
+        'doses: ["12,5/850 mg/día", "12,5/1.000 mg/día"]'
+      );
+
+    return respuestaTexto(response, normalizado);
+  }
+
+  return response;
 }
 
 async function fetchFresh(request) {
@@ -50,7 +83,7 @@ async function fetchFresh(request) {
   if (!response.ok) {
     throw new Error(`No se pudo actualizar ${request.url || request}: HTTP ${response.status}`);
   }
-  return normalizarAssetClinico(request, response);
+  return normalizarAsset(request, response);
 }
 
 async function precacheFreshShell() {
