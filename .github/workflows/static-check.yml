@@ -2,7 +2,7 @@ name: Insulog static checks
 
 on:
   push:
-    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page]
+    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand]
   pull_request:
     branches: [main]
 
@@ -34,6 +34,7 @@ jobs:
 
           html = Path("index.html").read_text(encoding="utf-8")
           pdf_js = Path("pdf-enhancements.js").read_text(encoding="utf-8")
+          pdf_css = Path("pdf-enhancements.css").read_text(encoding="utf-8")
           aps_js = Path("aps-safety-2026.js").read_text(encoding="utf-8")
           sw = Path("sw.js").read_text(encoding="utf-8")
           required_ids = [
@@ -65,6 +66,28 @@ jobs:
           for required_text in ["Preonce / Precena", "col-hora-medicion", "col-hgt"]:
               if required_text not in pdf_js:
                   raise SystemExit(f"PDF glucose log is missing: {required_text}")
+
+          for required_text in [
+              "alerta-hipoglicemia-ada",
+              "Hipoglicemia ADA nivel 1",
+              "Hipoglicemia ADA nivel 2",
+              "Hipoglicemia ADA nivel 3",
+              "value < 70",
+              "minimo < 54",
+              "hipo-nivel3-evento",
+              "actualizarAlertaHipoglicemia"
+          ]:
+              if required_text not in pdf_js:
+                  raise SystemExit(f"Dynamic ADA hypoglycemia alert is missing: {required_text}")
+
+          for required_text in [
+              "#p4 > .aps-safety-box",
+              ".aps-safety-box.hypo-visible",
+              "display: none",
+              "display: block"
+          ]:
+              if required_text not in pdf_css:
+                  raise SystemExit(f"Hypoglycemia alert visibility CSS is missing: {required_text}")
 
           for required_text in [
               "Metformina XR 1.000 mg",
@@ -99,7 +122,7 @@ jobs:
               raise SystemExit("Broken follow-up navigation must not be present")
 
           for required_text in [
-              'const CACHE_NAME = "insulog-shell-20260826-atomic2"',
+              'const CACHE_NAME = "insulog-shell-20260827-atomic3"',
               'new Request(asset, { cache: "reload" })',
               'cache.match("./index.html")',
               'addEventListener("fetch"',
@@ -118,4 +141,4 @@ jobs:
               if required_asset not in sw:
                   raise SystemExit(f"Critical app-shell asset is not cached: {required_asset}")
 
-          print("Static treatment page and atomic app-shell checks passed")
+          print("Dynamic ADA hypoglycemia alert and atomic app-shell checks passed")
