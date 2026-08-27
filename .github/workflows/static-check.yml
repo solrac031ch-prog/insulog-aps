@@ -2,7 +2,7 @@ name: Insulog static checks
 
 on:
   push:
-    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry, refresh-shell-without-slow-start, inicio-treatment-page-a1c-efficacy, med-dose-safety-ada2026, clean-formulary-combination-rules, allow-vildamet-with-metformin, clean-medication-copy-empa10]
+    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry, refresh-shell-without-slow-start, inicio-treatment-page-a1c-efficacy, med-dose-safety-ada2026, clean-formulary-combination-rules, allow-vildamet-with-metformin, clean-medication-copy-empa10, patient-friendly-pdf-schedules]
   pull_request:
     branches: [main]
 
@@ -77,9 +77,24 @@ jobs:
           if html.index('id="alerta-hipoglicemia-ada"') <= html.index('id="ajustar-seguimiento-btn"'):
               raise SystemExit("Hypoglycemia review must appear after the final Adjust button")
 
-          for required_text in ["Preonce / Precena", "col-hora-medicion", "col-hgt"]:
+          for required_text in [
+              "Preonce / Precena", "col-hora-medicion", "col-hgt",
+              "PAUTAS_PACIENTE", "actualizarDosisInsulinaPaciente", "actualizarTratamientoPaciente",
+              "Dosis AM:", "antes del desayuno", "Dosis PM:", "antes de dormir",
+              "Medicamentos para la diabetes", "comprimido", "queueMicrotask"
+          ]:
               if required_text not in pdf_js:
-                  raise SystemExit(f"PDF glucose log is missing: {required_text}")
+                  raise SystemExit(f"Patient PDF layer is missing: {required_text}")
+
+          for patient_med in [
+              "Metformina 850 mg: 1 comprimido", "Metformina XR 1.000 mg: 1 comprimido",
+              "Dapagliflozina 10 mg: 1 comprimido en la mañana",
+              "Empagliflozina 10 mg: 1 comprimido en la mañana",
+              "Vildagliptina 50 mg: 1 comprimido en la mañana",
+              "Vildagliptina/metformina 50/500 mg: 1 comprimido con el desayuno"
+          ]:
+              if patient_med not in pdf_js:
+                  raise SystemExit(f"Patient medication schedule is missing: {patient_med}")
 
           for forbidden_text in ["actualizarAlertaHipoglicemia", 'addEventListener("input"', 'createElement("script")']:
               if forbidden_text in pdf_js:
@@ -155,7 +170,7 @@ jobs:
               raise SystemExit("Broken follow-up navigation must not be present")
 
           for required_text in [
-              'const CACHE_NAME = "insulog-shell-20260827-atomic10"',
+              'const CACHE_NAME = "insulog-shell-20260827-atomic11"',
               'new Request(asset, { cache: "reload" })', 'cache.match("./index.html")',
               'addEventListener("fetch"', 'caches.delete',
               'event.waitUntil(refreshIndex.catch(() => undefined))',
@@ -172,4 +187,4 @@ jobs:
               if required_asset not in sw:
                   raise SystemExit(f"Critical app-shell asset is not cached: {required_asset}")
 
-          print("Clean medication UI, empagliflozin 10 mg, formulary exclusions, hypo review and atomic app-shell checks passed")
+          print("Patient-friendly insulin timing, tablet schedules, hypo review and atomic app-shell checks passed")
