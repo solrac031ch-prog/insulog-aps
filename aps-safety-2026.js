@@ -81,7 +81,7 @@
       value: "vildaMet",
       label: "Vildagliptina/metformina",
       availability: "particular",
-      groups: ["vildagliptina", "metformina-simple"],
+      groups: ["vildagliptina"],
       efficacy: "HbA1c: efecto combinado variable y habitualmente mayor que cada componente aislado; depende de HbA1c basal y dosis utilizada.",
       doses: ["50/500 mg", "50/850 mg", "50/1.000 mg"],
       safety: "Aplican precauciones de ambos componentes: revisar función renal y tolerancia a metformina; evitar vildagliptina con hepatopatía o ALT/AST >3× LSN, controlar función hepática y suspender si se sospecha pancreatitis."
