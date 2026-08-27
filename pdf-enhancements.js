@@ -73,18 +73,18 @@
     if (am > 0) {
       indicaciones.push(`
         <div class="pdf-insulina-line">
-          <span class="pdf-insulina-etiqueta">Dosis AM:</span>
+          <span class="pdf-insulina-etiqueta">Dosis AM</span>
           <strong>${am} UI</strong>
-          <span class="pdf-insulina-horario">— antes del desayuno</span>
+          <span class="pdf-insulina-horario">Antes del desayuno</span>
         </div>`);
     }
 
     if (pm > 0) {
       indicaciones.push(`
         <div class="pdf-insulina-line">
-          <span class="pdf-insulina-etiqueta">Dosis PM:</span>
+          <span class="pdf-insulina-etiqueta">Dosis PM</span>
           <strong>${pm} UI</strong>
-          <span class="pdf-insulina-horario">— antes de dormir</span>
+          <span class="pdf-insulina-horario">Antes de dormir</span>
         </div>`);
     }
 
@@ -159,12 +159,19 @@
     });
   }
 
+  function aplicarDensidadDocumento(pdf) {
+    const medicamentos = pdf.querySelectorAll(".pdf-medicamentos-paciente li").length;
+    pdf.classList.remove("pdf-densidad-amplia", "pdf-densidad-compacta");
+    pdf.classList.add(medicamentos <= 4 ? "pdf-densidad-amplia" : "pdf-densidad-compacta");
+  }
+
   function finalizarDocumentoPaciente(tipo) {
     const pdf = document.getElementById("pdf");
     if (!pdf) return;
     actualizarDosisInsulinaPaciente(pdf);
     actualizarTratamientoPaciente(pdf, tipo);
     marcarEstructuraCarta(pdf);
+    aplicarDensidadDocumento(pdf);
   }
 
   window.generarDocumento = function generarDocumentoOptimizado(tipo) {
