@@ -1,6 +1,6 @@
 .aps-context-card {
   margin: 18px auto;
-  max-width: 820px;
+  max-width: 900px;
 }
 
 .aps-context-card .card-title {
@@ -17,16 +17,16 @@
 .aps-med-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 12px;
+  gap: 12px;
 }
 
 .aps-med-option {
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  padding: 11px 12px;
+  padding: 12px 13px;
   border: 1px solid #dfe3e8;
-  border-radius: 10px;
+  border-radius: 11px;
   background: #fff;
   text-align: left;
   line-height: 1.25;
@@ -47,8 +47,9 @@
 .aps-med-copy {
   display: flex;
   min-width: 0;
+  flex: 1;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
 .aps-med-name {
@@ -64,6 +65,50 @@
   line-height: 1.35;
 }
 
+.aps-med-dose-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.aps-med-dose-label {
+  color: #33465f;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.aps-med-dose {
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #fff;
+  color: var(--text);
+  font-size: 0.78rem;
+}
+
+.aps-med-dose:disabled {
+  background: #f3f5f8;
+  color: #8a96a8;
+  cursor: not-allowed;
+}
+
+.aps-med-safety {
+  display: block;
+  padding-top: 6px;
+  border-top: 1px solid #edf0f4;
+  color: #6d3a31;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.aps-med-safety strong {
+  color: #8b2c1f;
+}
+
 .aps-efficacy-note {
   margin: 14px 0 0;
   padding: 10px 12px;
@@ -72,7 +117,7 @@
   background: #f7f9fc;
   color: var(--muted);
   font-size: 0.76rem;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 #p25 .aps-context-card {
@@ -133,6 +178,11 @@
   .aps-hypo-actions {
     grid-template-columns: 1fr;
   }
+
+  .aps-med-dose-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
 }
 
 @media print {
@@ -141,6 +191,8 @@
   }
 
   .aps-med-efficacy,
+  .aps-med-dose-row,
+  .aps-med-safety,
   .aps-efficacy-note {
     display: none !important;
   }
