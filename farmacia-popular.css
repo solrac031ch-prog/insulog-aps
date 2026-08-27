@@ -1,0 +1,99 @@
+.farmacia-popular-status {
+  margin-top: 7px;
+  padding: 9px 10px;
+  border: 1px solid #d6dde8;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #33465f;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.farmacia-popular-status a {
+  display: inline-block;
+  margin-top: 5px;
+  color: #0052cc;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.farmacia-popular-status a:hover {
+  text-decoration: underline;
+}
+
+.farmacia-popular-loading {
+  color: #526581;
+}
+
+.farmacia-popular-ok {
+  border-color: #9fd4b0;
+  background: #f4fbf6;
+}
+
+.farmacia-popular-unavailable {
+  border-color: #e4c6a2;
+  background: #fffaf3;
+  color: #6d4b27;
+}
+
+.farmacia-popular-stale {
+  border-color: #e4c6a2;
+  background: #fffaf3;
+}
+
+.farmacia-popular-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3px;
+}
+
+.farmacia-popular-head strong {
+  color: #174b2b;
+  font-size: 0.75rem;
+}
+
+.farmacia-popular-badge {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #dff3e5;
+  color: #1d6336;
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.farmacia-popular-price {
+  color: #173b68;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.farmacia-popular-price span {
+  color: #66758a;
+  font-size: 0.66rem;
+  font-weight: 500;
+}
+
+.farmacia-popular-meta,
+.farmacia-popular-product,
+.farmacia-popular-updated {
+  margin-top: 2px;
+}
+
+.farmacia-popular-product {
+  color: #33465f;
+  font-weight: 600;
+}
+
+.farmacia-popular-updated {
+  color: #6f7d90;
+  font-size: 0.67rem;
+}
+
+@media print {
+  .farmacia-popular-status {
+    display: none !important;
+  }
+}
