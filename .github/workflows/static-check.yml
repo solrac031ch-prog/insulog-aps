@@ -2,7 +2,7 @@ name: Insulog static checks
 
 on:
   push:
-    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry, refresh-shell-without-slow-start, inicio-treatment-page-a1c-efficacy]
+    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry, refresh-shell-without-slow-start, inicio-treatment-page-a1c-efficacy, med-dose-safety-ada2026]
   pull_request:
     branches: [main]
 
@@ -127,8 +127,9 @@ jobs:
               "insertarPaginaTratamientoInicio",
               'page.id = "p25"',
               "definirEsquemaInicioConTratamiento",
-              "enriquecerEficaciaSeguimiento",
+              "enriquecerTratamientoSeguimiento",
               "NOTA_EFICACIA",
+              "NOTA_DOSIS",
               "aps-med-efficacy",
               "0,73 pp",
               "0,77 pp",
@@ -137,6 +138,24 @@ jobs:
           ]:
               if required_text not in aps_js:
                   raise SystemExit(f"Initiation medication page/A1c reference is missing: {required_text}")
+
+          for required_text in [
+              "2.550 mg/día (máx. ADA Table 9.3)",
+              "2.000 mg/día (máx. ADA Table 9.3)",
+              "10 mg/día (máx. ADA Table 9.3)",
+              "25 mg/día (máx. ADA Table 9.3)",
+              "12,5 mg/día (½ de 25 mg; uso local)",
+              "50 mg cada 24 h",
+              "50 mg cada 12 h",
+              "activarSelectoresDosis",
+              "sincronizarSelectorDosis",
+              "Precauciones / evitar",
+              "Contraindicada con eGFR <30",
+              "suspender 3–4 días antes de cirugía",
+              "ALT/AST >3× LSN"
+          ]:
+              if required_text not in aps_js:
+                  raise SystemExit(f"Medication dosing/safety detail is missing: {required_text}")
 
           if "insertarTarjetaInicio" in aps_js:
               raise SystemExit("Initiation medications must not be injected into the NPH dose page")
@@ -147,6 +166,9 @@ jobs:
               ".aps-safety-box",
               ".aps-med-copy",
               ".aps-med-efficacy",
+              ".aps-med-dose-row",
+              ".aps-med-dose",
+              ".aps-med-safety",
               ".aps-efficacy-note",
               "#p25",
               "grid-template-columns"
@@ -168,7 +190,7 @@ jobs:
               raise SystemExit("Broken follow-up navigation must not be present")
 
           for required_text in [
-              'const CACHE_NAME = "insulog-shell-20260827-atomic7"',
+              'const CACHE_NAME = "insulog-shell-20260827-atomic8"',
               'new Request(asset, { cache: "reload" })',
               'cache.match("./index.html")',
               'addEventListener("fetch"',
@@ -192,4 +214,4 @@ jobs:
               if required_asset not in sw:
                   raise SystemExit(f"Critical app-shell asset is not cached: {required_asset}")
 
-          print("Initiation treatment page, HbA1c references, post-entry hypo review and atomic app-shell checks passed")
+          print("Medication dose selectors/safety, initiation page, post-entry hypo review and atomic app-shell checks passed")
