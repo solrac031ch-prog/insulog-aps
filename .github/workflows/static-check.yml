@@ -2,7 +2,7 @@ name: Insulog static checks
 
 on:
   push:
-    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry]
+    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry, refresh-shell-without-slow-start]
   pull_request:
     branches: [main]
 
@@ -146,14 +146,17 @@ jobs:
               raise SystemExit("Broken follow-up navigation must not be present")
 
           for required_text in [
-              'const CACHE_NAME = "insulog-shell-20260827-atomic5"',
+              'const CACHE_NAME = "insulog-shell-20260827-atomic6"',
               'new Request(asset, { cache: "reload" })',
               'cache.match("./index.html")',
               'addEventListener("fetch"',
-              'caches.delete'
+              'caches.delete',
+              'event.waitUntil(refreshIndex.catch(() => undefined))',
+              'event.waitUntil(refreshAsset.catch(() => undefined))',
+              'fetchFresh'
           ]:
               if required_text not in sw:
-                  raise SystemExit(f"Atomic app-shell service worker is missing: {required_text}")
+                  raise SystemExit(f"Fresh atomic app-shell service worker is missing: {required_text}")
 
           for required_asset in [
               './index.html',
@@ -167,4 +170,4 @@ jobs:
               if required_asset not in sw:
                   raise SystemExit(f"Critical app-shell asset is not cached: {required_asset}")
 
-          print("Post-entry ADA hypoglycemia review and atomic app-shell checks passed")
+          print("Post-entry ADA hypoglycemia review and self-refreshing atomic app-shell checks passed")
