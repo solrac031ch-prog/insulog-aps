@@ -46,26 +46,245 @@
   line-height: 1.25;
 }
 
+.pdf-insulina-paciente {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 2px solid #0052cc;
+  border-radius: 8px;
+  background: #f0f7ff;
+}
+
+.pdf-insulina-title,
+.pdf-medicamentos-title {
+  color: #0052cc;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.pdf-insulina-pautas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 12px;
+  margin-top: 5px;
+}
+
+.pdf-insulina-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: baseline;
+  font-size: 12.5px;
+  line-height: 1.2;
+}
+
+.pdf-insulina-line strong {
+  font-size: 18px;
+}
+
+.pdf-insulina-etiqueta,
+.pdf-insulina-horario {
+  font-weight: 700;
+}
+
+.pdf-medicamentos-paciente {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 1px solid #ccd5e0;
+  border-radius: 8px;
+  background: #fafbfc;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.pdf-medicamentos-title {
+  color: #1a2b3c;
+}
+
+.pdf-medicamentos-paciente ul {
+  margin: 5px 0 0;
+  padding-left: 18px;
+}
+
+.pdf-medicamentos-paciente li {
+  margin: 2px 0;
+}
+
 @media print {
-  .tabla-registro-hgt {
-    margin-top: 7px;
+  @page {
+    size: Letter portrait;
+    margin: 0.35cm;
   }
 
-  .tabla-registro-hgt th {
-    padding: 4px 2px;
-    font-size: 9px;
-    line-height: 1.1;
+  .pdf-carta-una-pagina {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0.18cm 0.45cm !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid-page !important;
+    orphans: 1;
+    widows: 1;
   }
 
-  .tabla-registro-hgt tbody td {
-    height: 21px;
+  .pdf-carta-una-pagina .pdf-doc-header {
+    margin-bottom: 5px !important;
+    padding-bottom: 5px !important;
+    gap: 10px !important;
   }
 
-  .registro-hgt-ayuda {
-    margin: 2px 0 5px;
-    padding: 3px 6px;
-    border-left: 2px solid #000;
-    background: #fff;
-    font-size: 9px;
+  .pdf-carta-una-pagina .pdf-doc-header > div:first-child > b {
+    font-size: 18px !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-doc-header span,
+  .pdf-carta-una-pagina .pdf-doc-header > div:last-child {
+    font-size: 11.5px !important;
+    line-height: 1.2 !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-patient-row {
+    margin-bottom: 5px !important;
+    font-size: 12.5px !important;
+    line-height: 1.2 !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-insulina-paciente {
+    margin: 4px 0 !important;
+    padding: 6px 8px !important;
+    border-width: 1.5px !important;
+    border-radius: 6px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid-page !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-insulina-title {
+    font-size: 13px !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-insulina-pautas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 10px;
+    margin-top: 3px;
+  }
+
+  .pdf-carta-una-pagina .pdf-insulina-line {
+    gap: 4px;
+    font-size: 12px !important;
+    line-height: 1.15 !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-insulina-line strong {
+    font-size: 16px !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-medicamentos-paciente {
+    margin: 4px 0 5px !important;
+    padding: 5px 8px !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+    line-height: 1.18 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid-page !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-medicamentos-title {
+    font-size: 12.5px !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-medicamentos-paciente ul {
+    margin: 2px 0 0 !important;
+    padding-left: 17px !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-medicamentos-paciente li {
+    margin: 0 !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-indicaciones {
+    margin: 5px 0 !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-indicaciones > b {
+    font-size: 12px !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-indicaciones ul {
+    margin: 2px 0 0 !important;
+    padding-left: 17px !important;
+    font-size: 12px !important;
+    line-height: 1.16 !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-indicaciones li {
+    margin: 0 !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-table-title {
+    margin: 3px 0 1px !important;
+    font-size: 12px !important;
+  }
+
+  .pdf-carta-una-pagina .tabla-registro-hgt {
+    margin: 2px 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid-page !important;
+  }
+
+  .pdf-carta-una-pagina .tabla-registro-hgt th {
+    padding: 2px !important;
+    font-size: 10.5px !important;
+    line-height: 1.05 !important;
+  }
+
+  .pdf-carta-una-pagina .tabla-registro-hgt .grupo-mediciones th {
+    font-size: 10.5px !important;
+  }
+
+  .pdf-carta-una-pagina .tabla-registro-hgt .unidad-tabla {
+    font-size: 9px !important;
+  }
+
+  .pdf-carta-una-pagina .tabla-registro-hgt tbody td {
+    height: 19px !important;
+  }
+
+  .pdf-carta-una-pagina .registro-hgt-ayuda {
+    margin: 1px 0 2px !important;
+    padding: 2px 5px !important;
+    border-left: 2px solid #000 !important;
+    background: #fff !important;
+    font-size: 10.5px !important;
+    line-height: 1.12 !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-firma-control {
+    margin-top: 4px !important;
+    gap: 12px !important;
+    font-size: 11.5px !important;
+    line-height: 1.15 !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-firma-control > div:first-child {
+    padding: 5px !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-firma-control > div:last-child {
+    margin-top: 16px !important;
+    padding-top: 3px !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-doc-footer {
+    margin-top: 5px !important;
+    padding-top: 4px !important;
+  }
+
+  .pdf-carta-una-pagina .pdf-doc-footer div {
+    font-size: 11.25px !important;
+    line-height: 1.15 !important;
   }
 }
