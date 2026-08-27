@@ -73,7 +73,9 @@ def parse_table(html: str) -> tuple[list[str], list[dict[str, str]]]:
     rows: list[dict[str, str]] = []
     body_rows = table.select("tbody tr") or table.find_all("tr")[1:]
     for tr in body_rows:
-        cells = [td.get_text(" ", strip=True) for td in tr.find_all("td")]
+        # En Cerro Navia la columna Botica viene como <th> dentro de cada fila.
+        # Leer solo <td> desplaza stock/precio una columna y produce datos falsos.
+        cells = [cell.get_text(" ", strip=True) for cell in tr.find_all(["td", "th"])]
         if not cells:
             continue
         row = {
@@ -124,11 +126,23 @@ def infer_variant(key: str, combined: str) -> str:
         if re.search(r"\b25\s*mg\b", text):
             return "25"
     if key == "vildaMet":
-        if "50/500" in text or ("50 mg" in text and "500 mg" in text):
+        if (
+            re.search(r"\b50\s*(?:mg)?\s*/\s*500\s*mg\b", text)
+            or "50/500" in text
+            or ("50 mg" in text and "500 mg" in text)
+        ):
             return "50/500"
-        if "50/850" in text or ("50 mg" in text and "850 mg" in text):
+        if (
+            re.search(r"\b50\s*(?:mg)?\s*/\s*850\s*mg\b", text)
+            or "50/850" in text
+            or ("50 mg" in text and "850 mg" in text)
+        ):
             return "50/850"
-        if "50/1000" in text or ("50 mg" in text and "1000 mg" in text):
+        if (
+            re.search(r"\b50\s*(?:mg)?\s*/\s*1000\s*mg\b", text)
+            or "50/1000" in text
+            or ("50 mg" in text and "1000 mg" in text)
+        ):
             return "50/1000"
     if key == "empaMet12_5_1000":
         if "12.5/1000" in text or ("12.5 mg" in text and "1000 mg" in text):
