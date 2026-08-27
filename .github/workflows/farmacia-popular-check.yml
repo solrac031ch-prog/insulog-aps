@@ -45,14 +45,16 @@ jobs:
           for token in [
               "farmaciapopularonline.cl/consultor?farmacia=cerro%20navia",
               "metformina500", "metformina750", "empagliflozina", "empaMet12_5_1000", "vildaMet",
-              "farmacia-popular-status", "cache: \"no-store\""
+              "farmacia-popular-status", "cache: \"no-store\"",
+              'const candidatos = variante ? matches.filter((item) => item.variant === variante) : matches',
+              "Stock publicado"
           ]:
               if token not in js:
                   raise SystemExit(f"Missing Farmacia Popular UI marker: {token}")
 
           for asset in [
               "./farmacia-popular.css?v=20260827-1",
-              "./farmacia-popular.js?v=20260827-1"
+              "./farmacia-popular.js?v=20260827-2"
           ]:
               if asset not in sw:
                   raise SystemExit(f"Farmacia Popular app-shell asset missing: {asset}")
@@ -60,7 +62,20 @@ jobs:
           if "schedule:" not in workflow or "workflow_dispatch:" not in workflow:
               raise SystemExit("Daily pharmacy sync must support schedule and manual dispatch")
 
-          if "No se encontró la tabla de medicamentos de Cerro Navia" not in scraper:
-              raise SystemExit("Scraper table validation is missing")
+          for token in [
+              '/Consultor/ObtenerMedicamentos',
+              'requests.Session()',
+              'data={"Texto": texto}',
+              'SEARCH_TERMS = ("metfor", "empa", "vilda")',
+              'tr.find_all(["td", "th"])',
+              '"source_mode": "server_search"',
+              'query_filtered_rows',
+              'No se encontró la tabla de medicamentos de Cerro Navia'
+          ]:
+              if token not in scraper:
+                  raise SystemExit(f"Filtered pharmacy scraper marker missing: {token}")
 
-          print("Farmacia Popular daily-price integration checks passed")
+          if 'const candidatos = filtrados.length ? filtrados : matches' in js:
+              raise SystemExit("Selected dose must never fall back to a different pharmacy presentation")
+
+          print("Farmacia Popular server-filtered daily-price integration checks passed")
