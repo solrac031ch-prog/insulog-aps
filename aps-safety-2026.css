@@ -7,24 +7,6 @@
   margin-bottom: 8px;
 }
 
-.aps-context-helper {
-  margin: 0 0 12px;
-  color: var(--muted);
-  font-size: 0.86rem;
-  line-height: 1.4;
-}
-
-.aps-formulary-note {
-  margin: 0 0 16px;
-  padding: 10px 12px;
-  border: 1px solid #c9d8ee;
-  border-radius: 9px;
-  background: #f4f8ff;
-  color: #28496f;
-  font-size: 0.79rem;
-  line-height: 1.45;
-}
-
 .aps-med-section + .aps-med-section {
   margin-top: 18px;
   padding-top: 16px;
@@ -223,7 +205,6 @@
   .aps-med-efficacy,
   .aps-med-dose-row,
   .aps-med-safety,
-  .aps-formulary-note,
   .aps-efficacy-note,
   .aps-med-section-title {
     display: none !important;
