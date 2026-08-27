@@ -60,7 +60,7 @@
     },
     {
       value: "empagliflozina",
-      label: "Empagliflozina",
+      label: "Empagliflozina 10 mg",
       availability: "particular",
       groups: ["sglt2"],
       efficacy: "HbA1c: ↓≈0,7–0,8 pp*; referencia comparativa con 25 mg ≈0,77 pp. El efecto depende de la dosis y la función renal.",
