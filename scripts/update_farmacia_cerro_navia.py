@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Actualiza precios/stock de medicamentos particulares desde Farmacia Popular Cerro Navia."""
+"""Actualiza precios/stock de medicamentos particulares desde Farmacia Popular Cerro Navia.
+
+La sincronización es deliberadamente conservadora: precios, stock y nuevas marcas de
+principios activos ya contemplados se actualizan solos; una presentación/dosis nueva se
+registra para revisión y nunca se incorpora automáticamente como opción terapéutica.
+"""
 
 from __future__ import annotations
 
@@ -18,6 +23,19 @@ SEARCH_URL = f"{BASE_URL}/Consultor/ObtenerMedicamentos"
 OUTPUT = Path("data/farmacia-cerro-navia.json")
 MIN_BASE_ROWS = 5
 SEARCH_TERMS = ("metfor", "empag", "vilda")
+MEDICATION_KEYS = (
+    "metformina500",
+    "metformina750",
+    "empagliflozina",
+    "empaMet12_5_1000",
+    "vildaMet",
+)
+MONITORED_FAMILIES = (
+    "metformina",
+    "empagliflozina",
+    "empagliflozina_metformina",
+    "vildagliptina_metformina",
+)
 HTTP_HEADERS = {
     "User-Agent": "InsulogAPS/1.0 (+https://solrac031ch-prog.github.io/insulog-aps/)",
     "Accept-Language": "es-CL,es;q=0.9",
@@ -27,6 +45,7 @@ HTTP_HEADERS = {
 def normalize(value: str) -> str:
     text = unicodedata.normalize("NFKD", value or "")
     text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    # La fuente publica EMPAGLIFOZINA en algunas filas. Se normaliza solo para matching.
     text = text.lower().replace(",", ".").replace("empaglifozina", "empagliflozina")
     return re.sub(r"\s+", " ", text).strip()
 
@@ -153,6 +172,26 @@ def infer_variant(key: str, combined: str) -> str:
     return ""
 
 
+def family_for_row(row: dict[str, str]) -> str:
+    product = normalize(row.get("product", ""))
+    principle = normalize(row.get("principle", ""))
+    combined = f"{product} {principle}"
+
+    if "empagliflozina" in combined and "metformina" in combined:
+        return "empagliflozina_metformina"
+    if "vildagliptina" in combined and "metformina" in combined:
+        return "vildagliptina_metformina"
+    if "empagliflozina" in combined and "metformina" not in combined:
+        return "empagliflozina"
+    if (
+        "metformina" in combined
+        and "empagliflozina" not in combined
+        and "vildagliptina" not in combined
+    ):
+        return "metformina"
+    return ""
+
+
 def is_match(key: str, row: dict[str, str]) -> bool:
     product = normalize(row.get("product", ""))
     principle = normalize(row.get("principle", ""))
@@ -160,14 +199,14 @@ def is_match(key: str, row: dict[str, str]) -> bool:
 
     if key == "metformina500":
         return (
-            "metformina" in principle
-            and all(x not in principle for x in ("vildagliptina", "empagliflozina"))
+            "metformina" in combined
+            and all(x not in combined for x in ("vildagliptina", "empagliflozina"))
             and bool(re.search(r"\b500\s*mg\b", combined))
         )
     if key == "metformina750":
         return (
-            "metformina" in principle
-            and all(x not in principle for x in ("vildagliptina", "empagliflozina"))
+            "metformina" in combined
+            and all(x not in combined for x in ("vildagliptina", "empagliflozina"))
             and bool(re.search(r"\b750\s*mg\b", combined))
         )
     if key == "empagliflozina":
@@ -180,6 +219,19 @@ def is_match(key: str, row: dict[str, str]) -> bool:
         )
     if key == "vildaMet":
         return "vildagliptina" in combined and "metformina" in combined
+    return False
+
+
+def recognized_by_app(row: dict[str, str]) -> bool:
+    combined = f"{row.get('product', '')} {row.get('principle', '')}"
+    for key in MEDICATION_KEYS:
+        if not is_match(key, row):
+            continue
+        if key == "empagliflozina":
+            return infer_variant(key, combined) in {"10", "25"}
+        if key == "vildaMet":
+            return infer_variant(key, combined) in {"50/500", "50/850", "50/1000"}
+        return True
     return False
 
 
@@ -198,10 +250,26 @@ def to_match(key: str, row: dict[str, str]) -> dict:
     }
 
 
+def to_discovery(row: dict[str, str]) -> dict:
+    return {
+        "family": family_for_row(row),
+        "product": row.get("product", ""),
+        "principle": row.get("principle", ""),
+        "brand": row.get("brand", ""),
+        "botica": row.get("botica", ""),
+        "stock": parse_number(row.get("stock", "")),
+        "price": parse_number(row.get("price", "")),
+        "laboratory": row.get("laboratory", ""),
+        "reason": "Presentación o dosis de una familia monitorizada que aún no está mapeada en Insulog.",
+    }
+
+
 def main() -> None:
     session = requests.Session()
     session.headers.update(HTTP_HEADERS)
 
+    # Si cualquiera de estas lecturas falla, el script termina antes de escribir OUTPUT,
+    # por lo que se conserva el último JSON válido publicado.
     initial = session.get(SOURCE_URL, timeout=45)
     initial.raise_for_status()
     base_headers, base_rows = parse_table(initial.text)
@@ -227,16 +295,8 @@ def main() -> None:
             seen.add(identity)
             all_rows.append(row)
 
-    medication_keys = [
-        "metformina500",
-        "metformina750",
-        "empagliflozina",
-        "empaMet12_5_1000",
-        "vildaMet",
-    ]
     medications: dict[str, dict] = {}
-
-    for key in medication_keys:
+    for key in MEDICATION_KEYS:
         matches = []
         for row in all_rows:
             if not is_match(key, row):
@@ -261,8 +321,29 @@ def main() -> None:
             "matches": matches,
         }
 
+    unrecognized_presentations = []
+    for row in all_rows:
+        family = family_for_row(row)
+        if not family or recognized_by_app(row):
+            continue
+        discovery = to_discovery(row)
+        if discovery["stock"] is not None and discovery["stock"] <= 0:
+            continue
+        unrecognized_presentations.append(discovery)
+
+    unrecognized_presentations.sort(
+        key=lambda item: (
+            item["family"],
+            item["product"],
+            item["price"] is None,
+            item["price"] or 10**12,
+            item["botica"],
+        )
+    )
+
     payload = {
         "status": "ok",
+        "schema_version": 2,
         "farmacia": "Cerro Navia",
         "source_url": SOURCE_URL,
         "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -274,6 +355,11 @@ def main() -> None:
         "query_headers": query_headers,
         "source_note": "El consultor oficial indica que no muestra medicamentos con stock cero.",
         "medications": medications,
+        "discovery": {
+            "monitored_families": list(MONITORED_FAMILIES),
+            "requires_clinical_review": bool(unrecognized_presentations),
+            "unrecognized_presentations": unrecognized_presentations,
+        },
     }
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
@@ -282,10 +368,13 @@ def main() -> None:
     available_count = sum(1 for value in medications.values() if value["available"])
     print(
         f"Cerro Navia: filtros {query_rows}; {len(all_rows)} filas únicas; "
-        f"{available_count}/{len(medication_keys)} medicamentos objetivo publicados."
+        f"{available_count}/{len(MEDICATION_KEYS)} medicamentos objetivo publicados; "
+        f"{len(unrecognized_presentations)} presentaciones para revisión."
     )
     for key, value in medications.items():
         print(key, "disponible" if value["available"] else "sin coincidencia", value["best_price"], len(value["matches"]))
+    for item in unrecognized_presentations:
+        print("REVISAR", item["family"], item["product"], item["botica"], item["price"], item["stock"])
 
 
 if __name__ == "__main__":
