@@ -2,7 +2,7 @@ name: Insulog static checks
 
 on:
   push:
-    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand]
+    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default]
   pull_request:
     branches: [main]
 
@@ -63,6 +63,9 @@ jobs:
           if './pdf-enhancements.css?v=20260826-2' not in html:
               raise SystemExit("PDF enhancement CSS is not loaded")
 
+          if 'class="aps-safety-box is-hidden"' not in html:
+              raise SystemExit("Hypoglycemia alert must be hidden directly in HTML")
+
           for required_text in ["Preonce / Precena", "col-hora-medicion", "col-hgt"]:
               if required_text not in pdf_js:
                   raise SystemExit(f"PDF glucose log is missing: {required_text}")
@@ -75,7 +78,9 @@ jobs:
               "value < 70",
               "minimo < 54",
               "hipo-nivel3-evento",
-              "actualizarAlertaHipoglicemia"
+              "actualizarAlertaHipoglicemia",
+              'alerta.classList.add("is-hidden")',
+              'alerta.classList.remove("is-hidden")'
           ]:
               if required_text not in pdf_js:
                   raise SystemExit(f"Dynamic ADA hypoglycemia alert is missing: {required_text}")
@@ -122,7 +127,7 @@ jobs:
               raise SystemExit("Broken follow-up navigation must not be present")
 
           for required_text in [
-              'const CACHE_NAME = "insulog-shell-20260827-atomic3"',
+              'const CACHE_NAME = "insulog-shell-20260827-atomic4"',
               'new Request(asset, { cache: "reload" })',
               'cache.match("./index.html")',
               'addEventListener("fetch"',
@@ -141,4 +146,4 @@ jobs:
               if required_asset not in sw:
                   raise SystemExit(f"Critical app-shell asset is not cached: {required_asset}")
 
-          print("Dynamic ADA hypoglycemia alert and atomic app-shell checks passed")
+          print("Hidden-by-default ADA hypoglycemia alert and atomic app-shell checks passed")
