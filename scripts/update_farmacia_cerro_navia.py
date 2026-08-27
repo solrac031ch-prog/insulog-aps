@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 
 SOURCE_URL = "https://farmaciapopularonline.cl/consultor?farmacia=cerro%20navia"
 OUTPUT = Path("data/farmacia-cerro-navia.json")
+MIN_SOURCE_ROWS = 5
 
 
 def normalize(value: str) -> str:
@@ -102,6 +103,11 @@ def main() -> None:
         first_row = table.find("tr")
         headers = [key_for_header(cell.get_text(" ", strip=True)) for cell in first_row.find_all(["th", "td"])] if first_row else []
 
+    required_headers = {"product", "principle", "botica", "stock", "price"}
+    missing_headers = sorted(required_headers.difference(headers))
+    if missing_headers:
+        raise RuntimeError(f"La tabla cambió de estructura; faltan columnas: {', '.join(missing_headers)}")
+
     rows: list[dict[str, str]] = []
     for tr in table.select("tbody tr") or table.find_all("tr")[1:]:
         cells = [td.get_text(" ", strip=True) for td in tr.find_all("td")]
@@ -109,6 +115,12 @@ def main() -> None:
             continue
         row = {headers[i] if i < len(headers) else f"col_{i}": value for i, value in enumerate(cells)}
         rows.append(row)
+
+    if len(rows) < MIN_SOURCE_ROWS:
+        raise RuntimeError(
+            f"La tabla de Cerro Navia parece incompleta: solo {len(rows)} filas; "
+            f"se requieren al menos {MIN_SOURCE_ROWS} para publicar disponibilidad."
+        )
 
     medication_keys = ["metformina500", "metformina750", "empagliflozina", "empaMet12_5_1000", "vildaMet"]
     medications: dict[str, dict] = {}
@@ -149,12 +161,17 @@ def main() -> None:
         "farmacia": "Cerro Navia",
         "source_url": SOURCE_URL,
         "updated_at": datetime.now(timezone.utc).isoformat(),
+        "source_rows": len(rows),
+        "source_headers": headers,
         "source_note": "El consultor oficial indica que no muestra medicamentos con stock cero.",
         "medications": medications,
     }
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    available_count = sum(1 for value in medications.values() if value["available"])
+    print(f"Cerro Navia: {len(rows)} filas válidas; {available_count}/{len(medication_keys)} medicamentos objetivo publicados.")
 
 
 if __name__ == "__main__":
