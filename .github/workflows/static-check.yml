@@ -2,7 +2,7 @@ name: Insulog static checks
 
 on:
   push:
-    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry, refresh-shell-without-slow-start, inicio-treatment-page-a1c-efficacy, med-dose-safety-ada2026, clean-formulary-combination-rules, allow-vildamet-with-metformin, clean-medication-copy-empa10, patient-friendly-pdf-schedules]
+    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry, refresh-shell-without-slow-start, inicio-treatment-page-a1c-efficacy, med-dose-safety-ada2026, clean-formulary-combination-rules, allow-vildamet-with-metformin, clean-medication-copy-empa10, patient-friendly-pdf-schedules, strict-one-page-letter-pdf]
   pull_request:
     branches: [main]
 
@@ -81,7 +81,9 @@ jobs:
               "Preonce / Precena", "col-hora-medicion", "col-hgt",
               "PAUTAS_PACIENTE", "actualizarDosisInsulinaPaciente", "actualizarTratamientoPaciente",
               "Dosis AM:", "antes del desayuno", "Dosis PM:", "antes de dormir",
-              "Medicamentos para la diabetes", "comprimido", "queueMicrotask"
+              "Medicamentos para la diabetes", "comprimido", "queueMicrotask",
+              "pdf-carta-una-pagina", "pdf-insulina-pautas", "pdf-insulina-line",
+              "marcarEstructuraCarta", "pdf-firma-control", "pdf-doc-footer"
           ]:
               if required_text not in pdf_js:
                   raise SystemExit(f"Patient PDF layer is missing: {required_text}")
@@ -95,6 +97,19 @@ jobs:
           ]:
               if patient_med not in pdf_js:
                   raise SystemExit(f"Patient medication schedule is missing: {patient_med}")
+
+          for required_text in [
+              "size: Letter portrait", "margin: 0.35cm", ".pdf-carta-una-pagina",
+              ".pdf-insulina-paciente", ".pdf-insulina-pautas", ".pdf-medicamentos-paciente",
+              ".pdf-indicaciones", ".pdf-firma-control", ".pdf-doc-footer",
+              "font-size: 12px !important", "height: 19px !important",
+              "page-break-inside: avoid !important", "break-inside: avoid-page !important"
+          ]:
+              if required_text not in pdf_css:
+                  raise SystemExit(f"Strict one-page Letter PDF styling is missing: {required_text}")
+
+          if "overflow: hidden" in pdf_css:
+              raise SystemExit("One-page PDF must fit by layout and must not truncate content with overflow:hidden")
 
           for forbidden_text in ["actualizarAlertaHipoglicemia", 'addEventListener("input"', 'createElement("script")']:
               if forbidden_text in pdf_js:
@@ -170,7 +185,7 @@ jobs:
               raise SystemExit("Broken follow-up navigation must not be present")
 
           for required_text in [
-              'const CACHE_NAME = "insulog-shell-20260827-atomic11"',
+              'const CACHE_NAME = "insulog-shell-20260827-atomic12"',
               'new Request(asset, { cache: "reload" })', 'cache.match("./index.html")',
               'addEventListener("fetch"', 'caches.delete',
               'event.waitUntil(refreshIndex.catch(() => undefined))',
@@ -187,4 +202,4 @@ jobs:
               if required_asset not in sw:
                   raise SystemExit(f"Critical app-shell asset is not cached: {required_asset}")
 
-          print("Patient-friendly insulin timing, tablet schedules, hypo review and atomic app-shell checks passed")
+          print("Strict one-page Letter patient PDF, tablet schedules, hypo review and atomic app-shell checks passed")
