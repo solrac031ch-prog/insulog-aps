@@ -1,7 +1,7 @@
 "use strict";
 
 const CACHE_NAME = "insulog-shell-20260827-atomic12";
-const DEPLOYMENT_REVISION = "patient-pdf-design-20260827-r1";
+const DEPLOYMENT_REVISION = "pdf-preview-next-page-20260827-r1";
 
 const APP_SHELL = [
   "./index.html",
@@ -9,12 +9,14 @@ const APP_SHELL = [
   "./pdf-enhancements.css?v=20260827-3",
   "./pdf-enhancements.css?v=20260827-4",
   "./pdf-design-2026.css?v=20260827-1",
+  "./document-flow.css?v=20260827-1",
   "./aps-safety-2026.css?v=20260827-2",
   "./farmacia-popular.css?v=20260827-1",
   "./app.js?v=20260826",
   "./pdf-enhancements.js?v=20260827-3",
   "./pdf-enhancements.js?v=20260827-4",
   "./aps-safety-2026.js?v=20260827-2",
+  "./document-flow.js?v=20260827-1",
   "./farmacia-popular.js?v=20260827-3",
   "./manifest.webmanifest?v=20260826",
   "./assets/icons/icon-32.png?v=20260826",
@@ -58,10 +60,24 @@ async function normalizarAsset(request, response) {
       );
     }
 
+    if (!texto.includes("./document-flow.css?v=20260827-1")) {
+      texto = texto.replace(
+        "</head>",
+        '  <link rel="stylesheet" href="./document-flow.css?v=20260827-1">\n</head>'
+      );
+    }
+
     if (!texto.includes("./farmacia-popular.js?v=20260827-3")) {
       texto = texto.replace(
         "</body>",
         '  <script src="./farmacia-popular.js?v=20260827-3"></script>\n</body>'
+      );
+    }
+
+    if (!texto.includes("./document-flow.js?v=20260827-1")) {
+      texto = texto.replace(
+        "</body>",
+        '  <script src="./document-flow.js?v=20260827-1"></script>\n</body>'
       );
     }
 

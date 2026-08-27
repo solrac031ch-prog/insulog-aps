@@ -1,0 +1,44 @@
+.pdf-preparation-page .patient-field {
+  margin-bottom: 12px;
+}
+
+.pdf-preparation-page .document-actions {
+  margin-top: 18px;
+}
+
+.pdf-preview-page {
+  text-align: left;
+}
+
+.pdf-preview-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 auto 14px;
+}
+
+.pdf-preview-toolbar .btn {
+  min-width: 190px;
+}
+
+@media print {
+  .container > #p7.page {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .container > .page:not(#p7),
+  #p7 > *:not(#pdf),
+  footer,
+  .no-print {
+    display: none !important;
+  }
+
+  #p7 {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
