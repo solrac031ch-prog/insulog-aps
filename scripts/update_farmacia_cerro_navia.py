@@ -17,7 +17,7 @@ SOURCE_URL = f"{BASE_URL}/consultor?farmacia=cerro%20navia"
 SEARCH_URL = f"{BASE_URL}/Consultor/ObtenerMedicamentos"
 OUTPUT = Path("data/farmacia-cerro-navia.json")
 MIN_BASE_ROWS = 5
-SEARCH_TERMS = ("metfor", "empa", "vilda")
+SEARCH_TERMS = ("metfor", "empag", "vilda")
 HTTP_HEADERS = {
     "User-Agent": "InsulogAPS/1.0 (+https://solrac031ch-prog.github.io/insulog-aps/)",
     "Accept-Language": "es-CL,es;q=0.9",
@@ -27,7 +27,8 @@ HTTP_HEADERS = {
 def normalize(value: str) -> str:
     text = unicodedata.normalize("NFKD", value or "")
     text = "".join(ch for ch in text if not unicodedata.combining(ch))
-    return re.sub(r"\s+", " ", text.lower().replace(",", ".")).strip()
+    text = text.lower().replace(",", ".").replace("empaglifozina", "empagliflozina")
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def parse_number(value: str) -> int | None:
@@ -145,6 +146,8 @@ def infer_variant(key: str, combined: str) -> str:
         ):
             return "50/1000"
     if key == "empaMet12_5_1000":
+        if "12.5/850" in text or ("12.5 mg" in text and "850 mg" in text):
+            return "12.5/850"
         if "12.5/1000" in text or ("12.5 mg" in text and "1000 mg" in text):
             return "12.5/1000"
     return ""
@@ -168,12 +171,12 @@ def is_match(key: str, row: dict[str, str]) -> bool:
             and bool(re.search(r"\b750\s*mg\b", combined))
         )
     if key == "empagliflozina":
-        return "empagliflozina" in principle and "metformina" not in principle
+        return "empagliflozina" in combined and "metformina" not in combined
     if key == "empaMet12_5_1000":
         return (
             "empagliflozina" in combined
             and "metformina" in combined
-            and infer_variant(key, combined) == "12.5/1000"
+            and infer_variant(key, combined) in {"12.5/850", "12.5/1000"}
         )
     if key == "vildaMet":
         return "vildagliptina" in combined and "metformina" in combined

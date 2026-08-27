@@ -55,7 +55,10 @@
       if (dosis.includes("50/850")) return "50/850";
       if (dosis.includes("50/1.000")) return "50/1000";
     }
-    if (key === "empaMet12_5_1000") return "12.5/1000";
+    if (key === "empaMet12_5_1000") {
+      if (dosis.includes("12,5/850")) return "12.5/850";
+      if (dosis.includes("12,5/1.000")) return "12.5/1000";
+    }
     return "";
   }
 
@@ -69,6 +72,20 @@
       if (precioA !== precioB) return precioA - precioB;
       return (Number(b.stock) || 0) - (Number(a.stock) || 0);
     });
+  }
+
+  function asegurarDosisEmpaMet(input) {
+    if (input.dataset.medKey !== "empaMet12_5_1000") return;
+    const select = input.closest("label")?.querySelector(".aps-med-dose");
+    if (!select) return;
+
+    const dosis850 = "12,5/850 mg/día";
+    if (Array.from(select.options).some((option) => option.value === dosis850)) return;
+
+    const option = document.createElement("option");
+    option.value = dosis850;
+    option.textContent = dosis850;
+    select.insertBefore(option, select.firstElementChild);
   }
 
   function asegurarPanel(input) {
@@ -168,7 +185,10 @@
 
   function enlazarInput(input) {
     const key = input.dataset.medKey;
-    if (!PARTICULAR_KEYS.has(key) || input.dataset.farmaciaPopularActivo === "true") return;
+    if (!PARTICULAR_KEYS.has(key)) return;
+
+    asegurarDosisEmpaMet(input);
+    if (input.dataset.farmaciaPopularActivo === "true") return;
 
     input.dataset.farmaciaPopularActivo = "true";
     input.addEventListener("change", () => actualizarInput(input));

@@ -47,14 +47,14 @@ jobs:
               "metformina500", "metformina750", "empagliflozina", "empaMet12_5_1000", "vildaMet",
               "farmacia-popular-status", "cache: \"no-store\"",
               'const candidatos = variante ? matches.filter((item) => item.variant === variante) : matches',
-              "Stock publicado"
+              "Stock publicado", "12,5/850 mg/día", "12.5/850", "asegurarDosisEmpaMet"
           ]:
               if token not in js:
                   raise SystemExit(f"Missing Farmacia Popular UI marker: {token}")
 
           for asset in [
               "./farmacia-popular.css?v=20260827-1",
-              "./farmacia-popular.js?v=20260827-2"
+              "./farmacia-popular.js?v=20260827-3"
           ]:
               if asset not in sw:
                   raise SystemExit(f"Farmacia Popular app-shell asset missing: {asset}")
@@ -66,11 +66,13 @@ jobs:
               '/Consultor/ObtenerMedicamentos',
               'requests.Session()',
               'data={"Texto": texto}',
-              'SEARCH_TERMS = ("metfor", "empa", "vilda")',
+              'SEARCH_TERMS = ("metfor", "empag", "vilda")',
               'tr.find_all(["td", "th"])',
               '"source_mode": "server_search"',
               'query_filtered_rows',
-              'No se encontró la tabla de medicamentos de Cerro Navia'
+              'No se encontró la tabla de medicamentos de Cerro Navia',
+              '{"12.5/850", "12.5/1000"}',
+              '"empagliflozina" in combined and "metformina" not in combined'
           ]:
               if token not in scraper:
                   raise SystemExit(f"Filtered pharmacy scraper marker missing: {token}")
