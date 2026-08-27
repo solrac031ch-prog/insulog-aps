@@ -2,7 +2,6 @@
 
 (() => {
   const NOTA_EFICACIA = "* pp = puntos porcentuales. Descensos orientativos de HbA1c observados en estudios poblacionales; varían con HbA1c basal, dosis, adherencia, función renal y tratamiento previo. No sumar cifras de forma mecánica ni usarlas para calcular la dosis de NPH.";
-  const NOTA_ARSENAL = "Arsenal disponible en APS: Metformina 850 mg, Metformina XR 1.000 mg, Dapagliflozina 10 mg, Vildagliptina 50 mg e Insulina NPH.";
 
   const MEDICAMENTOS_APS = [
     {
@@ -65,7 +64,7 @@
       availability: "particular",
       groups: ["sglt2"],
       efficacy: "HbA1c: ↓≈0,7–0,8 pp*; referencia comparativa con 25 mg ≈0,77 pp. El efecto depende de la dosis y la función renal.",
-      doses: ["12,5 mg/día", "25 mg/día"],
+      doses: ["10 mg/día", "12,5 mg/día", "25 mg/día"],
       safety: "Evitar en enfermedad grave, cetonemia/cetonuria, ayuno prolongado y período perioperatorio; suspender 3–4 días antes de cirugía programada. Riesgo de DKA/euglucémica, infecciones genitourinarias y depleción de volumen. El efecto glucémico disminuye con deterioro de función renal."
     },
     {
@@ -212,8 +211,6 @@
     card.id = `tratamiento-concomitante-${scope}`;
     card.innerHTML = `
       ${mostrarTitulo ? '<p class="card-title text-center">Tratamiento concomitante</p>' : ""}
-      <p class="aps-context-helper">Marque los medicamentos que el paciente utiliza actualmente y seleccione la dosis. Insulog evita duplicar metforminas simples, iSGLT2 y vildagliptina.</p>
-      <div class="aps-formulary-note"><strong>Disponible en APS:</strong> Metformina 850 mg · Metformina XR 1.000 mg · Dapagliflozina 10 mg · Vildagliptina 50 mg · Insulina NPH</div>
       <section class="aps-med-section">
         <div class="aps-med-section-title">Disponible en APS</div>
         <div class="aps-med-grid">${aps.map((med) => opcionMedicamentoHTML(med, scope)).join("")}</div>

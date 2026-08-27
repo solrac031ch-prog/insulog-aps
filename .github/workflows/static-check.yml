@@ -2,7 +2,7 @@ name: Insulog static checks
 
 on:
   push:
-    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry, refresh-shell-without-slow-start, inicio-treatment-page-a1c-efficacy, med-dose-safety-ada2026, clean-formulary-combination-rules, allow-vildamet-with-metformin]
+    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry, refresh-shell-without-slow-start, inicio-treatment-page-a1c-efficacy, med-dose-safety-ada2026, clean-formulary-combination-rules, allow-vildamet-with-metformin, clean-medication-copy-empa10]
   pull_request:
     branches: [main]
 
@@ -105,11 +105,11 @@ jobs:
               "Metformina 500 mg", "Metformina 750 mg", "Metformina 850 mg", "Metformina XR 1.000 mg",
               "Dapagliflozina", "Empagliflozina", "Empagliflozina/metformina",
               "Vildagliptina 50 mg", "Vildagliptina/metformina",
+              '"10 mg/día", "12,5 mg/día", "25 mg/día"',
               '"50/500 mg"', '"50/850 mg"', '"50/1.000 mg"',
               'groups: ["metformina-simple"]', 'groups: ["sglt2"]',
               'value: "vildaMet"', 'groups: ["vildagliptina"]',
-              "comparteGrupo", "desmarcarConflictos", "Disponible en APS", "Otras opciones / compra particular",
-              "Metformina 850 mg · Metformina XR 1.000 mg · Dapagliflozina 10 mg · Vildagliptina 50 mg · Insulina NPH"
+              "comparteGrupo", "desmarcarConflictos", "Disponible en APS", "Otras opciones / compra particular"
           ]:
               if required_text not in aps_js:
                   raise SystemExit(f"Formulary/combination rule is missing: {required_text}")
@@ -123,7 +123,10 @@ jobs:
               "uso local",
               "adaptación local",
               "esquema local",
-              "NOTA_DOSIS"
+              "NOTA_DOSIS",
+              "NOTA_ARSENAL",
+              "Insulog evita duplicar metforminas simples, iSGLT2 y vildagliptina.",
+              "Metformina 850 mg · Metformina XR 1.000 mg · Dapagliflozina 10 mg · Vildagliptina 50 mg · Insulina NPH"
           ]:
               if forbidden_text in aps_js:
                   raise SystemExit(f"Removed medication note resurfaced: {forbidden_text}")
@@ -131,11 +134,15 @@ jobs:
           for required_text in [
               ".aps-hypo-actions", ".aps-hypo-question", ".aps-safety-box",
               ".aps-med-copy", ".aps-med-efficacy", ".aps-med-dose-row", ".aps-med-dose",
-              ".aps-med-safety", ".aps-efficacy-note", ".aps-formulary-note",
-              ".aps-med-section-title", "#p25", "grid-template-columns"
+              ".aps-med-safety", ".aps-efficacy-note", ".aps-med-section-title",
+              "#p25", "grid-template-columns"
           ]:
               if required_text not in aps_css:
                   raise SystemExit(f"APS clinical UI styling is missing: {required_text}")
+
+          for removed_style in [".aps-context-helper", ".aps-formulary-note"]:
+              if removed_style in aps_css:
+                  raise SystemExit(f"Unused medication note style resurfaced: {removed_style}")
 
           for required_text in [
               'onclick="nav(35)"', 'data-aps-med="seguimiento"', 'onclick="prepSeg()"',
@@ -148,7 +155,7 @@ jobs:
               raise SystemExit("Broken follow-up navigation must not be present")
 
           for required_text in [
-              'const CACHE_NAME = "insulog-shell-20260827-atomic9"',
+              'const CACHE_NAME = "insulog-shell-20260827-atomic10"',
               'new Request(asset, { cache: "reload" })', 'cache.match("./index.html")',
               'addEventListener("fetch"', 'caches.delete',
               'event.waitUntil(refreshIndex.catch(() => undefined))',
@@ -165,4 +172,4 @@ jobs:
               if required_asset not in sw:
                   raise SystemExit(f"Critical app-shell asset is not cached: {required_asset}")
 
-          print("APS formulary, combination exclusions, medication safety, hypo review and atomic app-shell checks passed")
+          print("Clean medication UI, empagliflozin 10 mg, formulary exclusions, hypo review and atomic app-shell checks passed")
