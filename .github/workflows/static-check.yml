@@ -2,7 +2,7 @@ name: Insulog static checks
 
 on:
   push:
-    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry, refresh-shell-without-slow-start, inicio-treatment-page-a1c-efficacy, med-dose-safety-ada2026, clean-formulary-combination-rules]
+    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry, refresh-shell-without-slow-start, inicio-treatment-page-a1c-efficacy, med-dose-safety-ada2026, clean-formulary-combination-rules, allow-vildamet-with-metformin]
   pull_request:
     branches: [main]
 
@@ -107,12 +107,15 @@ jobs:
               "Vildagliptina 50 mg", "Vildagliptina/metformina",
               '"50/500 mg"', '"50/850 mg"', '"50/1.000 mg"',
               'groups: ["metformina-simple"]', 'groups: ["sglt2"]',
-              'groups: ["vildagliptina", "metformina-simple"]',
+              'value: "vildaMet"', 'groups: ["vildagliptina"]',
               "comparteGrupo", "desmarcarConflictos", "Disponible en APS", "Otras opciones / compra particular",
               "Metformina 850 mg · Metformina XR 1.000 mg · Dapagliflozina 10 mg · Vildagliptina 50 mg · Insulina NPH"
           ]:
               if required_text not in aps_js:
                   raise SystemExit(f"Formulary/combination rule is missing: {required_text}")
+
+          if 'groups: ["vildagliptina", "metformina-simple"]' in aps_js:
+              raise SystemExit("Vildagliptina/metformina must be allowed with a simple metformin")
 
           for forbidden_text in [
               "no es una tabla de titulación",
