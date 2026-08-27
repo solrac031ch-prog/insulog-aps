@@ -71,16 +71,28 @@
     const indicaciones = [];
 
     if (am > 0) {
-      indicaciones.push(`<div style="margin:7px 0;"><b>Dosis AM:</b> <span style="font-size:20px;font-weight:800;">${am} UI</span> — antes del desayuno</div>`);
+      indicaciones.push(`
+        <div class="pdf-insulina-line">
+          <span class="pdf-insulina-etiqueta">Dosis AM:</span>
+          <strong>${am} UI</strong>
+          <span class="pdf-insulina-horario">— antes del desayuno</span>
+        </div>`);
     }
 
     if (pm > 0) {
-      indicaciones.push(`<div style="margin:7px 0;"><b>Dosis PM:</b> <span style="font-size:20px;font-weight:800;">${pm} UI</span> — antes de dormir</div>`);
+      indicaciones.push(`
+        <div class="pdf-insulina-line">
+          <span class="pdf-insulina-etiqueta">Dosis PM:</span>
+          <strong>${pm} UI</strong>
+          <span class="pdf-insulina-horario">— antes de dormir</span>
+        </div>`);
     }
 
+    caja.removeAttribute("style");
+    caja.className = "pdf-insulina-paciente";
     caja.innerHTML = `
-      <b style="font-size:14px;color:#0052cc;text-transform:uppercase;letter-spacing:.5px;">Insulina NPH</b>
-      <div style="margin-top:9px;font-size:13px;line-height:1.45;">
+      <div class="pdf-insulina-title">Insulina NPH</div>
+      <div class="pdf-insulina-pautas">
         ${indicaciones.length ? indicaciones.join("") : "<div>Sin dosis de NPH indicada en este documento.</div>"}
       </div>`;
   }
@@ -113,22 +125,38 @@
     const instrucciones = instruccionesMedicamentosPaciente(tipo);
     if (!instrucciones.length) return;
 
-    const dosis = obtenerCajaDosis(pdf);
+    const dosis = pdf.querySelector(".pdf-insulina-paciente") || obtenerCajaDosis(pdf);
     const bloque = document.createElement("div");
-    bloque.className = "tratamiento-pdf";
-    bloque.style.margin = "12px 0 15px";
-    bloque.style.padding = "12px 14px";
-    bloque.style.border = "1px solid #ccd5e0";
-    bloque.style.borderRadius = "8px";
-    bloque.style.background = "#fafbfc";
-    bloque.style.fontSize = "12px";
-    bloque.style.lineHeight = "1.45";
+    bloque.className = "tratamiento-pdf pdf-medicamentos-paciente";
     bloque.innerHTML = `
-      <b style="font-size:13px;color:#1a2b3c;text-transform:uppercase;">Medicamentos para la diabetes</b>
-      <ul style="margin:8px 0 0;padding-left:20px;">${instrucciones.map((texto) => `<li style="margin:5px 0;">${texto}</li>`).join("")}</ul>`;
+      <div class="pdf-medicamentos-title">Medicamentos para la diabetes</div>
+      <ul>${instrucciones.map((texto) => `<li>${texto}</li>`).join("")}</ul>`;
 
     if (dosis) dosis.insertAdjacentElement("afterend", bloque);
     else pdf.insertAdjacentElement("afterbegin", bloque);
+  }
+
+  function marcarEstructuraCarta(pdf) {
+    pdf.classList.add("pdf-carta-una-pagina");
+
+    Array.from(pdf.children).forEach((child) => {
+      const texto = child.textContent.replace(/\s+/g, " ").trim();
+      if (!texto) return;
+
+      if (texto.includes("Plataforma de Apoyo Clínico Insulog APS")) {
+        child.classList.add("pdf-doc-header");
+      } else if (texto.startsWith("Paciente:")) {
+        child.classList.add("pdf-patient-row");
+      } else if (texto.includes("Indicaciones del Facultativo:") || texto.includes("Indicaciones de Continuidad:")) {
+        child.classList.add("pdf-indicaciones");
+      } else if (texto.includes("REGISTRO DE CONTROL (15 DÍAS)")) {
+        child.classList.add("pdf-table-title");
+      } else if (texto.includes("Próximo Control:") && texto.includes("Firma y Timbre Médico")) {
+        child.classList.add("pdf-firma-control");
+      } else if (texto.includes("Documento generado por Insulog APS")) {
+        child.classList.add("pdf-doc-footer");
+      }
+    });
   }
 
   function finalizarDocumentoPaciente(tipo) {
@@ -136,6 +164,7 @@
     if (!pdf) return;
     actualizarDosisInsulinaPaciente(pdf);
     actualizarTratamientoPaciente(pdf, tipo);
+    marcarEstructuraCarta(pdf);
   }
 
   window.generarDocumento = function generarDocumentoOptimizado(tipo) {
