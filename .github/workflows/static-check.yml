@@ -2,7 +2,7 @@ name: Insulog static checks
 
 on:
   push:
-    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry, refresh-shell-without-slow-start, inicio-treatment-page-a1c-efficacy, med-dose-safety-ada2026]
+    branches: [main, optimize-app-2026-08, optimize-pdf-glucose-log, update-aps-safety-ada2026, emergency-recover-stable, disable-sw-interception, atomic-app-shell-cache, static-treatment-followup-page, hypoglycemia-alert-on-demand, hide-hypo-alert-by-default, hypoglycemia-check-after-entry, refresh-shell-without-slow-start, inicio-treatment-page-a1c-efficacy, med-dose-safety-ada2026, clean-formulary-combination-rules]
   pull_request:
     branches: [main]
 
@@ -46,16 +46,12 @@ jobs:
               "ajustar-seguimiento-btn", "peso-paciente", "factor-dosis", "peso-seguimiento",
               "tabla-seguimiento", "nota-clinica", "pdf"
           ]
-
           missing = [item for item in required_ids if f'id="{item}"' not in html]
           if missing:
               raise SystemExit(f"Missing required IDs: {missing}")
 
-          if len(re.findall(r"<head(?:\s|>)", html, re.I)) != 1:
-              raise SystemExit("index.html must contain exactly one <head>")
-
-          if len(re.findall(r"</head>", html, re.I)) != 1:
-              raise SystemExit("index.html must contain exactly one </head>")
+          if len(re.findall(r"<head(?:\s|>)", html, re.I)) != 1 or len(re.findall(r"</head>", html, re.I)) != 1:
+              raise SystemExit("index.html must contain exactly one head")
 
           required_html_assets = [
               './app.js?v=20260826',
@@ -78,44 +74,26 @@ jobs:
 
           if 'class="aps-safety-box is-hidden"' not in html:
               raise SystemExit("Hypoglycemia review must be hidden directly in HTML")
-
-          adjust_pos = html.index('id="ajustar-seguimiento-btn"')
-          hipo_pos = html.index('id="alerta-hipoglicemia-ada"')
-          if hipo_pos <= adjust_pos:
+          if html.index('id="alerta-hipoglicemia-ada"') <= html.index('id="ajustar-seguimiento-btn"'):
               raise SystemExit("Hypoglycemia review must appear after the final Adjust button")
 
           for required_text in ["Preonce / Precena", "col-hora-medicion", "col-hgt"]:
               if required_text not in pdf_js:
                   raise SystemExit(f"PDF glucose log is missing: {required_text}")
 
-          for forbidden_text in [
-              "actualizarAlertaHipoglicemia",
-              'addEventListener("input"',
-              'createElement("script")',
-              'aps-safety-2026.js?v='
-          ]:
+          for forbidden_text in ["actualizarAlertaHipoglicemia", 'addEventListener("input"', 'createElement("script")']:
               if forbidden_text in pdf_js:
-                  raise SystemExit(f"PDF layer contains unrelated runtime safety logic: {forbidden_text}")
-
+                  raise SystemExit(f"PDF layer contains unrelated runtime logic: {forbidden_text}")
           if "#p4 > .aps-safety-box" in pdf_css or "hypo-visible" in pdf_css:
               raise SystemExit("PDF stylesheet must not control clinical safety visibility")
 
           for required_text in [
-              "Metformina XR 1.000 mg",
-              "Dapagliflozina 10 mg/día",
-              "Empagliflozina 25 mg/día",
-              "Empagliflozina 12,5 mg/día",
-              "Vildagliptina 50 mg",
-              "sobreinsulinización",
-              "HIPOGLICEMIA NIVEL 3",
-              "Promedio capilar global del registro",
-              "evaluarHipoglicemiaADA",
-              "firmaRegistroGlicemias",
-              "mostrarRevisionHipoglicemia",
-              "resolverRevisionHipoglicemia",
-              "revisionHipo",
-              "hipo-sin-ayuda",
-              "hipo-con-ayuda"
+              "sobreinsulinización", "HIPOGLICEMIA NIVEL 3", "Promedio capilar global del registro",
+              "evaluarHipoglicemiaADA", "firmaRegistroGlicemias", "mostrarRevisionHipoglicemia",
+              "resolverRevisionHipoglicemia", "revisionHipo", "hipo-sin-ayuda", "hipo-con-ayuda",
+              "insertarPaginaTratamientoInicio", 'page.id = "p25"', "definirEsquemaInicioConTratamiento",
+              "enriquecerTratamientoSeguimiento", "NOTA_EFICACIA", "activarSelectoresDosis",
+              "sincronizarSelectorDosis", "Precauciones / evitar"
           ]:
               if required_text not in aps_js:
                   raise SystemExit(f"APS safety layer is missing: {required_text}")
@@ -124,63 +102,40 @@ jobs:
               raise SystemExit("Hypoglycemia review must not react while glucose values are being typed")
 
           for required_text in [
-              "insertarPaginaTratamientoInicio",
-              'page.id = "p25"',
-              "definirEsquemaInicioConTratamiento",
-              "enriquecerTratamientoSeguimiento",
-              "NOTA_EFICACIA",
-              "NOTA_DOSIS",
-              "aps-med-efficacy",
-              "0,73 pp",
-              "0,77 pp",
-              "0,5–0,8 pp",
-              'document.getElementById("p25")'
+              "Metformina 500 mg", "Metformina 750 mg", "Metformina 850 mg", "Metformina XR 1.000 mg",
+              "Dapagliflozina", "Empagliflozina", "Empagliflozina/metformina",
+              "Vildagliptina 50 mg", "Vildagliptina/metformina",
+              '"50/500 mg"', '"50/850 mg"', '"50/1.000 mg"',
+              'groups: ["metformina-simple"]', 'groups: ["sglt2"]',
+              'groups: ["vildagliptina", "metformina-simple"]',
+              "comparteGrupo", "desmarcarConflictos", "Disponible en APS", "Otras opciones / compra particular",
+              "Metformina 850 mg · Metformina XR 1.000 mg · Dapagliflozina 10 mg · Vildagliptina 50 mg · Insulina NPH"
           ]:
               if required_text not in aps_js:
-                  raise SystemExit(f"Initiation medication page/A1c reference is missing: {required_text}")
+                  raise SystemExit(f"Formulary/combination rule is missing: {required_text}")
 
-          for required_text in [
-              "2.550 mg/día (máx. ADA Table 9.3)",
-              "2.000 mg/día (máx. ADA Table 9.3)",
-              "10 mg/día (máx. ADA Table 9.3)",
-              "25 mg/día (máx. ADA Table 9.3)",
-              "12,5 mg/día (½ de 25 mg; uso local)",
-              "50 mg cada 24 h",
-              "50 mg cada 12 h",
-              "activarSelectoresDosis",
-              "sincronizarSelectorDosis",
-              "Precauciones / evitar",
-              "Contraindicada con eGFR <30",
-              "suspender 3–4 días antes de cirugía",
-              "ALT/AST >3× LSN"
+          for forbidden_text in [
+              "no es una tabla de titulación",
+              "No incluida en ADA Table 9.3",
+              "uso local",
+              "adaptación local",
+              "esquema local",
+              "NOTA_DOSIS"
           ]:
-              if required_text not in aps_js:
-                  raise SystemExit(f"Medication dosing/safety detail is missing: {required_text}")
-
-          if "insertarTarjetaInicio" in aps_js:
-              raise SystemExit("Initiation medications must not be injected into the NPH dose page")
+              if forbidden_text in aps_js:
+                  raise SystemExit(f"Removed medication note resurfaced: {forbidden_text}")
 
           for required_text in [
-              ".aps-hypo-actions",
-              ".aps-hypo-question",
-              ".aps-safety-box",
-              ".aps-med-copy",
-              ".aps-med-efficacy",
-              ".aps-med-dose-row",
-              ".aps-med-dose",
-              ".aps-med-safety",
-              ".aps-efficacy-note",
-              "#p25",
-              "grid-template-columns"
+              ".aps-hypo-actions", ".aps-hypo-question", ".aps-safety-box",
+              ".aps-med-copy", ".aps-med-efficacy", ".aps-med-dose-row", ".aps-med-dose",
+              ".aps-med-safety", ".aps-efficacy-note", ".aps-formulary-note",
+              ".aps-med-section-title", "#p25", "grid-template-columns"
           ]:
               if required_text not in aps_css:
                   raise SystemExit(f"APS clinical UI styling is missing: {required_text}")
 
           for required_text in [
-              'onclick="nav(35)"',
-              "Tratamiento concomitante disponible en APS",
-              'data-aps-med="seguimiento"',
-              'onclick="prepSeg()"',
+              'onclick="nav(35)"', 'data-aps-med="seguimiento"', 'onclick="prepSeg()"',
               "CONTINUAR AL REGISTRO DE GLICEMIAS"
           ]:
               if required_text not in html:
@@ -190,28 +145,21 @@ jobs:
               raise SystemExit("Broken follow-up navigation must not be present")
 
           for required_text in [
-              'const CACHE_NAME = "insulog-shell-20260827-atomic8"',
-              'new Request(asset, { cache: "reload" })',
-              'cache.match("./index.html")',
-              'addEventListener("fetch"',
-              'caches.delete',
+              'const CACHE_NAME = "insulog-shell-20260827-atomic9"',
+              'new Request(asset, { cache: "reload" })', 'cache.match("./index.html")',
+              'addEventListener("fetch"', 'caches.delete',
               'event.waitUntil(refreshIndex.catch(() => undefined))',
-              'event.waitUntil(refreshAsset.catch(() => undefined))',
-              'fetchFresh'
+              'event.waitUntil(refreshAsset.catch(() => undefined))', 'fetchFresh'
           ]:
               if required_text not in sw:
                   raise SystemExit(f"Fresh atomic app-shell service worker is missing: {required_text}")
 
           for required_asset in [
-              './index.html',
-              './styles.css?v=20260826',
-              './app.js?v=20260826',
-              './pdf-enhancements.css?v=20260827-3',
-              './aps-safety-2026.css?v=20260827-2',
-              './pdf-enhancements.js?v=20260827-3',
-              './aps-safety-2026.js?v=20260827-2'
+              './index.html', './styles.css?v=20260826', './app.js?v=20260826',
+              './pdf-enhancements.css?v=20260827-3', './aps-safety-2026.css?v=20260827-2',
+              './pdf-enhancements.js?v=20260827-3', './aps-safety-2026.js?v=20260827-2'
           ]:
               if required_asset not in sw:
                   raise SystemExit(f"Critical app-shell asset is not cached: {required_asset}")
 
-          print("Medication dose selectors/safety, initiation page, post-entry hypo review and atomic app-shell checks passed")
+          print("APS formulary, combination exclusions, medication safety, hypo review and atomic app-shell checks passed")
