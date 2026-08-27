@@ -27,7 +27,8 @@ HTTP_HEADERS = {
 def normalize(value: str) -> str:
     text = unicodedata.normalize("NFKD", value or "")
     text = "".join(ch for ch in text if not unicodedata.combining(ch))
-    return re.sub(r"\s+", " ", text.lower().replace(",", ".")).strip()
+    text = text.lower().replace(",", ".").replace("empaglifozina", "empagliflozina")
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def parse_number(value: str) -> int | None:
