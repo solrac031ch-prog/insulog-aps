@@ -1,14 +1,17 @@
 "use strict";
 
 const CACHE_NAME = "insulog-shell-20260827-atomic12";
+const DEPLOYMENT_REVISION = "pdf-polish-20260827-r1";
 
 const APP_SHELL = [
   "./index.html",
   "./styles.css?v=20260826",
   "./pdf-enhancements.css?v=20260827-3",
+  "./pdf-enhancements.css?v=20260827-4",
   "./aps-safety-2026.css?v=20260827-2",
   "./app.js?v=20260826",
   "./pdf-enhancements.js?v=20260827-3",
+  "./pdf-enhancements.js?v=20260827-4",
   "./aps-safety-2026.js?v=20260827-2",
   "./manifest.webmanifest?v=20260826",
   "./assets/icons/icon-32.png?v=20260826",
