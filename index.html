@@ -13,6 +13,8 @@
   <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/icon-180.png?v=20260826">
   <link rel="stylesheet" href="./styles.css?v=20260826">
   <link rel="stylesheet" href="./pdf-enhancements.css?v=20260827-3">
+  <link rel="stylesheet" href="./pdf-design-2026.css?v=20260827-1">
+  <link rel="stylesheet" href="./document-flow.css?v=20260827-1">
   <link rel="stylesheet" href="./aps-safety-2026.css?v=20260827-2">
   <title>Insulog APS | Insulinización en APS</title>
 </head>
@@ -298,8 +300,8 @@
       </div>
     </section>
 
-    <section id="p6" class="page page-center" aria-hidden="true">
-      <div class="page-label no-print">[P6] Generación de documento / impresión</div>
+    <section id="p6" class="page page-center pdf-preparation-page" aria-hidden="true">
+      <div class="page-label no-print">[P6] Preparación del documento</div>
       <h2 class="no-print">Informe clínico Insulog APS</h2>
 
       <div class="field patient-field no-print">
@@ -310,17 +312,23 @@
       <div class="date-row no-print">Fecha: <span id="fecha-hoy"></span></div>
 
       <div class="document-actions no-print">
-        <button type="button" class="btn btn-main" onclick="generarDocumento('inicio')">INICIO DE INSULINA</button>
-        <button type="button" class="btn btn-main" onclick="generarDocumento('seguimiento')">SEGUIMIENTO Y AJUSTE</button>
-        <button type="button" class="btn btn-success" onclick="generarDocumento('pscv')">CONTROL PROGRAMA CV</button>
+        <button type="button" class="btn btn-main" onclick="mostrarDocumento('inicio')">INICIO DE INSULINA</button>
+        <button type="button" class="btn btn-main" onclick="mostrarDocumento('seguimiento')">SEGUIMIENTO Y AJUSTE</button>
+        <button type="button" class="btn btn-success" onclick="mostrarDocumento('pscv')">CONTROL PROGRAMA CV</button>
+      </div>
+    </section>
+
+    <section id="p7" class="page pdf-preview-page" aria-hidden="true">
+      <div class="page-label no-print">[P7] Vista previa del documento</div>
+      <h2 class="no-print text-center">Documento listo para imprimir</h2>
+
+      <div class="pdf-preview-toolbar no-print">
+        <button type="button" class="btn" onclick="volverPreparacionDocumento()">VOLVER / CAMBIAR DATOS</button>
+        <button type="button" class="btn btn-main" onclick="window.print()">IMPRIMIR</button>
+        <button type="button" class="btn btn-danger" onclick="finalizar()">FINALIZAR</button>
       </div>
 
       <div id="pdf" class="imprimible-container" aria-live="polite"></div>
-
-      <div class="decision-actions no-print">
-        <button type="button" class="btn btn-main" onclick="window.print()">IMPRIMIR</button>
-        <button type="button" class="btn btn-danger" onclick="finalizar()">FINALIZAR (VOLVER AL INICIO)</button>
-      </div>
     </section>
   </main>
 
@@ -332,5 +340,6 @@
   <script src="./app.js?v=20260826"></script>
   <script src="./pdf-enhancements.js?v=20260827-3"></script>
   <script src="./aps-safety-2026.js?v=20260827-2"></script>
+  <script src="./document-flow.js?v=20260827-1"></script>
 </body>
 </html>
