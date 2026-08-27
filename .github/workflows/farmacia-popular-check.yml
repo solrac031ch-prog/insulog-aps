@@ -11,6 +11,7 @@ on:
       - "scripts/update_farmacia_cerro_navia.py"
       - "data/farmacia-cerro-navia.json"
       - ".github/workflows/sync-farmacia-cerro-navia.yml"
+      - ".github/workflows/farmacia-popular-check.yml"
       - "sw.js"
 
 permissions:
@@ -28,6 +29,80 @@ jobs:
 
       - name: Validate scraper syntax
         run: python -m py_compile scripts/update_farmacia_cerro_navia.py
+
+      - name: Install scraper test dependencies
+        run: python -m pip install --disable-pip-version-check requests beautifulsoup4
+
+      - name: Validate future brand and presentation behavior
+        run: |
+          python - <<'PY'
+          import runpy
+
+          ns = runpy.run_path("scripts/update_farmacia_cerro_navia.py")
+          is_match = ns["is_match"]
+          family_for_row = ns["family_for_row"]
+          recognized_by_app = ns["recognized_by_app"]
+
+          # Una marca nueva con principio activo/dosis conocida debe entrar automáticamente.
+          nueva_marca_10 = {
+              "product": "MARCA NUEVA 10 MG X 30 COMP",
+              "principle": "Empagliflozina 10 mg",
+              "brand": "LAB NUEVO",
+              "botica": "Igualdad 150",
+              "stock": "20",
+              "price": "$20.000",
+          }
+          assert is_match("empagliflozina", nueva_marca_10)
+          assert recognized_by_app(nueva_marca_10)
+
+          # Se tolera el error ortográfico que hoy usa la fuente para Jardiance.
+          typo_fuente_25 = {
+              "product": "OTRA MARCA 25 MG X 30 COMP",
+              "principle": "EMPAGLIFOZINA 25MG",
+              "botica": "Mapocho 8265",
+              "stock": "10",
+              "price": "$30.000",
+          }
+          assert is_match("empagliflozina", typo_fuente_25)
+          assert recognized_by_app(typo_fuente_25)
+
+          # Una dosis nueva no debe perderse ni entrar silenciosamente al selector clínico.
+          dosis_nueva = {
+              "product": "MARCA NUEVA 5 MG X 30 COMP",
+              "principle": "Empagliflozina 5 mg",
+              "botica": "Igualdad 150",
+              "stock": "12",
+              "price": "$18.000",
+          }
+          assert family_for_row(dosis_nueva) == "empagliflozina"
+          assert is_match("empagliflozina", dosis_nueva)
+          assert not recognized_by_app(dosis_nueva)
+
+          # Una nueva marca de la combinación 12,5/850 ya contemplada debe entrar sola.
+          combo_850 = {
+              "product": "NUEVA DUO 12,5/850 MG X 60 COMP",
+              "principle": "Empagliflozina/Metformina",
+              "botica": "Mapocho 8265",
+              "stock": "15",
+              "price": "$29.000",
+          }
+          assert is_match("empaMet12_5_1000", combo_850)
+          assert recognized_by_app(combo_850)
+
+          # Una presentación de metformina fuera de las alternativas particulares actuales
+          # debe quedar para revisión, no desaparecer.
+          metformina_1000 = {
+              "product": "METFORMINA 1000 MG X 30 COMP",
+              "principle": "Metformina",
+              "botica": "Mapocho 8265",
+              "stock": "9",
+              "price": "$4.000",
+          }
+          assert family_for_row(metformina_1000) == "metformina"
+          assert not recognized_by_app(metformina_1000)
+
+          print("Future pharmacy brand/presentation behavior passed")
+          PY
 
       - name: Validate seed/data JSON
         run: python -m json.tool data/farmacia-cerro-navia.json > /dev/null
@@ -59,8 +134,13 @@ jobs:
               if asset not in sw:
                   raise SystemExit(f"Farmacia Popular app-shell asset missing: {asset}")
 
-          if "schedule:" not in workflow or "workflow_dispatch:" not in workflow:
-              raise SystemExit("Daily pharmacy sync must support schedule and manual dispatch")
+          for token in [
+              "schedule:", "workflow_dispatch:", "fetch-depth: 0",
+              "Validate generated pharmacy data", "for attempt in 1 2 3",
+              "git reset --hard origin/main", "python scripts/update_farmacia_cerro_navia.py"
+          ]:
+              if token not in workflow:
+                  raise SystemExit(f"Daily pharmacy sync resilience marker missing: {token}")
 
           for token in [
               '/Consultor/ObtenerMedicamentos',
@@ -69,10 +149,13 @@ jobs:
               'SEARCH_TERMS = ("metfor", "empag", "vilda")',
               'tr.find_all(["td", "th"])',
               '"source_mode": "server_search"',
+              '"schema_version": 2',
               'query_filtered_rows',
               'No se encontró la tabla de medicamentos de Cerro Navia',
               '{"12.5/850", "12.5/1000"}',
-              '"empagliflozina" in combined and "metformina" not in combined'
+              '"empagliflozina" in combined and "metformina" not in combined',
+              'MONITORED_FAMILIES', 'family_for_row', 'recognized_by_app',
+              '"requires_clinical_review"', '"unrecognized_presentations"'
           ]:
               if token not in scraper:
                   raise SystemExit(f"Filtered pharmacy scraper marker missing: {token}")
@@ -80,4 +163,4 @@ jobs:
           if 'const candidatos = filtrados.length ? filtrados : matches' in js:
               raise SystemExit("Selected dose must never fall back to a different pharmacy presentation")
 
-          print("Farmacia Popular server-filtered daily-price integration checks passed")
+          print("Farmacia Popular future-proof daily-price integration checks passed")
