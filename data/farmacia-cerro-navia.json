@@ -2,7 +2,21 @@
   "status": "ok",
   "farmacia": "Cerro Navia",
   "source_url": "https://farmaciapopularonline.cl/consultor?farmacia=cerro%20navia",
-  "updated_at": "2026-08-27T16:03:17.791867+00:00",
+  "updated_at": "2026-08-27T16:07:24.972770+00:00",
+  "source_rows": 11,
+  "source_headers": [
+    "bio equivalente",
+    "requiere receta",
+    "product",
+    "principle",
+    "brand",
+    "botica",
+    "stock",
+    "unit",
+    "unit_price",
+    "price",
+    "laboratory"
+  ],
   "source_note": "El consultor oficial indica que no muestra medicamentos con stock cero.",
   "medications": {
     "metformina500": {
