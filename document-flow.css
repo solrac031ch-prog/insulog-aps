@@ -25,7 +25,7 @@
 @media print {
   @page {
     size: Letter portrait;
-    margin: 0.3cm;
+    margin: 0.35cm;
   }
 
   html,
@@ -48,9 +48,12 @@
     box-shadow: none !important;
   }
 
-  .container > #p7.page {
+  .container > #p7.page,
+  #p7 {
     display: block !important;
     width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
   }
@@ -62,18 +65,9 @@
     display: none !important;
   }
 
-  #p7 {
-    display: block !important;
-    width: 100% !important;
-    min-height: 0 !important;
-    height: auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  /* El contenedor de pantalla no debe sumar márgenes ni padding al documento impreso. */
   #pdf.imprimible-container {
     display: block !important;
+    box-sizing: border-box !important;
     width: 100% !important;
     max-width: none !important;
     min-height: 0 !important;
@@ -87,28 +81,250 @@
   }
 
   /*
-   * Reserva de seguridad para Chromium/Edge: mantiene las 15 filas y todo el
-   * contenido dentro de una sola hoja Letter sin recortar información.
-   * El ancho compensa el zoom para seguir usando toda el área imprimible.
+   * Impresión Letter real: sin zoom global ni ensanchamiento artificial.
+   * La hoja cabe por composición, tipografía y alturas controladas.
    */
   #pdf.pdf-carta-una-pagina {
-    width: 108.7% !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
     max-width: none !important;
     margin: 0 !important;
-    padding: 0.08cm 0.32cm 0.06cm !important;
-    zoom: 0.92;
+    padding: 0.08cm 0.34cm 0.06cm !important;
+    transform: none !important;
+    font-size: 12.2px !important;
+    line-height: 1.23 !important;
     page-break-inside: auto !important;
     break-inside: auto !important;
     orphans: 1 !important;
     widows: 1 !important;
   }
 
-  #pdf.pdf-carta-una-pagina .tabla-registro-hgt,
-  #pdf.pdf-carta-una-pagina .pdf-insulina-paciente,
+  /* Encabezado: limpio y compacto, sin perder jerarquía. */
+  #pdf.pdf-carta-una-pagina .pdf-doc-header {
+    gap: 10px !important;
+    margin: 0 0 4px !important;
+    padding: 0 0 5px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-doc-header > div:first-child > b {
+    font-size: 19px !important;
+    line-height: 1.02 !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-doc-header span,
+  #pdf.pdf-carta-una-pagina .pdf-doc-header > div:last-child {
+    font-size: 10.4px !important;
+    line-height: 1.1 !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-doc-header > div:last-child {
+    min-width: 104px !important;
+    padding: 4px 7px !important;
+  }
+
+  /* Paciente. */
+  #pdf.pdf-carta-una-pagina .pdf-patient-row {
+    gap: 7px !important;
+    margin: 0 0 4px !important;
+    padding: 4px 7px !important;
+    font-size: 12.7px !important;
+    line-height: 1.15 !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-patient-row span {
+    font-size: 13.2px !important;
+  }
+
+  /* NPH: mantiene las UI como foco principal sin ocupar altura innecesaria. */
+  #pdf.pdf-carta-una-pagina .pdf-insulina-paciente {
+    margin: 0 0 4px !important;
+    padding: 5px 7px 6px !important;
+    border-radius: 7px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-insulina-title {
+    font-size: 11.7px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-insulina-pautas {
+    gap: 6px !important;
+    margin-top: 4px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-insulina-line {
+    min-height: 34px !important;
+    padding: 4px 6px !important;
+    border-radius: 6px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-insulina-line strong {
+    font-size: 21px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-insulina-etiqueta {
+    font-size: 9.8px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-insulina-horario {
+    font-size: 11.5px !important;
+  }
+
+  /* Medicación e indicaciones: legibles, con menos vacío vertical. */
   #pdf.pdf-carta-una-pagina .pdf-medicamentos-paciente,
-  #pdf.pdf-carta-una-pagina .pdf-indicaciones,
-  #pdf.pdf-carta-una-pagina .pdf-firma-control {
+  #pdf.pdf-carta-una-pagina .pdf-indicaciones {
+    margin: 0 0 4px !important;
+    padding: 5px 7px !important;
+    border-radius: 6px !important;
+    font-size: 11.9px !important;
+    line-height: 1.19 !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-medicamentos-title,
+  #pdf.pdf-carta-una-pagina .pdf-indicaciones > b,
+  #pdf.pdf-carta-una-pagina .pdf-table-title {
+    font-size: 11.4px !important;
+    line-height: 1 !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-medicamentos-paciente ul,
+  #pdf.pdf-carta-una-pagina .pdf-indicaciones ul {
+    gap: 1px !important;
+    margin: 0 !important;
+    line-height: 1.18 !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-medicamentos-paciente li {
+    margin: 0 !important;
+    padding: 1px 2px 1px 14px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-indicaciones ul {
+    padding-left: 15px !important;
+    font-size: 11.7px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-indicaciones li {
+    margin: 0 !important;
+  }
+
+  /* Registro HGT: 15 filas completas, útiles para escribir a mano. */
+  #pdf.pdf-carta-una-pagina .pdf-table-title {
+    margin: 0 0 2px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .registro-hgt-ayuda {
+    margin: 0 0 3px !important;
+    padding: 3px 6px !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .tabla-registro-hgt {
+    width: 100% !important;
+    margin: 0 !important;
     page-break-inside: avoid !important;
     break-inside: avoid-page !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .tabla-registro-hgt .grupo-mediciones th {
+    padding: 3px 2px !important;
+    font-size: 10.2px !important;
+    line-height: 1 !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .tabla-registro-hgt thead tr:nth-child(2) th {
+    padding: 2.5px 2px !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .tabla-registro-hgt .unidad-tabla {
+    font-size: 8.4px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .tabla-registro-hgt tbody td {
+    height: 17.2px !important;
+  }
+
+  /* Firma y pie: discretos, alineados y sin espacio muerto. */
+  #pdf.pdf-carta-una-pagina .pdf-firma-control {
+    gap: 20px !important;
+    margin-top: 4px !important;
+    font-size: 10.8px !important;
+    line-height: 1.15 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid-page !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-firma-control > div:first-child {
+    padding: 4px 6px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-firma-control > div:last-child {
+    padding-top: 4px !important;
+    font-size: 9.9px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-doc-footer {
+    margin-top: 4px !important;
+    padding-top: 4px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-doc-footer > div {
+    gap: 16px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina .pdf-doc-footer div {
+    font-size: 9.4px !important;
+    line-height: 1.12 !important;
+  }
+
+  /* Casos habituales: buen tamaño de lectura, sin inflar la tabla. */
+  #pdf.pdf-carta-una-pagina.pdf-densidad-amplia {
+    font-size: 12.35px !important;
+    line-height: 1.24 !important;
+  }
+
+  #pdf.pdf-carta-una-pagina.pdf-densidad-amplia .pdf-insulina-line {
+    min-height: 36px !important;
+    padding: 4px 7px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina.pdf-densidad-amplia .pdf-insulina-line strong {
+    font-size: 22px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina.pdf-densidad-amplia .pdf-medicamentos-paciente,
+  #pdf.pdf-carta-una-pagina.pdf-densidad-amplia .pdf-indicaciones {
+    font-size: 12.1px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina.pdf-densidad-amplia .tabla-registro-hgt tbody td {
+    height: 17.8px !important;
+  }
+
+  /* Casos con muchos medicamentos: compacta solo lo necesario. */
+  #pdf.pdf-carta-una-pagina.pdf-densidad-compacta {
+    font-size: 11.55px !important;
+    line-height: 1.16 !important;
+  }
+
+  #pdf.pdf-carta-una-pagina.pdf-densidad-compacta .pdf-insulina-line {
+    min-height: 32px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina.pdf-densidad-compacta .pdf-insulina-line strong {
+    font-size: 19.5px !important;
+  }
+
+  #pdf.pdf-carta-una-pagina.pdf-densidad-compacta .pdf-medicamentos-paciente,
+  #pdf.pdf-carta-una-pagina.pdf-densidad-compacta .pdf-indicaciones,
+  #pdf.pdf-carta-una-pagina.pdf-densidad-compacta .pdf-indicaciones ul {
+    font-size: 11.25px !important;
+    line-height: 1.14 !important;
+  }
+
+  #pdf.pdf-carta-una-pagina.pdf-densidad-compacta .tabla-registro-hgt tbody td {
+    height: 16.4px !important;
   }
 }
