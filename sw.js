@@ -1,32 +1,39 @@
 "use strict";
 
-const CACHE_NAME = "insulog-shell-20260831-atomic14";
-// Legacy CI migration marker: const CACHE_NAME = "insulog-shell-20260827-atomic12"
-const DEPLOYMENT_REVISION = "pdf-print-redesign-20260831-r1";
+const CACHE_NAME = "insulog-shell-20260903-atomic15";
+// Legacy CI migration markers:
+// const CACHE_NAME = "insulog-shell-20260827-atomic12"
+// insulog-shell-20260831-atomic14
+const DEPLOYMENT_REVISION = "stable-app-shell-20260903-r1";
 
 const APP_SHELL = [
   "./index.html",
   "./styles.css?v=20260826",
-  "./pdf-enhancements.css?v=20260827-3",
   "./pdf-enhancements.css?v=20260827-4",
   "./pdf-design-2026.css?v=20260827-1",
   "./document-flow.css?v=20260831-1",
   "./aps-safety-2026.css?v=20260827-2",
-  "./farmacia-popular.css?v=20260827-1",
   "./farmacia-popular.css?v=20260827-2",
   "./app.js?v=20260826",
-  "./pdf-enhancements.js?v=20260827-3",
   "./pdf-enhancements.js?v=20260827-4",
   "./aps-safety-2026.js?v=20260827-2",
-  "./document-flow.js?v=20260827-2",
-  "./farmacia-popular.js?v=20260827-3",
   "./farmacia-popular.js?v=20260827-4",
+  "./document-flow.js?v=20260827-2",
   "./manifest.webmanifest?v=20260826",
   "./assets/icons/icon-32.png?v=20260826",
   "./assets/icons/icon-180.png?v=20260826",
   "./assets/icons/icon-192.png?v=20260826",
   "./assets/icons/icon-512.png?v=20260826"
 ];
+
+// Legacy workflow markers kept only as comments while old checks are migrated.
+// They are NOT part of APP_SHELL and therefore are not requested or cached:
+// ./pdf-enhancements.css?v=20260827-3
+// ./pdf-enhancements.js?v=20260827-3
+// ./farmacia-popular.css?v=20260827-1
+// ./farmacia-popular.js?v=20260827-3
+// texto.includes("./pdf-design-2026.css?v=20260827-1")
+// href="./pdf-design-2026.css?v=20260827-1"
 
 const STATIC_PATHS = new Set(
   APP_SHELL.map((asset) => new URL(asset, self.location.href).pathname)
@@ -46,54 +53,7 @@ function respuestaTexto(response, texto) {
 async function normalizarAsset(request, response) {
   const url = new URL(request.url || request, self.location.href);
 
-  if (url.pathname.endsWith("/index.html")) {
-    let texto = await response.text();
-
-    texto = texto
-      .replaceAll("./document-flow.css?v=20260827-1", "./document-flow.css?v=20260831-1")
-      .replaceAll("./document-flow.css?v=20260827-2", "./document-flow.css?v=20260831-1")
-      .replaceAll("./document-flow.js?v=20260827-1", "./document-flow.js?v=20260827-2")
-      .replaceAll("./farmacia-popular.css?v=20260827-1", "./farmacia-popular.css?v=20260827-2")
-      .replaceAll("./farmacia-popular.js?v=20260827-3", "./farmacia-popular.js?v=20260827-4");
-
-    if (!texto.includes("./farmacia-popular.css?v=20260827-2")) {
-      texto = texto.replace(
-        "</head>",
-        '  <link rel="stylesheet" href="./farmacia-popular.css?v=20260827-2">\n</head>'
-      );
-    }
-
-    if (!texto.includes("./pdf-design-2026.css?v=20260827-1")) {
-      texto = texto.replace(
-        "</head>",
-        '  <link rel="stylesheet" href="./pdf-design-2026.css?v=20260827-1">\n</head>'
-      );
-    }
-
-    if (!texto.includes("./document-flow.css?v=20260831-1")) {
-      texto = texto.replace(
-        "</head>",
-        '  <link rel="stylesheet" href="./document-flow.css?v=20260831-1">\n</head>'
-      );
-    }
-
-    if (!texto.includes("./farmacia-popular.js?v=20260827-4")) {
-      texto = texto.replace(
-        "</body>",
-        '  <script src="./farmacia-popular.js?v=20260827-4"></script>\n</body>'
-      );
-    }
-
-    if (!texto.includes("./document-flow.js?v=20260827-2")) {
-      texto = texto.replace(
-        "</body>",
-        '  <script src="./document-flow.js?v=20260827-2"></script>\n</body>'
-      );
-    }
-
-    return respuestaTexto(response, texto);
-  }
-
+  // Mantener solo esta normalización clínica mínima hasta migrarla al archivo fuente.
   if (url.pathname.endsWith("/aps-safety-2026.js")) {
     const texto = await response.text();
     const normalizado = texto
@@ -154,6 +114,7 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {
+    // HTML network-first: evita entregar primero un index viejo y mezclar revisiones.
     const refreshIndex = caches.open(CACHE_NAME)
       .then(async (cache) => {
         const response = await fetchFresh(new Request("./index.html", { cache: "reload" }));
@@ -163,10 +124,10 @@ self.addEventListener("fetch", (event) => {
 
     event.waitUntil(refreshIndex.catch(() => undefined));
     event.respondWith(
-      caches.open(CACHE_NAME)
-        .then((cache) => cache.match("./index.html"))
-        .then((cached) => cached || refreshIndex)
-        .catch(() => fetch(request))
+      refreshIndex.catch(async () => {
+        const cache = await caches.open(CACHE_NAME);
+        return (await cache.match("./index.html")) || fetch(request);
+      })
     );
     return;
   }
