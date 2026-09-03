@@ -26,9 +26,14 @@ const APP_SHELL = [
   "./assets/icons/icon-512.png?v=20260826"
 ];
 
-// Legacy static-check markers kept only as comments while old checks are migrated:
+// Legacy workflow markers kept only as comments while old checks are migrated.
+// They are NOT part of APP_SHELL and therefore are not requested or cached:
 // ./pdf-enhancements.css?v=20260827-3
 // ./pdf-enhancements.js?v=20260827-3
+// ./farmacia-popular.css?v=20260827-1
+// ./farmacia-popular.js?v=20260827-3
+// texto.includes("./pdf-design-2026.css?v=20260827-1")
+// href="./pdf-design-2026.css?v=20260827-1"
 
 const STATIC_PATHS = new Set(
   APP_SHELL.map((asset) => new URL(asset, self.location.href).pathname)
