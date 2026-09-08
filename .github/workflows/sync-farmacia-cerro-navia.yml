@@ -2,7 +2,9 @@ name: Sync Farmacia Popular Cerro Navia
 
 on:
   schedule:
-    - cron: "17 10 * * *"
+    # GitHub Actions schedule es best-effort. Se programan varios intentos UTC
+    # para cubrir la madrugada/mañana de Chile incluso si alguno se retrasa.
+    - cron: "30 7,8,9,10,13 * * *"
   workflow_dispatch:
   push:
     branches: [main]
@@ -31,13 +33,66 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Skip scheduled retry if data is already current today
+        id: freshness
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+
+          chile = ZoneInfo("America/Santiago")
+          today_chile = datetime.now(chile).date()
+          path = Path("data/farmacia-cerro-navia.json")
+          updated_chile = None
+          current_today = False
+
+          try:
+              data = json.loads(path.read_text(encoding="utf-8"))
+              raw = str(data.get("updated_at") or "").strip()
+              if raw:
+                  updated = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+                  if updated.tzinfo is None:
+                      updated = updated.replace(tzinfo=timezone.utc)
+                  updated_chile = updated.astimezone(chile).date()
+                  current_today = updated_chile == today_chile
+          except Exception as exc:
+              print(f"Could not determine pharmacy data freshness: {exc}")
+
+          # Solo los intentos automáticos se omiten si ya hubo una actualización
+          # ese día. workflow_dispatch y push siguen ejecutándose como prueba/rescate.
+          skip = os.environ.get("EVENT_NAME") == "schedule" and current_today
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"skip={'true' if skip else 'false'}\n")
+              output.write(f"today_chile={today_chile.isoformat()}\n")
+              output.write(f"updated_chile={updated_chile.isoformat() if updated_chile else 'unknown'}\n")
+
+          if skip:
+              print(f"Pharmacy data is already current for Chile date {today_chile}; scheduled retry skipped.")
+          else:
+              print(
+                  "Pharmacy sync will run:",
+                  f"event={os.environ.get('EVENT_NAME')}",
+                  f"today_chile={today_chile}",
+                  f"updated_chile={updated_chile}",
+              )
+          PY
+
       - name: Install scraper dependencies
+        if: steps.freshness.outputs.skip != 'true'
         run: python -m pip install --disable-pip-version-check requests beautifulsoup4
 
       - name: Fetch current prices, stock and new presentations
+        if: steps.freshness.outputs.skip != 'true'
         run: python scripts/update_farmacia_cerro_navia.py
 
       - name: Validate generated pharmacy data
+        if: steps.freshness.outputs.skip != 'true'
         run: |
           python - <<'PY'
           import json
@@ -65,6 +120,7 @@ jobs:
           PY
 
       - name: Commit updated pharmacy data safely
+        if: steps.freshness.outputs.skip != 'true'
         run: |
           set -e
           git config user.name "github-actions[bot]"
