@@ -7,6 +7,7 @@ on:
     branches: [main]
     paths:
       - "pdf-design-2026.css"
+      - "index.html"
       - "sw.js"
       - ".github/workflows/pdf-design-check.yml"
 
@@ -26,6 +27,7 @@ jobs:
           from pathlib import Path
 
           css = Path("pdf-design-2026.css").read_text(encoding="utf-8")
+          html = Path("index.html").read_text(encoding="utf-8")
           sw = Path("sw.js").read_text(encoding="utf-8")
 
           required_css = [
@@ -55,12 +57,14 @@ jobs:
           if "overflow: hidden" in css:
               raise SystemExit("Patient PDF must never force one page by clipping content")
 
-          for token in [
-              './pdf-design-2026.css?v=20260827-1',
-              'texto.includes("./pdf-design-2026.css?v=20260827-1")',
-              'href="./pdf-design-2026.css?v=20260827-1"'
-          ]:
-              if token not in sw:
-                  raise SystemExit(f"New PDF design is not wired into the app shell: {token}")
+          asset = "./pdf-design-2026.css?v=20260827-1"
+          if f'href="{asset}"' not in html:
+              raise SystemExit("PDF design must be loaded directly by index.html")
+          if asset not in sw:
+              raise SystemExit("PDF design must be present in the offline app shell")
 
-          print("Patient PDF design keeps the Letter one-page contract without clipping")
+          for legacy in ["texto.includes(", "normalizarAsset", "respuestaTexto"]:
+              if legacy in sw:
+                  raise SystemExit(f"PDF wiring must not depend on service-worker HTML/JS rewriting: {legacy}")
+
+          print("Patient PDF design is directly loaded and keeps the Letter one-page contract without clipping")
