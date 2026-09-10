@@ -194,6 +194,8 @@ require(
         'addEventListener("fetch"', 'caches.delete',
         'event.waitUntil(refreshIndex.catch(() => undefined))',
         'event.waitUntil(refreshAsset.catch(() => undefined))', "fetchFresh",
+        'const PDF_PREVIEW_PATH = "./pdf-preview.html?v=20260910-1"',
+        'url.pathname.endsWith("/pdf-preview.html")', 'cache.match(navigationAsset)',
     ],
     "PWA invariants",
 )
