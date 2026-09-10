@@ -28,9 +28,13 @@ jobs:
           node --check farmacia-popular.js
           node --check document-flow.js
           node --check sw.js
+          node --check tests/clinical-engine.test.js
+          node --check tests/clinical-engine-regression.test.js
 
       - name: Run clinical engine equivalence tests
-        run: node tests/clinical-engine.test.js
+        run: |
+          node tests/clinical-engine.test.js
+          node tests/clinical-engine-regression.test.js
 
       - name: Validate manifest JSON
         run: python -m json.tool manifest.webmanifest > /dev/null
