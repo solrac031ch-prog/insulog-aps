@@ -1,21 +1,23 @@
 "use strict";
 
-const CACHE_NAME = "insulog-shell-20260910-atomic16";
-const DEPLOYMENT_REVISION = "source-of-truth-20260910-r1";
+const CACHE_NAME = "insulog-shell-20260910-atomic17";
+const DEPLOYMENT_REVISION = "pdf-isolation-20260910-r1";
+const PDF_PREVIEW_PATH = "./pdf-preview.html?v=20260910-1";
 
 const APP_SHELL = [
   "./index.html",
+  PDF_PREVIEW_PATH,
   "./styles.css?v=20260826",
   "./pdf-enhancements.css?v=20260827-4",
   "./pdf-design-2026.css?v=20260827-1",
-  "./document-flow.css?v=20260831-1",
+  "./document-flow.css?v=20260910-1",
   "./aps-safety-2026.css?v=20260827-2",
   "./farmacia-popular.css?v=20260827-2",
   "./app.js?v=20260826",
   "./pdf-enhancements.js?v=20260827-4",
   "./aps-safety-2026.js?v=20260910-1",
   "./farmacia-popular.js?v=20260827-4",
-  "./document-flow.js?v=20260827-2",
+  "./document-flow.js?v=20260910-1",
   "./manifest.webmanifest?v=20260826",
   "./assets/icons/icon-32.png?v=20260826",
   "./assets/icons/icon-180.png?v=20260826",
@@ -69,19 +71,24 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {
-    // HTML network-first: evita entregar primero un index viejo y mezclar revisiones.
-    const refreshIndex = caches.open(CACHE_NAME)
+    // La app y el documento imprimible son dos documentos HTML distintos.
+    // Ambos usan network-first, pero nunca se sustituyen entre sí.
+    const navigationAsset = url.pathname.endsWith("/pdf-preview.html")
+      ? PDF_PREVIEW_PATH
+      : "./index.html";
+
+    const refreshNavigation = caches.open(CACHE_NAME)
       .then(async (cache) => {
-        const response = await fetchFresh(new Request("./index.html", { cache: "reload" }));
-        await cache.put("./index.html", response.clone());
+        const response = await fetchFresh(new Request(navigationAsset, { cache: "reload" }));
+        await cache.put(navigationAsset, response.clone());
         return response;
       });
 
-    event.waitUntil(refreshIndex.catch(() => undefined));
+    event.waitUntil(refreshNavigation.catch(() => undefined));
     event.respondWith(
-      refreshIndex.catch(async () => {
+      refreshNavigation.catch(async () => {
         const cache = await caches.open(CACHE_NAME);
-        return (await cache.match("./index.html")) || fetch(request);
+        return (await cache.match(navigationAsset)) || fetch(request);
       })
     );
     return;

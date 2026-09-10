@@ -27,6 +27,7 @@ pdf_css = text("pdf-enhancements.css")
 pdf_design = text("pdf-design-2026.css")
 doc_js = text("document-flow.js")
 doc_css = text("document-flow.css")
+pdf_preview_html = text("pdf-preview.html")
 aps_js = text("aps-safety-2026.js")
 aps_css = text("aps-safety-2026.css")
 pharmacy_js = text("farmacia-popular.js")
@@ -53,21 +54,22 @@ direct_assets = [
     "./pdf-enhancements.js?v=20260827-4",
     "./aps-safety-2026.js?v=20260910-1",
     "./farmacia-popular.js?v=20260827-4",
-    "./document-flow.js?v=20260827-2",
-    "./pdf-enhancements.css?v=20260827-4",
-    "./pdf-design-2026.css?v=20260827-1",
-    "./document-flow.css?v=20260831-1",
+    "./document-flow.js?v=20260910-1",
+    "./document-flow.css?v=20260910-1",
     "./aps-safety-2026.css?v=20260827-2",
     "./farmacia-popular.css?v=20260827-2",
 ]
 require(html, direct_assets, "Direct application assets")
+require(html, ['id="pdf-preview-frame"', './pdf-preview.html?v=20260910-1', 'imprimirDocumentoAislado()', 'pdf-render-staging'], "Isolated PDF host")
+forbid(html, ['href="./pdf-enhancements.css', 'href="./pdf-design-2026.css'], "Parent application PDF styles")
+require(pdf_preview_html, ['./styles.css?v=20260826', './pdf-enhancements.css?v=20260827-4', './pdf-design-2026.css?v=20260827-1', './document-flow.css?v=20260910-1', 'id="pdf"'], "Isolated PDF document assets")
 
 script_order = [
     html.index("./app.js?v=20260826"),
     html.index("./pdf-enhancements.js?v=20260827-4"),
     html.index("./aps-safety-2026.js?v=20260910-1"),
     html.index("./farmacia-popular.js?v=20260827-4"),
-    html.index("./document-flow.js?v=20260827-2"),
+    html.index("./document-flow.js?v=20260910-1"),
 ]
 if script_order != sorted(script_order):
     raise SystemExit("JavaScript load order must remain app -> PDF -> APS safety -> pharmacy -> document flow")
@@ -77,8 +79,12 @@ p7_start = html.index('<section id="p7"')
 main_end = html.index("</main>", p7_start)
 if 'id="pdf"' in html[p6_start:p7_start]:
     raise SystemExit("P6 must contain only document preparation controls")
-if 'id="pdf"' not in html[p7_start:main_end]:
-    raise SystemExit("P7 must own the PDF preview")
+if 'id="pdf"' in html[p7_start:main_end]:
+    raise SystemExit("P7 must not render the printable PDF in the parent document")
+if 'id="pdf-preview-frame"' not in html[p7_start:main_end]:
+    raise SystemExit("P7 must own the isolated PDF iframe")
+if html.index('id="pdf"') < main_end:
+    raise SystemExit("The parent #pdf staging node must live outside the application main")
 
 if 'class="aps-safety-box is-hidden"' not in html:
     raise SystemExit("Hypoglycemia review must be hidden directly in HTML")
@@ -162,8 +168,8 @@ require(
     "Letter PDF styling",
 )
 forbid(pdf_css, ["overflow: hidden"], "PDF clipping")
-require(doc_js, ["mostrarDocumento", "volverPreparacionDocumento", "nav(7)"], "P6/P7 document flow")
-require(doc_css, ["@media print", "#p7"], "Document-flow print isolation")
+require(doc_js, ["mostrarDocumento", "volverPreparacionDocumento", "nav(7)", "pdf-preview-frame", "copiarVistaPreviaAlFrame", "imprimirDocumentoAislado", "contentDocument", "queueMicrotask"], "P6/P7 isolated document flow")
+require(doc_css, ["@media print", "#p7", ".pdf-preview-frame", ".pdf-render-staging", "body.pdf-isolated-document"], "Document-flow print isolation")
 require(pdf_design, ["@page"], "PDF design page contract")
 
 # Farmacia Popular remains a presentation/data concern, not a clinical-calculation input.
@@ -182,12 +188,14 @@ forbid(sw, ["normalizarAsset", "respuestaTexto"], "Service-worker runtime transf
 require(
     sw,
     [
-        'const CACHE_NAME = "insulog-shell-20260910-atomic16"',
-        'const DEPLOYMENT_REVISION = "source-of-truth-20260910-r1"',
-        'new Request(asset, { cache: "reload" })', 'cache.match("./index.html")',
+        'const CACHE_NAME = "insulog-shell-20260910-atomic17"',
+        'const DEPLOYMENT_REVISION = "pdf-isolation-20260910-r1"',
+        'new Request(asset, { cache: "reload" })',
         'addEventListener("fetch"', 'caches.delete',
-        'event.waitUntil(refreshIndex.catch(() => undefined))',
+        'event.waitUntil(refreshNavigation.catch(() => undefined))',
         'event.waitUntil(refreshAsset.catch(() => undefined))', "fetchFresh",
+        'const PDF_PREVIEW_PATH = "./pdf-preview.html?v=20260910-1"',
+        'url.pathname.endsWith("/pdf-preview.html")', 'cache.match(navigationAsset)',
     ],
     "PWA invariants",
 )
@@ -195,8 +203,8 @@ require(
     sw,
     [
         "./index.html", "./styles.css?v=20260826", "./app.js?v=20260826",
-        "./pdf-enhancements.js?v=20260827-4", "./aps-safety-2026.js?v=20260910-1",
-        "./farmacia-popular.js?v=20260827-4", "./document-flow.js?v=20260827-2",
+        "./pdf-preview.html?v=20260910-1", "./pdf-enhancements.js?v=20260827-4", "./aps-safety-2026.js?v=20260910-1",
+        "./farmacia-popular.js?v=20260827-4", "./document-flow.js?v=20260910-1",
     ],
     "Critical cached app-shell assets",
 )

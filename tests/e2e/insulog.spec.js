@@ -189,12 +189,14 @@ test("la alerta de hipoglicemia aparece solo después de presionar Ajustar dosis
   await expect(page.locator("#hipo-con-ayuda")).toBeVisible();
 });
 
-test("P6 solo prepara el documento y P7 contiene la vista previa", async ({ page }) => {
+test("P6 solo prepara el documento y P7 contiene la vista previa aislada", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => nav(6));
   await expectActivePage(page, "p6");
   await expect(page.locator("#p6 #pdf")).toHaveCount(0);
-  await expect(page.locator("#p7 #pdf")).toHaveCount(1);
+  await expect(page.locator("#p7 #pdf")).toHaveCount(0);
+  await expect(page.locator("#pdf-preview-frame")).toHaveCount(1);
+  await expect(page.locator("body > #pdf.pdf-render-staging")).toBeHidden();
 
   let alertMessage = "";
   page.once("dialog", async (dialog) => {
@@ -208,10 +210,23 @@ test("P6 solo prepara el documento y P7 contiene la vista previa", async ({ page
   await page.locator("#nombre-paciente").fill("Paciente E2E");
   await page.locator("#p6").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
   await expectActivePage(page, "p7");
-  await expect(page.locator("#pdf")).toContainText("Paciente E2E");
+
+  const preview = page.frameLocator("#pdf-preview-frame");
+  await expect(preview.locator("#pdf")).toContainText("Paciente E2E");
+  await expect(page.locator("#imprimir-documento-btn")).toBeEnabled();
 });
 
-test("el documento de paciente imprime en una sola hoja Letter", async ({ page }) => {
+test("los estilos del PDF viven solo dentro del documento aislado", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('head > link[href*="pdf-enhancements.css"]')).toHaveCount(0);
+  await expect(page.locator('head > link[href*="pdf-design-2026.css"]')).toHaveCount(0);
+
+  const preview = page.frameLocator("#pdf-preview-frame");
+  await expect(preview.locator('head > link[href*="pdf-enhancements.css"]')).toHaveCount(1);
+  await expect(preview.locator('head > link[href*="pdf-design-2026.css"]')).toHaveCount(1);
+});
+
+test("el documento aislado imprime en una sola hoja Letter", async ({ page, context }) => {
   await page.goto("/");
   await page.evaluate(() => {
     globalData.am = 10;
@@ -224,10 +239,26 @@ test("el documento de paciente imprime en una sola hoja Letter", async ({ page }
   await page.locator("#nombre-paciente").fill("Paciente prueba impresión");
   await page.locator("#p6").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
   await expectActivePage(page, "p7");
-  await expect(page.locator("#pdf")).toContainText("Paciente prueba impresión");
 
-  await page.emulateMedia({ media: "print" });
-  const pdf = await page.pdf({
+  const preview = page.frameLocator("#pdf-preview-frame");
+  await expect(preview.locator("#pdf")).toContainText("Paciente prueba impresión");
+
+  const rendered = await page.locator("#pdf-preview-frame").evaluate((iframe) => {
+    const root = iframe.contentDocument?.getElementById("pdf");
+    return { className: root?.className || "", html: root?.innerHTML || "" };
+  });
+  expect(rendered.html).toContain("Paciente prueba impresión");
+
+  const printPage = await context.newPage();
+  await printPage.goto("/pdf-preview.html?v=20260910-1");
+  await printPage.evaluate(({ className, html }) => {
+    const root = document.getElementById("pdf");
+    root.className = className;
+    root.innerHTML = html;
+  }, rendered);
+  await printPage.emulateMedia({ media: "print" });
+
+  const pdf = await printPage.pdf({
     format: "Letter",
     printBackground: true,
     preferCSSPageSize: true,
@@ -235,6 +266,7 @@ test("el documento de paciente imprime en una sola hoja Letter", async ({ page }
   });
   const document = await PDFDocument.load(pdf);
   expect(document.getPageCount()).toBe(1);
+  await printPage.close();
 });
 
 test("el nombre del paciente no persiste tras recargar la aplicación", async ({ page }) => {
