@@ -1,0 +1,117 @@
+name: Source of truth migration (temporary branch only)
+
+on:
+  push:
+    branches: [pwa-source-of-truth]
+    paths:
+      - ".github/source-of-truth-trigger.txt"
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: pwa-source-of-truth
+          fetch-depth: 0
+
+      - name: Move formulary corrections into source and simplify service worker
+        shell: python
+        run: |
+          from pathlib import Path
+
+          aps_path = Path("aps-safety-2026.js")
+          aps = aps_path.read_text(encoding="utf-8")
+          old_label = '      label: "Empagliflozina 10 mg",'
+          new_label = '      label: "Empagliflozina",'
+          old_combo = '      doses: ["12,5/1.000 mg/día"],'
+          new_combo = '      doses: ["12,5/850 mg/día", "12,5/1.000 mg/día"],'
+          if old_label not in aps or old_combo not in aps:
+              raise SystemExit("Expected formulary source markers were not found")
+          aps = aps.replace(old_label, new_label, 1).replace(old_combo, new_combo, 1)
+          aps_path.write_text(aps, encoding="utf-8")
+
+          index_path = Path("index.html")
+          index = index_path.read_text(encoding="utf-8")
+          old_asset = './aps-safety-2026.js?v=20260827-2'
+          new_asset = './aps-safety-2026.js?v=20260910-1'
+          if old_asset not in index:
+              raise SystemExit("Expected APS safety asset version was not found in index.html")
+          index = index.replace(old_asset, new_asset)
+          index_path.write_text(index, encoding="utf-8")
+
+          sw_path = Path("sw.js")
+          sw = sw_path.read_text(encoding="utf-8")
+          sw = sw.replace('const CACHE_NAME = "insulog-shell-20260903-atomic15";', 'const CACHE_NAME = "insulog-shell-20260910-atomic16";', 1)
+          sw = sw.replace('const DEPLOYMENT_REVISION = "stable-app-shell-20260903-r1";', 'const DEPLOYMENT_REVISION = "source-of-truth-20260910-r1";', 1)
+          if old_asset not in sw:
+              raise SystemExit("Expected APS safety asset version was not found in sw.js")
+          sw = sw.replace(old_asset, new_asset)
+
+          start = sw.find('function respuestaTexto(')
+          end = sw.find('async function fetchFresh(')
+          if start == -1 or end == -1 or end <= start:
+              raise SystemExit("Could not locate obsolete service-worker transformation block")
+          sw = sw[:start] + sw[end:]
+          old_return = '  return normalizarAsset(request, response);'
+          if old_return not in sw:
+              raise SystemExit("Could not locate transformed fetch return")
+          sw = sw.replace(old_return, '  return response;', 1)
+
+          legacy_start = sw.find('// Legacy CI migration markers:')
+          if legacy_start != -1:
+              legacy_end = sw.find('const DEPLOYMENT_REVISION', legacy_start)
+              sw = sw[:legacy_start] + sw[legacy_end:]
+          marker_start = sw.find('// Legacy workflow markers kept only as comments')
+          if marker_start != -1:
+              marker_end = sw.find('const STATIC_PATHS', marker_start)
+              sw = sw[:marker_start] + sw[marker_end:]
+
+          sw_path.write_text(sw, encoding="utf-8")
+
+          check_path = Path(".github/workflows/static-check.yml")
+          check = check_path.read_text(encoding="utf-8")
+          check = check.replace(old_asset, new_asset)
+          old_cache_assert = '              \'const CACHE_NAME = "insulog-shell-20260827-atomic12"\','
+          new_cache_assert = '              \'const CACHE_NAME = "insulog-shell-20260910-atomic16"\','
+          if old_cache_assert not in check:
+              raise SystemExit("Could not locate legacy cache assertion")
+          check = check.replace(old_cache_assert, new_cache_assert, 1)
+
+          formulary_anchor = '              \'"10 mg/día", "12,5 mg/día", "25 mg/día"\','
+          if formulary_anchor not in check:
+              raise SystemExit("Could not locate formulary assertions in static check")
+          check = check.replace(
+              formulary_anchor,
+              formulary_anchor + '\n              \'label: "Empagliflozina"\', \'doses: ["12,5/850 mg/día", "12,5/1.000 mg/día"]\','
+          )
+
+          sw_anchor = '          for required_asset in ['
+          guard = '          if "normalizarAsset" in sw or "respuestaTexto" in sw:\n              raise SystemExit("Service worker must not rewrite clinical JavaScript at runtime")\n\n'
+          if sw_anchor not in check:
+              raise SystemExit("Could not locate service-worker asset assertions")
+          check = check.replace(sw_anchor, guard + sw_anchor, 1)
+          check_path.write_text(check, encoding="utf-8")
+
+          print("Source-of-truth migration applied without changing app.js or clinical algorithms")
+
+      - name: Validate syntax before commit
+        run: |
+          node --check aps-safety-2026.js
+          node --check sw.js
+          grep -q 'label: "Empagliflozina"' aps-safety-2026.js
+          grep -q '12,5/850 mg/día' aps-safety-2026.js
+          ! grep -q 'normalizarAsset' sw.js
+          ! grep -q 'respuestaTexto' sw.js
+
+      - name: Commit branch migration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add aps-safety-2026.js index.html sw.js .github/workflows/static-check.yml
+          git commit -m "Move APS formulary values into source of truth"
+          git push origin HEAD:pwa-source-of-truth
