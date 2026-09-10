@@ -38,7 +38,7 @@
         <p class="author-role">Médico Internista</p>
       </div>
 
-      <button type="button" class="btn btn-main btn-narrow" onclick="nav(1)">INICIAR ALGORITMO</button>
+      <button type="button" class="btn btn-main btn-narrow" data-action="navigate" data-page="1">INICIAR ALGORITMO</button>
     </section>
 
     <section id="p1" class="page page-center" aria-hidden="true">
@@ -47,8 +47,8 @@
       <p class="lead">¿El paciente presenta DM tipo 1, patología pancreática (ej. pancreatitis crónica), embarazo, antecedente de cirugía pancreática o es menor de 18 años?</p>
 
       <div class="stack-actions narrow-actions">
-        <button type="button" class="btn btn-danger" onclick="exclusion()">SÍ</button>
-        <button type="button" class="btn btn-main" onclick="nav(2)">NO</button>
+        <button type="button" class="btn btn-danger" data-action="exclude">SÍ</button>
+        <button type="button" class="btn btn-main" data-action="navigate" data-page="2">NO</button>
       </div>
 
       <div id="alerta" class="alert alert-danger is-hidden" role="alert">
@@ -69,8 +69,8 @@
 
       <p class="section-prompt">Seleccione el tipo de manejo</p>
       <div class="stack-actions narrow-actions">
-        <button type="button" class="btn btn-main" onclick="mostrarInicio()">INICIO DE INSULINA</button>
-        <button type="button" class="btn btn-success" onclick="nav(35)">SEGUIMIENTO DE INSULINA</button>
+        <button type="button" class="btn btn-main" data-action="show-initial-criteria">INICIO DE INSULINA</button>
+        <button type="button" class="btn btn-success" data-action="navigate" data-page="35">SEGUIMIENTO DE INSULINA</button>
       </div>
 
       <div id="criterios" class="is-hidden">
@@ -93,14 +93,14 @@
 
           <p class="card-title criteria-heading">Criterios clínicos y descompensación</p>
           <div class="selection-grid">
-            <button type="button" class="btn selection-btn inicio-btn" data-value="Fracaso terapia oral" onclick="toggleSeleccion(this)">Fracaso terapia oral</button>
-            <button type="button" class="btn selection-btn inicio-btn" data-value="Deseo del paciente" onclick="toggleSeleccion(this)">Deseo del paciente</button>
-            <button type="button" class="btn selection-btn catabolico-btn" data-value="Baja de peso involuntaria" onclick="toggleSeleccion(this)">Baja de peso involuntaria</button>
-            <button type="button" class="btn selection-btn catabolico-btn" data-value="Poliuria marcada" onclick="toggleSeleccion(this)">Poliuria marcada</button>
-            <button type="button" class="btn selection-btn catabolico-btn" data-value="Polidipsia marcada" onclick="toggleSeleccion(this)">Polidipsia marcada</button>
-            <button type="button" class="btn selection-btn catabolico-btn" data-value="Astenia marcada / compromiso del estado general" onclick="toggleSeleccion(this)">Astenia marcada / compromiso del estado general</button>
-            <button type="button" class="btn selection-btn catabolico-btn" data-value="Sospecha de cetosis o cetonuria / crisis hiperglicémica reciente" onclick="toggleSeleccion(this)">Sospecha de cetosis o cetonuria / crisis hiperglicémica reciente</button>
-            <button type="button" class="btn selection-btn catabolico-btn" data-value="Glicemias muy elevadas con síntomas" onclick="toggleSeleccion(this)">Glicemias muy elevadas con síntomas</button>
+            <button type="button" class="btn selection-btn inicio-btn" data-value="Fracaso terapia oral" data-action="toggle-selection">Fracaso terapia oral</button>
+            <button type="button" class="btn selection-btn inicio-btn" data-value="Deseo del paciente" data-action="toggle-selection">Deseo del paciente</button>
+            <button type="button" class="btn selection-btn catabolico-btn" data-value="Baja de peso involuntaria" data-action="toggle-selection">Baja de peso involuntaria</button>
+            <button type="button" class="btn selection-btn catabolico-btn" data-value="Poliuria marcada" data-action="toggle-selection">Poliuria marcada</button>
+            <button type="button" class="btn selection-btn catabolico-btn" data-value="Polidipsia marcada" data-action="toggle-selection">Polidipsia marcada</button>
+            <button type="button" class="btn selection-btn catabolico-btn" data-value="Astenia marcada / compromiso del estado general" data-action="toggle-selection">Astenia marcada / compromiso del estado general</button>
+            <button type="button" class="btn selection-btn catabolico-btn" data-value="Sospecha de cetosis o cetonuria / crisis hiperglicémica reciente" data-action="toggle-selection">Sospecha de cetosis o cetonuria / crisis hiperglicémica reciente</button>
+            <button type="button" class="btn selection-btn catabolico-btn" data-value="Glicemias muy elevadas con síntomas" data-action="toggle-selection">Glicemias muy elevadas con síntomas</button>
           </div>
 
           <div id="sugerencia-esquema-inicio" class="alert alert-info is-hidden"></div>
@@ -109,18 +109,18 @@
         <div class="card card-red text-left">
           <p class="card-title text-center">Alto riesgo de hipoglicemia</p>
           <div class="selection-grid">
-            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Adulto mayor frágil" onclick="toggleSeleccion(this)">Adulto mayor frágil</button>
-            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Enfermedad renal crónica" onclick="toggleSeleccion(this)">Enfermedad renal crónica</button>
-            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Baja ingesta o ingesta irregular" onclick="toggleSeleccion(this)">Baja ingesta o ingesta irregular</button>
-            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Antecedente de hipoglicemia" onclick="toggleSeleccion(this)">Antecedente de hipoglicemia</button>
-            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Vive solo o bajo soporte familiar" onclick="toggleSeleccion(this)">Vive solo o bajo soporte familiar</button>
-            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Deterioro cognitivo" onclick="toggleSeleccion(this)">Deterioro cognitivo</button>
-            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Consumo problemático de alcohol" onclick="toggleSeleccion(this)">Consumo problemático de alcohol</button>
-            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Actividad de alto riesgo ante hipoglicemia" onclick="toggleSeleccion(this)">Actividad de alto riesgo ante hipoglicemia</button>
+            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Adulto mayor frágil" data-action="toggle-selection">Adulto mayor frágil</button>
+            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Enfermedad renal crónica" data-action="toggle-selection">Enfermedad renal crónica</button>
+            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Baja ingesta o ingesta irregular" data-action="toggle-selection">Baja ingesta o ingesta irregular</button>
+            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Antecedente de hipoglicemia" data-action="toggle-selection">Antecedente de hipoglicemia</button>
+            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Vive solo o bajo soporte familiar" data-action="toggle-selection">Vive solo o bajo soporte familiar</button>
+            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Deterioro cognitivo" data-action="toggle-selection">Deterioro cognitivo</button>
+            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Consumo problemático de alcohol" data-action="toggle-selection">Consumo problemático de alcohol</button>
+            <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Actividad de alto riesgo ante hipoglicemia" data-action="toggle-selection">Actividad de alto riesgo ante hipoglicemia</button>
           </div>
         </div>
 
-        <button type="button" class="btn btn-main btn-narrow section-action" onclick="definirEsquemaInicio()">SIGUIENTE: DOSIFICACIÓN</button>
+        <button type="button" class="btn btn-main btn-narrow section-action" data-action="define-initial-scheme">SIGUIENTE: DOSIFICACIÓN</button>
       </div>
     </section>
 
@@ -156,7 +156,7 @@
       </div>
 
       <div id="preview-dosis" class="alert alert-success is-hidden"></div>
-      <button type="button" class="btn btn-main btn-narrow section-action" onclick="calcularInicioMejorado()">CALCULAR DOSIS Y GENERAR NOTA</button>
+      <button type="button" class="btn btn-main btn-narrow section-action" data-action="calculate-initial">CALCULAR DOSIS Y GENERAR NOTA</button>
     </section>
 
     <section id="p35" class="page page-center" aria-hidden="true">
@@ -198,8 +198,8 @@
         <p class="aps-context-helper">Este registro se incorpora a la nota clínica y no modifica automáticamente el cálculo de NPH.</p>
       </div>
 
-      <button type="button" class="btn btn-main btn-narrow section-action" onclick="prepSeg()">CONTINUAR AL REGISTRO DE GLICEMIAS</button>
-      <button type="button" class="btn btn-narrow section-action" onclick="nav(2)">VOLVER</button>
+      <button type="button" class="btn btn-main btn-narrow section-action" data-action="prepare-followup">CONTINUAR AL REGISTRO DE GLICEMIAS</button>
+      <button type="button" class="btn btn-narrow section-action" data-action="navigate" data-page="2">VOLVER</button>
     </section>
 
     <section id="p4" class="page page-center" aria-hidden="true">
@@ -244,7 +244,7 @@
         </table>
       </div>
 
-      <button id="ajustar-seguimiento-btn" type="button" class="btn btn-main btn-narrow section-action" onclick="calcularSeguimientoPro()">AJUSTAR DOSIS (PROTOCOLO APS)</button>
+      <button id="ajustar-seguimiento-btn" type="button" class="btn btn-main btn-narrow section-action" data-action="calculate-followup">AJUSTAR DOSIS (PROTOCOLO APS)</button>
 
       <div id="alerta-hipoglicemia-ada" class="aps-safety-box is-hidden" role="alert" aria-live="polite" aria-hidden="true">
         <strong id="hipo-ada-titulo"></strong>
@@ -269,15 +269,15 @@
         <p>Mantener controles y seguimiento por medicina interna APS.</p>
         <p><strong>Acciones sugeridas:</strong></p>
         <div class="stack-actions">
-          <button type="button" class="btn action-btn" data-value="Evaluar por nutricionista" onclick="toggleAccion(this)">1. Evaluar por nutricionista</button>
-          <button type="button" class="btn action-btn" data-value="Evaluar técnica de administración de insulina por enfermería" onclick="toggleAccion(this)">2. Evaluar técnica de administración de insulina por enfermería</button>
-          <button type="button" class="btn action-btn" data-value="Evaluar uso y almacenamiento de insulina por químico farmacéutico" onclick="toggleAccion(this)">3. Evaluar uso y almacenamiento de insulina por químico farmacéutico</button>
-          <button type="button" class="btn action-btn" data-value="Derivar a Telediabetología" onclick="toggleAccion(this)">4. Derivar a Telediabetología</button>
-          <button type="button" class="btn action-btn" data-value="Derivar a diabetología nivel secundario" onclick="toggleAccion(this)">5. Derivar a diabetología nivel secundario</button>
+          <button type="button" class="btn action-btn" data-value="Evaluar por nutricionista" data-action="toggle-high-dose-action">1. Evaluar por nutricionista</button>
+          <button type="button" class="btn action-btn" data-value="Evaluar técnica de administración de insulina por enfermería" data-action="toggle-high-dose-action">2. Evaluar técnica de administración de insulina por enfermería</button>
+          <button type="button" class="btn action-btn" data-value="Evaluar uso y almacenamiento de insulina por químico farmacéutico" data-action="toggle-high-dose-action">3. Evaluar uso y almacenamiento de insulina por químico farmacéutico</button>
+          <button type="button" class="btn action-btn" data-value="Derivar a Telediabetología" data-action="toggle-high-dose-action">4. Derivar a Telediabetología</button>
+          <button type="button" class="btn action-btn" data-value="Derivar a diabetología nivel secundario" data-action="toggle-high-dose-action">5. Derivar a diabetología nivel secundario</button>
         </div>
       </div>
 
-      <button type="button" class="btn btn-main btn-narrow section-action" onclick="generarNotaDosisAlta()">GENERAR NOTA CLÍNICA</button>
+      <button type="button" class="btn btn-main btn-narrow section-action" data-action="generate-high-dose-note">GENERAR NOTA CLÍNICA</button>
     </section>
 
     <section id="p5" class="page page-center" aria-hidden="true">
@@ -286,15 +286,15 @@
       <p class="lead small-lead">Resumen automático listo para copiar en ficha clínica APS.</p>
 
       <div id="nota-clinica" class="nota" role="region" aria-label="Nota clínica generada"></div>
-      <button type="button" class="btn btn-success btn-narrow section-action" onclick="copiarNota()">COPIAR NOTA A FICHA CLÍNICA</button>
+      <button type="button" class="btn btn-success btn-narrow section-action" data-action="copy-note">COPIAR NOTA A FICHA CLÍNICA</button>
       <div id="copy-status" class="copy-status" role="status" aria-live="polite"></div>
 
       <div class="card decision-card">
         <p class="card-title">Decisión de seguimiento</p>
         <p class="helper-text">Seleccione conducta final del paciente</p>
         <div class="decision-actions">
-          <button type="button" class="btn btn-main" onclick="abrirDocumento('seguimiento')">SEGUIMIENTO Y AJUSTE</button>
-          <button type="button" class="btn btn-success" onclick="abrirDocumento('pscv')">CONTROL EN PROGRAMA CV</button>
+          <button type="button" class="btn btn-main" data-action="open-document" data-document-type="seguimiento">SEGUIMIENTO Y AJUSTE</button>
+          <button type="button" class="btn btn-success" data-action="open-document" data-document-type="pscv">CONTROL EN PROGRAMA CV</button>
         </div>
       </div>
     </section>
@@ -311,9 +311,9 @@
       <div class="date-row no-print">Fecha: <span id="fecha-hoy"></span></div>
 
       <div class="document-actions no-print">
-        <button type="button" class="btn btn-main" onclick="mostrarDocumento('inicio')">INICIO DE INSULINA</button>
-        <button type="button" class="btn btn-main" onclick="mostrarDocumento('seguimiento')">SEGUIMIENTO Y AJUSTE</button>
-        <button type="button" class="btn btn-success" onclick="mostrarDocumento('pscv')">CONTROL PROGRAMA CV</button>
+        <button type="button" class="btn btn-main" data-action="show-document" data-document-type="inicio">INICIO DE INSULINA</button>
+        <button type="button" class="btn btn-main" data-action="show-document" data-document-type="seguimiento">SEGUIMIENTO Y AJUSTE</button>
+        <button type="button" class="btn btn-success" data-action="show-document" data-document-type="pscv">CONTROL PROGRAMA CV</button>
       </div>
     </section>
 
@@ -322,9 +322,9 @@
       <h2 class="no-print text-center">Documento listo para imprimir</h2>
 
       <div class="pdf-preview-toolbar no-print">
-        <button type="button" class="btn" onclick="volverPreparacionDocumento()">VOLVER / CAMBIAR DATOS</button>
-        <button id="imprimir-documento-btn" type="button" class="btn btn-main" onclick="imprimirDocumentoAislado()" disabled>IMPRIMIR</button>
-        <button type="button" class="btn btn-danger" onclick="finalizar()">FINALIZAR</button>
+        <button type="button" class="btn" data-action="back-document">VOLVER / CAMBIAR DATOS</button>
+        <button id="imprimir-documento-btn" type="button" class="btn btn-main" data-action="print-document" disabled>IMPRIMIR</button>
+        <button type="button" class="btn btn-danger" data-action="finish">FINALIZAR</button>
       </div>
 
       <div class="pdf-preview-frame-shell no-print">
@@ -340,14 +340,14 @@
 
   <div id="pdf" class="imprimible-container pdf-render-staging" aria-hidden="true"></div>
 
-  <script src="./app-runtime.js?v=20260910-1"></script>
+  <script src="./app-runtime.js?v=20260910-2"></script>
   <script src="./clinical-engine.js?v=20260910-3"></script>
-  <script src="./app.js?v=20260910-3"></script>
-  <script src="./patient-document.js?v=20260910-1"></script>
-  <script src="./pdf-enhancements.js?v=20260827-4"></script>
-  <script src="./aps-safety-2026.js?v=20260910-2"></script>
+  <script src="./app.js?v=20260910-4"></script>
+  <script src="./patient-document.js?v=20260910-2"></script>
+  <script src="./pdf-enhancements.js?v=20260910-5"></script>
+  <script src="./aps-safety-2026.js?v=20260910-3"></script>
   <script src="./farmacia-popular.js?v=20260827-4"></script>
-  <script src="./document-flow.js?v=20260910-1"></script>
-  <script src="./app-shell.js?v=20260910-1"></script>
+  <script src="./document-flow.js?v=20260910-2"></script>
+  <script src="./app-shell.js?v=20260910-2"></script>
 </body>
 </html>
