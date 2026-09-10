@@ -1,13 +1,13 @@
 "use strict";
 
-const CACHE_NAME = "insulog-shell-20260910-atomic22";
-const DEPLOYMENT_REVISION = "phase6-explicit-ui-actions-20260910-r1";
+const CACHE_NAME = "insulog-shell-20260910-atomic23";
+const DEPLOYMENT_REVISION = "phase7-mobile-ui-20260910-r1";
 const PDF_PREVIEW_PATH = "./pdf-preview.html?v=20260910-1";
 
 const APP_SHELL = [
   "./index.html",
   PDF_PREVIEW_PATH,
-  "./styles.css?v=20260826",
+  "./styles.css?v=20260910-1",
   "./pdf-enhancements.css?v=20260827-4",
   "./pdf-design-2026.css?v=20260827-1",
   "./document-flow.css?v=20260910-1",
@@ -75,8 +75,6 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {
-    // La app y el documento imprimible son dos documentos HTML distintos.
-    // Ambos usan network-first, pero nunca se sustituyen entre sí.
     const navigationAsset = url.pathname.endsWith("/pdf-preview.html")
       ? PDF_PREVIEW_PATH
       : "./index.html";

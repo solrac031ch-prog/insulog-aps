@@ -21,6 +21,7 @@ def forbid(haystack: str, needles, label: str) -> None:
 
 
 html = text("index.html")
+styles = text("styles.css")
 runtime_js = text("app-runtime.js")
 clinical_engine = text("clinical-engine.js")
 app = text("app.js")
@@ -68,6 +69,19 @@ require(
     "Declarative UI actions",
 )
 
+# Phase 7 visual contract: one responsive app stylesheet, touch-sized controls, no mobile page chrome.
+require(
+    styles,
+    [
+        "--page-inline:", "--radius-lg:", "min-height: 50px", "min-height: 48px",
+        ".selection-btn::after", ".tracking-table tbody tr:focus-within",
+        "@media (max-width: 760px)", "min-height: 100vh", "border-radius: 0",
+        "@media (prefers-reduced-motion: reduce)",
+    ],
+    "Phase 7 mobile UI foundation",
+)
+forbid(styles, ["overflow-x: scroll !important", "zoom:"], "Mobile UI distortion workarounds")
+
 direct_assets = [
     "./app-runtime.js?v=20260910-2",
     "./clinical-engine.js?v=20260910-3",
@@ -82,10 +96,10 @@ direct_assets = [
     "./aps-safety-2026.css?v=20260827-2",
     "./farmacia-popular.css?v=20260827-2",
 ]
-require(html, direct_assets, "Direct application assets")
+require(html, direct_assets + ["./styles.css?v=20260910-1"], "Direct application assets")
 require(html, ['id="pdf-preview-frame"', './pdf-preview.html?v=20260910-1', 'pdf-render-staging'], "Isolated PDF host")
 forbid(html, ['href="./pdf-enhancements.css', 'href="./pdf-design-2026.css'], "Parent application PDF styles")
-require(pdf_preview_html, ['./styles.css?v=20260826', './pdf-enhancements.css?v=20260827-4', './pdf-design-2026.css?v=20260827-1', './document-flow.css?v=20260910-1', 'id="pdf"'], "Isolated PDF document assets")
+require(pdf_preview_html, ['./styles.css?v=20260910-1', './pdf-enhancements.css?v=20260827-4', './pdf-design-2026.css?v=20260827-1', './document-flow.css?v=20260910-1', 'id="pdf"'], "Isolated PDF document assets")
 
 script_order = [html.index(asset) for asset in direct_assets[:9]]
 if script_order != sorted(script_order):
@@ -316,13 +330,13 @@ require(
 )
 require(pharmacy_css, [".farmacia-popular"], "Farmacia Popular styling")
 
-# PWA responsibility: cache/offline only, with a fresh shell for Phase 6 assets.
+# PWA responsibility: cache/offline only, with a fresh shell for Phase 7 styles.
 forbid(sw, ["normalizarAsset", "respuestaTexto"], "Service-worker runtime transformations")
 require(
     sw,
     [
-        'const CACHE_NAME = "insulog-shell-20260910-atomic22"',
-        'const DEPLOYMENT_REVISION = "phase6-explicit-ui-actions-20260910-r1"',
+        'const CACHE_NAME = "insulog-shell-20260910-atomic23"',
+        'const DEPLOYMENT_REVISION = "phase7-mobile-ui-20260910-r1"',
         'new Request(asset, { cache: "reload" })', 'addEventListener("fetch"', 'caches.delete',
         'event.waitUntil(refreshNavigation.catch(() => undefined))',
         'event.waitUntil(refreshAsset.catch(() => undefined))', "fetchFresh",
@@ -334,7 +348,7 @@ require(
 require(
     sw,
     [
-        "./index.html", "./styles.css?v=20260826", "./app-runtime.js?v=20260910-2",
+        "./index.html", "./styles.css?v=20260910-1", "./app-runtime.js?v=20260910-2",
         "./clinical-engine.js?v=20260910-3", "./app.js?v=20260910-4", "./patient-document.js?v=20260910-2",
         "./pdf-preview.html?v=20260910-1", "./pdf-enhancements.js?v=20260910-5", "./aps-safety-2026.js?v=20260910-3",
         "./farmacia-popular.js?v=20260827-4", "./document-flow.js?v=20260910-2", "./app-shell.js?v=20260910-2",
@@ -349,4 +363,4 @@ if "followup-flow-2026.js" in html or "followup-flow-2026.js" in sw:
 runtime_sources = "\n".join([runtime_js, clinical_engine, app, patient_document_js, pdf_js, doc_js, aps_js, pharmacy_js, shell_js])
 forbid(runtime_sources, ["localStorage", "sessionStorage", "indexedDB"], "Patient data persistence")
 
-print("Insulog Phase 6 action registry, clinical engine, pharmacy, PDF, privacy and PWA invariants passed")
+print("Insulog Phase 7 mobile UI, action registry, clinical engine, pharmacy, PDF, privacy and PWA invariants passed")
