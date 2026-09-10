@@ -97,6 +97,18 @@ button {
   display: none !important;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .page-label {
   display: inline-flex;
   align-items: center;
@@ -112,6 +124,15 @@ button {
   letter-spacing: 0.045em;
   line-height: 1.15;
   text-transform: uppercase;
+}
+
+#p25 .page-label {
+  font-size: 0;
+}
+
+#p25 .page-label::after {
+  content: "Inicio · tratamiento actual";
+  font-size: 0.72rem;
 }
 
 h1,
@@ -150,6 +171,18 @@ h2 {
   font-size: clamp(1.02rem, 2.2vw, 1.24rem);
   font-weight: 700;
   line-height: 1.4;
+}
+
+.hero-note {
+  max-width: 620px;
+  margin: -10px auto 22px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.hero-action {
+  margin-top: 4px;
 }
 
 .author-block {
@@ -199,6 +232,14 @@ h2 {
   font-size: 0.84rem;
 }
 
+.card-helper {
+  max-width: 650px;
+  margin: -4px auto 18px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
 .btn {
   width: 100%;
   min-height: 50px;
@@ -227,7 +268,8 @@ h2 {
 
 .btn:focus-visible,
 input:focus-visible,
-select:focus-visible {
+select:focus-visible,
+summary:focus-visible {
   outline: none;
   box-shadow: var(--focus);
 }
@@ -273,6 +315,24 @@ select:focus-visible {
   margin-top: 24px;
 }
 
+.secondary-nav {
+  max-width: 260px;
+  min-height: 44px;
+  margin-top: 14px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+  font-size: 0.88rem;
+}
+
+.secondary-nav:hover {
+  border-color: var(--border-color);
+  background: var(--surface-soft);
+  color: var(--text-strong);
+  box-shadow: none;
+}
+
 .stack-actions {
   display: flex;
   flex-direction: column;
@@ -282,6 +342,18 @@ select:focus-visible {
 .narrow-actions {
   max-width: 400px;
   margin: 0 auto;
+}
+
+.route-actions {
+  gap: 8px;
+}
+
+.action-caption {
+  margin: -1px 8px 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .decision-actions,
@@ -337,6 +409,51 @@ select:focus-visible {
   margin-top: 5px;
 }
 
+.evidence-card {
+  margin-top: 18px;
+  box-shadow: none;
+}
+
+.evidence-card summary,
+.guidance-details summary {
+  position: relative;
+  padding-right: 28px;
+  color: var(--text-strong);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 800;
+  list-style: none;
+}
+
+.evidence-card summary::-webkit-details-marker,
+.guidance-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.evidence-card summary::after,
+.guidance-details summary::after {
+  content: "+";
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  color: var(--primary-dark);
+  font-size: 1.15rem;
+  font-weight: 700;
+  transform: translateY(-52%);
+}
+
+.evidence-card[open] summary::after,
+.guidance-details[open] summary::after {
+  content: "−";
+}
+
+.evidence-content,
+.guidance-content {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-color);
+}
+
 .card-blue {
   border-color: #bdd8f8;
   background: #f5f9ff;
@@ -362,6 +479,46 @@ select:focus-visible {
 
 .criteria-heading {
   margin-top: 24px;
+}
+
+.criteria-card {
+  margin-top: 24px;
+}
+
+.clinical-check-card {
+  max-width: 660px;
+  margin: 0 auto 20px;
+  padding: 18px 20px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+}
+
+.condition-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 18px;
+  margin: 0;
+  padding-left: 20px;
+  color: #324a68;
+}
+
+.clinical-check-card .section-prompt {
+  margin-bottom: 0;
+  text-align: center;
+}
+
+.guidance-details {
+  box-shadow: none;
+}
+
+.dosing-grid {
+  margin-top: 4px;
+}
+
+.compact-warning {
+  max-width: 520px;
+  margin-top: 20px;
 }
 
 .decision-card {
@@ -429,6 +586,19 @@ select:focus-visible {
   grid-template-columns: 1.05fr 1.2fr 0.8fr 0.8fr;
   max-width: 860px;
   margin-bottom: 4px;
+}
+
+.followup-setup-card {
+  max-width: 880px;
+  margin-top: 0;
+  padding: 18px;
+  background: var(--surface-soft);
+  box-shadow: none;
+}
+
+.followup-dose-help {
+  margin: 10px 0 0;
+  text-align: left;
 }
 
 .field {
@@ -519,6 +689,25 @@ input:invalid:not(:placeholder-shown) {
   background: radial-gradient(circle, #fff 0 37%, transparent 41%);
 }
 
+.table-guide {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 700px;
+  margin: 20px auto 8px;
+  color: #405775;
+  font-size: 0.86rem;
+}
+
+.table-guide strong {
+  flex: 0 0 auto;
+  color: var(--text-strong);
+}
+
+.table-guide span {
+  text-align: right;
+}
+
 .table-wrap {
   width: 100%;
   max-width: 700px;
@@ -549,6 +738,14 @@ input:invalid:not(:placeholder-shown) {
   color: #fff;
   font-size: 0.79rem;
   letter-spacing: 0.02em;
+}
+
+.th-unit {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.68rem;
+  font-weight: 650;
+  opacity: 0.82;
 }
 
 .tracking-table th,
@@ -732,6 +929,10 @@ footer p {
     font-size: 0.68rem;
   }
 
+  #p25 .page-label::after {
+    font-size: 0.68rem;
+  }
+
   h2 {
     font-size: clamp(1.48rem, 7vw, 1.82rem);
   }
@@ -744,6 +945,11 @@ footer p {
     margin-bottom: 22px;
   }
 
+  .hero-note {
+    margin-top: -8px;
+    margin-bottom: 20px;
+  }
+
   .lead {
     margin-bottom: 20px;
     font-size: 0.96rem;
@@ -754,7 +960,8 @@ footer p {
   .p4-header-grid,
   .selection-grid,
   .decision-actions,
-  .document-actions {
+  .document-actions,
+  .condition-list {
     grid-template-columns: 1fr;
   }
 
@@ -766,13 +973,22 @@ footer p {
     min-height: 52px;
   }
 
+  .secondary-nav {
+    min-height: 44px;
+  }
+
   .card,
   .alert,
-  .bibliography-card {
+  .bibliography-card,
+  .clinical-check-card {
     margin-top: 14px;
     margin-bottom: 14px;
     padding: 16px;
     border-radius: 14px;
+  }
+
+  .clinical-check-card {
+    margin-top: 0;
   }
 
   .selection-btn,
@@ -780,14 +996,63 @@ footer p {
     min-height: 52px;
   }
 
+  .table-guide {
+    display: block;
+    margin-top: 18px;
+    margin-bottom: 8px;
+  }
+
+  .table-guide strong,
+  .table-guide span {
+    display: block;
+    text-align: left;
+  }
+
+  .table-guide span {
+    margin-top: 3px;
+    color: var(--muted);
+  }
+
   .table-wrap {
-    width: calc(100% + 8px);
-    margin-left: -4px;
-    margin-right: -4px;
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    overflow-x: visible;
   }
 
   .tracking-table {
-    min-width: 500px;
+    min-width: 0;
+    table-layout: fixed;
+    font-size: 0.82rem;
+  }
+
+  .tracking-table th:first-child {
+    width: 17%;
+  }
+
+  .tracking-table th:nth-child(2) {
+    width: 35%;
+  }
+
+  .tracking-table th:nth-child(3) {
+    width: 48%;
+  }
+
+  .tracking-table th {
+    padding: 9px 4px;
+    font-size: 0.74rem;
+  }
+
+  .tracking-table td {
+    padding: 4px;
+  }
+
+  .glicemia {
+    width: 100%;
+    max-width: 92px;
+    min-width: 0;
+    min-height: 40px;
+    padding: 5px 3px;
   }
 
   .nota {
@@ -798,6 +1063,10 @@ footer p {
 
   .section-action {
     margin-top: 20px;
+  }
+
+  .compact-warning {
+    margin-top: 18px;
   }
 
   footer {
@@ -829,12 +1098,22 @@ footer p {
 
   .card,
   .alert,
-  .bibliography-card {
+  .bibliography-card,
+  .clinical-check-card {
     padding: 14px;
   }
 
+  .tracking-table th {
+    font-size: 0.7rem;
+  }
+
+  .th-unit {
+    font-size: 0.62rem;
+  }
+
   .glicemia {
-    width: 74px;
+    width: 100%;
+    max-width: 78px;
   }
 }
 
