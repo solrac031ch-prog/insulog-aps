@@ -87,34 +87,32 @@
     };
   }
 
+  function detectDiscordantHighs(values, name) {
+    const data = values.filter((value) => Number.isFinite(value));
+    if (data.length < 4) return [];
+
+    return data.flatMap((value, index) => {
+      if (value < 70) return [];
+
+      const rest = data.filter((_, currentIndex) => currentIndex !== index);
+      const restAverage = rest.reduce((a, b) => a + b, 0) / rest.length;
+      return value > restAverage + 50 ? [`${name} ${value} mg/dL`] : [];
+    });
+  }
+
   function analyzeGlucose(values, name) {
     const data = values.filter((value) => Number.isFinite(value));
-    const excluded = [];
-    let used = [...data];
-
-    if (data.length >= 4) {
-      used = data.filter((value, index) => {
-        if (value < 70) return true;
-
-        const rest = data.filter((_, currentIndex) => currentIndex !== index);
-        const restAverage = rest.reduce((a, b) => a + b, 0) / rest.length;
-
-        if (value > restAverage + 50) {
-          excluded.push(`${name} ${value} mg/dL`);
-          return false;
-        }
-        return true;
-      });
-    }
+    const discordant = detectDiscordantHighs(data, name);
 
     return {
       datos: data,
-      usados: used,
-      promedio: used.length ? used.reduce((a, b) => a + b, 0) / used.length : null,
+      usados: [...data],
+      promedio: data.length ? data.reduce((a, b) => a + b, 0) / data.length : null,
       min: data.length ? Math.min(...data) : null,
       hipoSevera: data.some((value) => value < 54),
       hipo: data.some((value) => value < 70),
-      excluidos: excluded
+      excluidos: [],
+      discordantes: discordant
     };
   }
 
@@ -276,6 +274,7 @@
     const dosePerKg = (newAm + newPm) / weightKg;
     const doseSafety = assessDoseSafety(dosePerKg);
     const excluded = [...fasting.excluidos, ...(preEleven ? preEleven.excluidos : [])];
+    const discordant = [...fasting.discordantes, ...(preEleven ? preEleven.discordantes : [])];
 
     if (fasting.hipoSevera) {
       warnings.push("Hipoglicemia severa en ayunas: considerar evaluación clínica precoz y reducción de NPH PM.");
@@ -318,6 +317,7 @@
       `Esquema final sugerido: ${regimenLabel(finalRegimen)}`,
       ...reasoning,
       excluded.length ? `Valores altos aislados excluidos del promedio: ${excluded.join(", ")}` : "",
+      discordant.length ? `Valores discordantes: ${discordant.join(", ")}. Se mantienen en el promedio; verificar técnica, horario, alimentación y contexto clínico antes de excluirlos manualmente.` : "",
       warnings.length ? `Advertencias: ${warnings.join(" ")}` : ""
     ].filter(Boolean).join("\n");
 
@@ -341,6 +341,7 @@
       razonamiento: reasoning,
       advertencias: warnings,
       excluidos: excluded,
+      discordantes: discordant,
       explicacion: explanation
     };
   }
@@ -349,6 +350,7 @@
     roundEven,
     suggestInitialScheme,
     calculateInitialDose,
+    detectDiscordantHighs,
     analyzeGlucose,
     calculateAdjustment,
     calculateSecondDose,
