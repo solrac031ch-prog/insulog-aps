@@ -22,6 +22,7 @@ def forbid(haystack: str, needles, label: str) -> None:
 
 html = text("index.html")
 runtime_js = text("app-runtime.js")
+clinical_engine = text("clinical-engine.js")
 app = text("app.js")
 patient_document_js = text("patient-document.js")
 shell_js = text("app-shell.js")
@@ -54,7 +55,8 @@ if len(re.findall(r"<head(?:\s|>)", html, re.I)) != 1 or len(re.findall(r"</head
 
 direct_assets = [
     "./app-runtime.js?v=20260910-1",
-    "./app.js?v=20260910-1",
+    "./clinical-engine.js?v=20260910-1",
+    "./app.js?v=20260910-2",
     "./patient-document.js?v=20260910-1",
     "./pdf-enhancements.js?v=20260827-4",
     "./aps-safety-2026.js?v=20260910-1",
@@ -72,7 +74,8 @@ require(pdf_preview_html, ['./styles.css?v=20260826', './pdf-enhancements.css?v=
 
 script_order = [
     html.index("./app-runtime.js?v=20260910-1"),
-    html.index("./app.js?v=20260910-1"),
+    html.index("./clinical-engine.js?v=20260910-1"),
+    html.index("./app.js?v=20260910-2"),
     html.index("./patient-document.js?v=20260910-1"),
     html.index("./pdf-enhancements.js?v=20260827-4"),
     html.index("./aps-safety-2026.js?v=20260910-1"),
@@ -81,7 +84,7 @@ script_order = [
     html.index("./app-shell.js?v=20260910-1"),
 ]
 if script_order != sorted(script_order):
-    raise SystemExit("JavaScript load order must remain runtime -> app -> patient document -> PDF -> APS safety -> pharmacy -> document flow -> shell")
+    raise SystemExit("JavaScript load order must remain runtime -> clinical engine -> app -> patient document -> PDF -> APS safety -> pharmacy -> document flow -> shell")
 
 p6_start = html.index('<section id="p6"')
 p7_start = html.index('<section id="p7"')
@@ -112,7 +115,7 @@ require(
 )
 forbid(
     runtime_js,
-    ["calcularInicioMejorado", "calcularSeguimientoPro", "calcularAjuste", "MEDICAMENTOS_APS", "generarDocumento"],
+    ["calcularInicioMejorado", "calcularSeguimientoPro", "calcularAjuste", "calculateFollowup", "MEDICAMENTOS_APS", "generarDocumento"],
     "Runtime clinical leakage",
 )
 forbid(
@@ -128,7 +131,7 @@ require(
 )
 forbid(
     patient_document_js,
-    ["function calcularInicioMejorado", "function calcularSeguimientoPro", "function calcularAjuste", "MEDICAMENTOS_APS"],
+    ["function calcularInicioMejorado", "function calcularSeguimientoPro", "function calcularAjuste", "calculateFollowup", "MEDICAMENTOS_APS"],
     "Patient document clinical leakage",
 )
 require(
@@ -138,20 +141,42 @@ require(
      "window.InsulogShell", "DOMContentLoaded"],
     "Application shell boundary",
 )
-forbid(shell_js, ["globalData", "calcularAjuste", "MEDICAMENTOS_APS", "generarDocumento"], "Shell clinical leakage")
+forbid(shell_js, ["globalData", "calcularAjuste", "calculateFollowup", "MEDICAMENTOS_APS", "generarDocumento"], "Shell clinical leakage")
 
-# Core clinical invariants. These protect accidental refactors; intentional clinical changes
-# must update both the implementation and this contract in the same reviewed PR.
+# Pure clinical engine: formulas and decision rules live here and must not depend on browser state.
+require(
+    clinical_engine,
+    [
+        "InsulogClinicalEngine", "function roundEven", "Math.ceil(value / 2) * 2",
+        "function suggestInitialScheme", "hba1c > 9", "hba1c >= 11", "fasting > 250", "fasting >= 250",
+        "function calculateInitialDose", "total * 0.66",
+        "function analyzeGlucose", "value < 54", "value < 70",
+        "function calculateAdjustment", "analysis.promedio < 80", "analysis.promedio <= 130", "analysis.promedio <= 180",
+        "function calculateSecondDose", "Math.min(10, Math.max(4, weightKg * 0.1))",
+        "function calculateFollowup", "preElevenValues.length >= 3", "dosePerKg >= 1", "dosePerKg >= 0.7",
+    ],
+    "Pure clinical engine invariants",
+)
+forbid(
+    clinical_engine,
+    ["document", "querySelector", "globalData", "localStorage", "sessionStorage", "indexedDB", "nav("],
+    "Pure clinical engine browser coupling",
+)
+
+# UI adapter must delegate clinical decisions to the pure engine while keeping legacy globals available.
 require(
     app,
     [
-        "function redondearPar", "Math.ceil(valor / 2) * 2",
-        "function calcularInicioMejorado", "function analizarGlicemias",
-        "function calcularAjuste", "ayunasRaw.length < 3", "preonceRaw.length >= 3",
-        "function dosisSegundaDosis", "Math.min(10, Math.max(4, pesoKg * 0.1))",
-        "function calcularSeguimientoPro", "dosisKg >= 1", "dosisKg >= 0.7",
+        "const clinicalEngine = window.InsulogClinicalEngine",
+        "clinicalEngine.suggestInitialScheme", "clinicalEngine.calculateInitialDose",
+        "function redondearPar", "clinicalEngine.roundEven",
+        "function analizarGlicemias", "clinicalEngine.analyzeGlucose",
+        "function calcularAjuste", "clinicalEngine.calculateAdjustment",
+        "function dosisSegundaDosis", "clinicalEngine.calculateSecondDose",
+        "function calcularSeguimientoPro", "ayunasRaw.length < 3", "clinicalEngine.calculateFollowup",
+        "resultado.dosisKg >= 0.7",
     ],
-    "Core clinical invariants",
+    "Clinical UI adapter invariants",
 )
 
 # APS safety/formulary is the source of truth.
@@ -237,8 +262,8 @@ forbid(sw, ["normalizarAsset", "respuestaTexto"], "Service-worker runtime transf
 require(
     sw,
     [
-        'const CACHE_NAME = "insulog-shell-20260910-atomic18"',
-        'const DEPLOYMENT_REVISION = "runtime-navigation-20260910-r1"',
+        'const CACHE_NAME = "insulog-shell-20260910-atomic19"',
+        'const DEPLOYMENT_REVISION = "clinical-engine-20260910-r1"',
         'new Request(asset, { cache: "reload" })',
         'addEventListener("fetch"', 'caches.delete',
         'event.waitUntil(refreshNavigation.catch(() => undefined))',
@@ -252,7 +277,7 @@ require(
     sw,
     [
         "./index.html", "./styles.css?v=20260826", "./app-runtime.js?v=20260910-1",
-        "./app.js?v=20260910-1", "./patient-document.js?v=20260910-1",
+        "./clinical-engine.js?v=20260910-1", "./app.js?v=20260910-2", "./patient-document.js?v=20260910-1",
         "./pdf-preview.html?v=20260910-1", "./pdf-enhancements.js?v=20260827-4", "./aps-safety-2026.js?v=20260910-1",
         "./farmacia-popular.js?v=20260827-4", "./document-flow.js?v=20260910-1", "./app-shell.js?v=20260910-1",
     ],
@@ -263,7 +288,7 @@ if "followup-flow-2026.js" in html or "followup-flow-2026.js" in sw:
     raise SystemExit("Broken dynamic follow-up flow must not return")
 
 # Privacy: identifiable patient clinical state must remain ephemeral in browser memory.
-runtime = "\n".join([runtime_js, app, patient_document_js, pdf_js, doc_js, aps_js, pharmacy_js, shell_js])
+runtime = "\n".join([runtime_js, clinical_engine, app, patient_document_js, pdf_js, doc_js, aps_js, pharmacy_js, shell_js])
 forbid(runtime, ["localStorage", "sessionStorage", "indexedDB"], "Patient data persistence")
 
-print("Insulog application, clinical, pharmacy, PDF, privacy and PWA invariants passed")
+print("Insulog application, pure clinical engine, pharmacy, PDF, privacy and PWA invariants passed")
