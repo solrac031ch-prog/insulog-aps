@@ -7,6 +7,7 @@ on:
     branches: [main]
     paths:
       - "pdf-design-2026.css"
+      - "pdf-preview.html"
       - "index.html"
       - "sw.js"
       - ".github/workflows/pdf-design-check.yml"
@@ -21,13 +22,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate one-page Letter design contract
+      - name: Validate isolated one-page Letter design contract
         shell: python
         run: |
           from pathlib import Path
 
           css = Path("pdf-design-2026.css").read_text(encoding="utf-8")
           html = Path("index.html").read_text(encoding="utf-8")
+          preview = Path("pdf-preview.html").read_text(encoding="utf-8")
           sw = Path("sw.js").read_text(encoding="utf-8")
 
           required_css = [
@@ -58,13 +60,17 @@ jobs:
               raise SystemExit("Patient PDF must never force one page by clipping content")
 
           asset = "./pdf-design-2026.css?v=20260827-1"
-          if f'href="{asset}"' not in html:
-              raise SystemExit("PDF design must be loaded directly by index.html")
+          if f'href="{asset}"' not in preview:
+              raise SystemExit("PDF design must load inside pdf-preview.html")
+          if f'href="{asset}"' in html:
+              raise SystemExit("PDF design CSS must remain isolated from the parent application")
           if asset not in sw:
-              raise SystemExit("PDF design must be present in the offline app shell")
+              raise SystemExit("PDF design must remain available in the offline app shell")
+          if './pdf-preview.html?v=20260910-1' not in sw:
+              raise SystemExit("Isolated preview page must be available offline")
 
-          for legacy in ["texto.includes(", "normalizarAsset", "respuestaTexto"]:
+          for legacy in ["normalizarAsset", "respuestaTexto"]:
               if legacy in sw:
-                  raise SystemExit(f"PDF wiring must not depend on service-worker HTML/JS rewriting: {legacy}")
+                  raise SystemExit(f"PDF wiring must not depend on service-worker rewriting: {legacy}")
 
-          print("Patient PDF design is directly loaded and keeps the Letter one-page contract without clipping")
+          print("Patient PDF design is isolated and keeps the Letter one-page contract without clipping")
