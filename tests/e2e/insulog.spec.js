@@ -55,7 +55,33 @@ test("arranca sin errores JavaScript y monta la capa de seguridad", async ({ pag
   await expect(page.locator('script[src*="farmacia-popular.js"]')).toHaveCount(1);
   await page.waitForTimeout(150);
 
+  const architecture = await page.evaluate(() => ({
+    runtime: Boolean(window.InsulogRuntime),
+    shell: Boolean(window.InsulogShell),
+    activePageId: window.InsulogRuntime?.navigation.activePageId(),
+    initialState: window.InsulogRuntime?.state.snapshot()
+  }));
+  expect(architecture.runtime).toBe(true);
+  expect(architecture.shell).toBe(true);
+  expect(architecture.activePageId).toBe("p0");
+  expect(architecture.initialState).toEqual({ am: 0, pm: 0, criteria: "", acciones: "" });
   expect(pageErrors).toEqual([]);
+});
+
+test("la nueva navegación mantiene compatibilidad con nav y las páginas existentes", async ({ page }) => {
+  await page.goto("/");
+
+  await page.evaluate(() => window.InsulogRuntime.navigation.go(2));
+  await expectActivePage(page, "p2");
+
+  await page.evaluate(() => nav(1));
+  await expectActivePage(page, "p1");
+
+  const state = await page.evaluate(() => {
+    globalData.am = 12;
+    return window.InsulogRuntime.state.snapshot();
+  });
+  expect(state.am).toBe(12);
 });
 
 test("la exclusión clínica mantiene al paciente fuera del algoritmo APS", async ({ page }) => {
