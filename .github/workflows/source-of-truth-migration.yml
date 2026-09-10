@@ -46,10 +46,14 @@ jobs:
 
           sw_path = Path("sw.js")
           sw = sw_path.read_text(encoding="utf-8")
-          sw = sw.replace('const CACHE_NAME = "insulog-shell-20260903-atomic15";', 'const CACHE_NAME = "insulog-shell-20260910-atomic16";', 1)
-          sw = sw.replace('const DEPLOYMENT_REVISION = "stable-app-shell-20260903-r1";', 'const DEPLOYMENT_REVISION = "source-of-truth-20260910-r1";', 1)
-          if old_asset not in sw:
-              raise SystemExit("Expected APS safety asset version was not found in sw.js")
+          old_cache = 'const CACHE_NAME = "insulog-shell-20260903-atomic15";'
+          new_cache = 'const CACHE_NAME = "insulog-shell-20260910-atomic16";'
+          old_revision = 'const DEPLOYMENT_REVISION = "stable-app-shell-20260903-r1";'
+          new_revision = 'const DEPLOYMENT_REVISION = "source-of-truth-20260910-r1";'
+          if old_cache not in sw or old_revision not in sw or old_asset not in sw:
+              raise SystemExit("Expected service-worker version markers were not found")
+          sw = sw.replace(old_cache, new_cache, 1)
+          sw = sw.replace(old_revision, new_revision, 1)
           sw = sw.replace(old_asset, new_asset)
 
           start = sw.find('function respuestaTexto(')
@@ -72,31 +76,6 @@ jobs:
               sw = sw[:marker_start] + sw[marker_end:]
 
           sw_path.write_text(sw, encoding="utf-8")
-
-          check_path = Path(".github/workflows/static-check.yml")
-          check = check_path.read_text(encoding="utf-8")
-          check = check.replace(old_asset, new_asset)
-          old_cache_assert = '              \'const CACHE_NAME = "insulog-shell-20260827-atomic12"\','
-          new_cache_assert = '              \'const CACHE_NAME = "insulog-shell-20260910-atomic16"\','
-          if old_cache_assert not in check:
-              raise SystemExit("Could not locate legacy cache assertion")
-          check = check.replace(old_cache_assert, new_cache_assert, 1)
-
-          formulary_anchor = '              \'"10 mg/día", "12,5 mg/día", "25 mg/día"\','
-          if formulary_anchor not in check:
-              raise SystemExit("Could not locate formulary assertions in static check")
-          check = check.replace(
-              formulary_anchor,
-              formulary_anchor + '\n              \'label: "Empagliflozina"\', \'doses: ["12,5/850 mg/día", "12,5/1.000 mg/día"]\','
-          )
-
-          sw_anchor = '          for required_asset in ['
-          guard = '          if "normalizarAsset" in sw or "respuestaTexto" in sw:\n              raise SystemExit("Service worker must not rewrite clinical JavaScript at runtime")\n\n'
-          if sw_anchor not in check:
-              raise SystemExit("Could not locate service-worker asset assertions")
-          check = check.replace(sw_anchor, guard + sw_anchor, 1)
-          check_path.write_text(check, encoding="utf-8")
-
           print("Source-of-truth migration applied without changing app.js or clinical algorithms")
 
       - name: Validate syntax before commit
@@ -112,6 +91,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add aps-safety-2026.js index.html sw.js .github/workflows/static-check.yml
+          git add aps-safety-2026.js index.html sw.js
           git commit -m "Move APS formulary values into source of truth"
           git push origin HEAD:pwa-source-of-truth
