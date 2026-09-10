@@ -150,6 +150,42 @@
     return roundEven(Math.min(10, Math.max(4, weightKg * 0.1)));
   }
 
+  function assessDoseSafety(dosePerKg) {
+    if (!Number.isFinite(dosePerKg)) {
+      return Object.freeze({
+        level: "unknown",
+        requiresHighDoseReview: false,
+        blocksAutomaticEscalation: false,
+        warning: ""
+      });
+    }
+
+    if (dosePerKg >= 1) {
+      return Object.freeze({
+        level: "stop",
+        requiresHighDoseReview: true,
+        blocksAutomaticEscalation: true,
+        warning: "Dosis ≥1 UI/kg/día: no seguir escalando automáticamente en APS sin evaluación clínica; revisar técnica, adherencia, lipohipertrofia, alimentación y considerar derivación."
+      });
+    }
+
+    if (dosePerKg >= 0.7) {
+      return Object.freeze({
+        level: "high",
+        requiresHighDoseReview: true,
+        blocksAutomaticEscalation: false,
+        warning: "Dosis ≥0.7 UI/kg/día: dosis alta; revisar técnica, adherencia, sitios de punción, alimentación y necesidad de evaluación por Medicina Interna APS."
+      });
+    }
+
+    return Object.freeze({
+      level: "standard",
+      requiresHighDoseReview: false,
+      blocksAutomaticEscalation: false,
+      warning: ""
+    });
+  }
+
   function regimenLabel(regimenType) {
     if (regimenType === "2") return "NPH AM + PM";
     if (regimenType === "am") return "NPH solo AM";
@@ -238,6 +274,7 @@
     newPm = Math.max(0, newPm);
 
     const dosePerKg = (newAm + newPm) / weightKg;
+    const doseSafety = assessDoseSafety(dosePerKg);
     const excluded = [...fasting.excluidos, ...(preEleven ? preEleven.excluidos : [])];
 
     if (fasting.hipoSevera) {
@@ -260,10 +297,8 @@
       warnings.push("Dosis PM queda en 0 UI: interpretar como suspensión de dosis nocturna.");
     }
 
-    if (dosePerKg >= 1) {
-      warnings.push("Dosis ≥1 UI/kg/día: no seguir escalando automáticamente en APS sin evaluación clínica; revisar técnica, adherencia, lipohipertrofia, alimentación y considerar derivación.");
-    } else if (dosePerKg >= 0.7) {
-      warnings.push("Dosis ≥0.7 UI/kg/día: dosis alta; revisar técnica, adherencia, sitios de punción, alimentación y necesidad de evaluación por Medicina Interna APS.");
+    if (doseSafety.warning) {
+      warnings.push(doseSafety.warning);
     }
 
     const availableAverages = [
@@ -300,6 +335,9 @@
       promedioGlobal: globalAverage !== null ? Math.round(globalAverage) : "N/A",
       hba1cEstimada: estimatedHba1c,
       dosisKg: dosePerKg,
+      doseSafety,
+      requiresHighDoseReview: doseSafety.requiresHighDoseReview,
+      blocksAutomaticEscalation: doseSafety.blocksAutomaticEscalation,
       razonamiento: reasoning,
       advertencias: warnings,
       excluidos: excluded,
@@ -314,6 +352,7 @@
     analyzeGlucose,
     calculateAdjustment,
     calculateSecondDose,
+    assessDoseSafety,
     calculateFollowup,
     regimenLabel
   });
