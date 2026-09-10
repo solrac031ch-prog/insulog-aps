@@ -1,0 +1,48 @@
+name: Temporary Phase 4 runtime migration
+
+on:
+  push:
+    branches: [phase4-runtime-navigation-boundary]
+    paths:
+      - "scripts/migrate_phase4_runtime.py"
+      - ".github/workflows/migrate-phase4-runtime.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: phase4-runtime-navigation-boundary
+
+      - name: Apply deterministic runtime migration
+        run: python scripts/migrate_phase4_runtime.py
+
+      - name: Validate migrated JavaScript syntax
+        run: |
+          node --check app-runtime.js
+          node --check app.js
+          node --check patient-document.js
+          node --check app-shell.js
+          node --check document-flow.js
+          node --check sw.js
+
+      - name: Validate migrated invariants
+        run: python scripts/check_invariants.py
+
+      - name: Commit migrated application files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js patient-document.js index.html sw.js scripts/check_invariants.py tests/e2e/insulog.spec.js .github/workflows/static-check.yml .github/workflows/document-flow-check.yml
+          if git diff --cached --quiet; then
+            echo "No migration changes to commit"
+            exit 0
+          fi
+          git commit -m "Separate runtime navigation and document boundaries"
+          git push origin HEAD:phase4-runtime-navigation-boundary
