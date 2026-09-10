@@ -37,6 +37,10 @@ async function fillFasting(page, values) {
   }
 }
 
+async function runtimeState(page) {
+  return page.evaluate(() => window.InsulogRuntime.state.snapshot());
+}
+
 async function expectNoHorizontalOverflow(page) {
   const dimensions = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
@@ -45,7 +49,7 @@ async function expectNoHorizontalOverflow(page) {
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 2);
 }
 
-test("arranca sin errores JavaScript y monta la capa de seguridad", async ({ page }) => {
+test("arranca sin errores JavaScript y monta las APIs explícitas de Fase 6", async ({ page }) => {
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
 
@@ -53,32 +57,57 @@ test("arranca sin errores JavaScript y monta la capa de seguridad", async ({ pag
   await expect(page.locator("#p0 .brand-title")).toHaveText("Insulog APS");
   await expect(page.locator("#p25")).toBeAttached();
   await expect(page.locator('script[src*="farmacia-popular.js"]')).toHaveCount(1);
+  await expect(page.locator("[onclick], [onchange], [oninput]")).toHaveCount(0);
   await page.waitForTimeout(150);
 
   const architecture = await page.evaluate(() => ({
     runtime: Boolean(window.InsulogRuntime),
+    app: Boolean(window.InsulogApp),
+    documents: Boolean(window.InsulogDocuments),
     shell: Boolean(window.InsulogShell),
     activePageId: window.InsulogRuntime?.navigation.activePageId(),
-    initialState: window.InsulogRuntime?.state.snapshot()
+    initialState: window.InsulogRuntime?.state.snapshot(),
+    actions: [
+      "navigate", "define-initial-scheme", "calculate-initial", "prepare-followup",
+      "calculate-followup", "open-document", "show-document", "finish"
+    ].every((name) => window.InsulogRuntime?.actions.has(name)),
+    legacy: {
+      nav: typeof nav,
+      globalData: typeof globalData,
+      calculateFollowup: typeof calcularSeguimientoPro,
+      generateDocument: typeof generarDocumento,
+      finish: typeof finalizar
+    }
   }));
+
   expect(architecture.runtime).toBe(true);
+  expect(architecture.app).toBe(true);
+  expect(architecture.documents).toBe(true);
   expect(architecture.shell).toBe(true);
+  expect(architecture.actions).toBe(true);
   expect(architecture.activePageId).toBe("p0");
   expect(architecture.initialState).toEqual({ am: 0, pm: 0, criteria: "", acciones: "" });
+  expect(architecture.legacy).toEqual({
+    nav: "undefined",
+    globalData: "undefined",
+    calculateFollowup: "undefined",
+    generateDocument: "undefined",
+    finish: "undefined"
+  });
   expect(pageErrors).toEqual([]);
 });
 
-test("la nueva navegación mantiene compatibilidad con nav y las páginas existentes", async ({ page }) => {
+test("navegación y estado funcionan solo a través del runtime", async ({ page }) => {
   await page.goto("/");
 
   await page.evaluate(() => window.InsulogRuntime.navigation.go(2));
   await expectActivePage(page, "p2");
 
-  await page.evaluate(() => nav(1));
+  await page.evaluate(() => window.InsulogRuntime.navigation.go(1));
   await expectActivePage(page, "p1");
 
   const state = await page.evaluate(() => {
-    globalData.am = 12;
+    window.InsulogRuntime.state.patch({ am: 12 });
     return window.InsulogRuntime.state.snapshot();
   });
   expect(state.am).toBe(12);
@@ -109,8 +138,8 @@ test("inicio con hiperglicemia marcada conserva el cálculo NPH 0,2 UI/kg y repa
   await page.locator("#p3").getByRole("button", { name: "CALCULAR DOSIS Y GENERAR NOTA", exact: true }).click();
   await expectActivePage(page, "p5");
 
-  const dose = await page.evaluate(() => ({ am: globalData.am, pm: globalData.pm }));
-  expect(dose).toEqual({ am: 10, pm: 4 });
+  const data = await runtimeState(page);
+  expect({ am: data.am, pm: data.pm }).toEqual({ am: 10, pm: 4 });
 });
 
 test("alto riesgo de hipoglicemia conserva inicio conservador 0,1 UI/kg", async ({ page }) => {
@@ -128,8 +157,8 @@ test("alto riesgo de hipoglicemia conserva inicio conservador 0,1 UI/kg", async 
   await page.locator("#p3").getByRole("button", { name: "CALCULAR DOSIS Y GENERAR NOTA", exact: true }).click();
   await expectActivePage(page, "p5");
 
-  const dose = await page.evaluate(() => ({ am: globalData.am, pm: globalData.pm }));
-  expect(dose).toEqual({ am: 0, pm: 8 });
+  const data = await runtimeState(page);
+  expect({ am: data.am, pm: data.pm }).toEqual({ am: 0, pm: 8 });
 });
 
 test("seguimiento genera exactamente 15 filas de HGT", async ({ page }) => {
@@ -195,8 +224,8 @@ test("seguimiento PM con ayunas 160 mg/dL aumenta exactamente 2 UI", async ({ pa
   await page.locator("#ajustar-seguimiento-btn").click();
 
   await expectActivePage(page, "p5");
-  const dose = await page.evaluate(() => ({ am: globalData.am, pm: globalData.pm }));
-  expect(dose).toEqual({ am: 0, pm: 22 });
+  const data = await runtimeState(page);
+  expect({ am: data.am, pm: data.pm }).toEqual({ am: 0, pm: 22 });
 });
 
 test("glicemia discordante se conserva en el promedio y en la nota clínica", async ({ page }) => {
@@ -209,8 +238,8 @@ test("glicemia discordante se conserva en el promedio y en la nota clínica", as
   await page.locator("#ajustar-seguimiento-btn").click();
 
   await expectActivePage(page, "p5");
-  const result = await page.evaluate(() => ({ pm: globalData.pm, promAy: globalData.promAy }));
-  expect(result).toEqual({ pm: 22, promAy: 150 });
+  const data = await runtimeState(page);
+  expect({ pm: data.pm, promAy: data.promAy }).toEqual({ pm: 22, promAy: 150 });
   await expect(page.locator("#nota-clinica")).toContainText("Valores discordantes: Ayunas 300 mg/dL");
   await expect(page.locator("#nota-clinica")).toContainText("Se mantienen en el promedio");
 });
@@ -258,15 +287,15 @@ test("hipoglicemia con asistencia mantiene nivel 3 y no ajusta NPH automáticame
   await page.locator("#hipo-con-ayuda").click();
 
   await expectActivePage(page, "p5");
-  const dose = await page.evaluate(() => ({ am: globalData.am, pm: globalData.pm }));
-  expect(dose).toEqual({ am: 0, pm: 20 });
+  const data = await runtimeState(page);
+  expect({ am: data.am, pm: data.pm }).toEqual({ am: 0, pm: 20 });
   await expect(page.locator("#nota-clinica")).toContainText("HIPOGLICEMIA NIVEL 3 REFERIDA");
   await expect(page.locator("#nota-clinica")).toContainText("No se realiza ajuste automático de NPH");
 });
 
 test("P6 solo prepara el documento y P7 contiene la vista previa aislada", async ({ page }) => {
   await page.goto("/");
-  await page.evaluate(() => nav(6));
+  await page.evaluate(() => window.InsulogRuntime.navigation.go(6));
   await expectActivePage(page, "p6");
   await expect(page.locator("#p6 #pdf")).toHaveCount(0);
   await expect(page.locator("#p7 #pdf")).toHaveCount(0);
@@ -304,11 +333,13 @@ test("los estilos del PDF viven solo dentro del documento aislado", async ({ pag
 test("el documento aislado imprime en una sola hoja Letter", async ({ page, context }) => {
   await page.goto("/");
   await page.evaluate(() => {
-    globalData.am = 10;
-    globalData.pm = 4;
-    globalData.criteria = "HbA1c 11%, glicemia en ayunas 280 mg/dL";
-    globalData.tratamientoConcomitante = "Metformina 850 mg: 1.700 mg/día; Dapagliflozina: 10 mg/día; Vildagliptina 50 mg: 50 mg cada 12 h";
-    nav(6);
+    window.InsulogRuntime.state.patch({
+      am: 10,
+      pm: 4,
+      criteria: "HbA1c 11%, glicemia en ayunas 280 mg/dL",
+      tratamientoConcomitante: "Metformina 850 mg: 1.700 mg/día; Dapagliflozina: 10 mg/día; Vildagliptina 50 mg: 50 mg cada 12 h"
+    });
+    window.InsulogRuntime.navigation.go(6);
   });
 
   await page.locator("#nombre-paciente").fill("Paciente prueba impresión");
@@ -347,7 +378,7 @@ test("el documento aislado imprime en una sola hoja Letter", async ({ page, cont
 test("el nombre del paciente no persiste tras recargar la aplicación", async ({ page }) => {
   const marker = "PACIENTE-NO-PERSISTIR-E2E";
   await page.goto("/");
-  await page.evaluate(() => nav(6));
+  await page.evaluate(() => window.InsulogRuntime.navigation.go(6));
   await page.locator("#nombre-paciente").fill(marker);
 
   const storage = await page.evaluate(async () => ({
