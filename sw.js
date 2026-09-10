@@ -1,10 +1,7 @@
 "use strict";
 
-const CACHE_NAME = "insulog-shell-20260903-atomic15";
-// Legacy CI migration markers:
-// const CACHE_NAME = "insulog-shell-20260827-atomic12"
-// insulog-shell-20260831-atomic14
-const DEPLOYMENT_REVISION = "stable-app-shell-20260903-r1";
+const CACHE_NAME = "insulog-shell-20260910-atomic16";
+const DEPLOYMENT_REVISION = "source-of-truth-20260910-r1";
 
 const APP_SHELL = [
   "./index.html",
@@ -16,7 +13,7 @@ const APP_SHELL = [
   "./farmacia-popular.css?v=20260827-2",
   "./app.js?v=20260826",
   "./pdf-enhancements.js?v=20260827-4",
-  "./aps-safety-2026.js?v=20260827-2",
+  "./aps-safety-2026.js?v=20260910-1",
   "./farmacia-popular.js?v=20260827-4",
   "./document-flow.js?v=20260827-2",
   "./manifest.webmanifest?v=20260826",
@@ -26,58 +23,16 @@ const APP_SHELL = [
   "./assets/icons/icon-512.png?v=20260826"
 ];
 
-// Legacy workflow markers kept only as comments while old checks are migrated.
-// They are NOT part of APP_SHELL and therefore are not requested or cached:
-// ./pdf-enhancements.css?v=20260827-3
-// ./pdf-enhancements.js?v=20260827-3
-// ./farmacia-popular.css?v=20260827-1
-// ./farmacia-popular.js?v=20260827-3
-// texto.includes("./pdf-design-2026.css?v=20260827-1")
-// href="./pdf-design-2026.css?v=20260827-1"
-
 const STATIC_PATHS = new Set(
   APP_SHELL.map((asset) => new URL(asset, self.location.href).pathname)
 );
-
-function respuestaTexto(response, texto) {
-  const headers = new Headers(response.headers);
-  headers.delete("content-length");
-  headers.delete("content-encoding");
-  return new Response(texto, {
-    status: response.status,
-    statusText: response.statusText,
-    headers
-  });
-}
-
-async function normalizarAsset(request, response) {
-  const url = new URL(request.url || request, self.location.href);
-
-  // Mantener solo esta normalización clínica mínima hasta migrarla al archivo fuente.
-  if (url.pathname.endsWith("/aps-safety-2026.js")) {
-    const texto = await response.text();
-    const normalizado = texto
-      .replace(
-        'label: "Empagliflozina 10 mg"',
-        'label: "Empagliflozina"'
-      )
-      .replace(
-        'doses: ["12,5/1.000 mg/día"]',
-        'doses: ["12,5/850 mg/día", "12,5/1.000 mg/día"]'
-      );
-
-    return respuestaTexto(response, normalizado);
-  }
-
-  return response;
-}
 
 async function fetchFresh(request) {
   const response = await fetch(new Request(request, { cache: "reload" }));
   if (!response.ok) {
     throw new Error(`No se pudo actualizar ${request.url || request}: HTTP ${response.status}`);
   }
-  return normalizarAsset(request, response);
+  return response;
 }
 
 async function precacheFreshShell() {

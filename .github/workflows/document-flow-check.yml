@@ -95,16 +95,22 @@ jobs:
               if forbidden in css:
                   raise SystemExit(f"PDF must not use distortion/clipping workaround: {forbidden}")
 
-          for asset in [
+          current_assets = [
               './document-flow.css?v=20260831-1',
               './document-flow.js?v=20260827-2',
               './farmacia-popular.css?v=20260827-2',
               './farmacia-popular.js?v=20260827-4'
-          ]:
+          ]
+          for asset in current_assets:
+              if asset not in html:
+                  raise SystemExit(f"Current document/pharmacy asset must be loaded directly: {asset}")
               if asset not in sw:
                   raise SystemExit(f"Current app-shell asset missing: {asset}")
 
-          if 'insulog-shell-20260831-atomic14' not in sw:
-              raise SystemExit("PDF redesign must force a fresh PWA shell")
+          if 'const CACHE_NAME = "insulog-shell-20260910-atomic16"' not in sw:
+              raise SystemExit("Current document flow must ship with the current PWA shell revision")
+          for legacy in ['normalizarAsset', 'respuestaTexto']:
+              if legacy in sw:
+                  raise SystemExit(f"Document flow must not depend on service-worker rewriting: {legacy}")
 
-          print("P6/P7 separation and clean one-page Letter composition checks passed")
+          print("P6/P7 separation, direct asset loading and clean one-page Letter composition checks passed")
