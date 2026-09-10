@@ -94,7 +94,7 @@ jobs:
                   raise SystemExit(f"PDF must not use distortion workaround: {forbidden}")
 
           for asset in [
-              './styles.css?v=20260910-1',
+              './styles.css?v=20260910-2',
               './pdf-enhancements.css?v=20260827-4',
               './pdf-design-2026.css?v=20260827-1',
               './document-flow.css?v=20260910-1'
@@ -113,7 +113,7 @@ jobs:
               if asset not in sw:
                   raise SystemExit(f"Current isolated document asset missing from app shell: {asset}")
 
-          if 'const CACHE_NAME = "insulog-shell-20260910-atomic23"' not in sw:
-              raise SystemExit("Phase 7 visual shell must ship with a fresh PWA cache")
+          if 'const CACHE_NAME = "insulog-shell-20260910-atomic24"' not in sw:
+              raise SystemExit("Phase 7B screen polish must ship with a fresh PWA cache")
 
           print("P6/P7 explicit-action preview and one-page Letter checks passed")

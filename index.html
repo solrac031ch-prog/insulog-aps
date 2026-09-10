@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.webmanifest?v=20260826">
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/icon-32.png?v=20260826">
   <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/icon-180.png?v=20260826">
-  <link rel="stylesheet" href="./styles.css?v=20260910-1">
+  <link rel="stylesheet" href="./styles.css?v=20260910-2">
   <link rel="stylesheet" href="./document-flow.css?v=20260910-1">
   <link rel="stylesheet" href="./aps-safety-2026.css?v=20260827-2">
   <link rel="stylesheet" href="./farmacia-popular.css?v=20260827-2">
@@ -20,31 +20,45 @@
 <body>
   <main class="container" id="app" aria-live="polite">
     <section id="p0" class="page active page-center" aria-hidden="false">
-      <div class="page-label">[P0] Inicio / Portada</div>
+      <div class="page-label">Apoyo clínico · DM2 en APS</div>
       <h1 class="brand-title">Insulog APS</h1>
       <p class="brand-subtitle">Insulinización en Atención Primaria de Salud</p>
+      <p class="hero-note">Inicio, seguimiento y ajuste de insulina NPH con una nota clínica lista para la ficha.</p>
 
-      <div class="card bibliography-card">
-        <p class="card-title">Bibliografía utilizada</p>
-        <ul>
-          <li>Guía ALAD 2019: Diagnóstico y tratamiento de DM2</li>
-          <li>ADA Standards of Care 2026</li>
-          <li>Protocolo MINSAL Chile – Insulina NPH en APS</li>
-        </ul>
-      </div>
+      <button type="button" class="btn btn-main btn-narrow hero-action" data-action="navigate" data-page="1">INICIAR ALGORITMO</button>
 
       <div class="author-block">
         <p class="author-name">Dr. Carlos Herrera Malaver</p>
         <p class="author-role">Médico Internista</p>
       </div>
 
-      <button type="button" class="btn btn-main btn-narrow" data-action="navigate" data-page="1">INICIAR ALGORITMO</button>
+      <details class="card bibliography-card evidence-card">
+        <summary>Fuentes clínicas y versión</summary>
+        <div class="evidence-content">
+          <ul>
+            <li>Guía ALAD 2019: Diagnóstico y tratamiento de DM2</li>
+            <li>ADA Standards of Care 2026</li>
+            <li>Protocolo MINSAL Chile – Insulina NPH en APS</li>
+          </ul>
+        </div>
+      </details>
     </section>
 
     <section id="p1" class="page page-center" aria-hidden="true">
-      <div class="page-label">[P1] Evaluación inicial (criterios de exclusión)</div>
-      <h2>Evaluación inicial</h2>
-      <p class="lead">¿El paciente presenta DM tipo 1, patología pancreática (ej. pancreatitis crónica), embarazo, antecedente de cirugía pancreática o es menor de 18 años?</p>
+      <div class="page-label">Seguridad · antes de usar el algoritmo</div>
+      <h2>Confirme que el paciente puede manejarse en este flujo APS</h2>
+      <p class="lead">Si presenta cualquiera de las condiciones siguientes, este algoritmo de insulinización NPH no corresponde como ruta principal.</p>
+
+      <div class="clinical-check-card text-left">
+        <ul class="condition-list">
+          <li>Diabetes mellitus tipo 1</li>
+          <li>Embarazo</li>
+          <li>Menor de 18 años</li>
+          <li>Pancreatitis crónica u otra patología pancreática relevante</li>
+          <li>Antecedente de cirugía pancreática</li>
+        </ul>
+        <p class="section-prompt">¿El paciente presenta alguna de estas condiciones?</p>
+      </div>
 
       <div class="stack-actions narrow-actions">
         <button type="button" class="btn btn-danger" data-action="exclude">SÍ</button>
@@ -56,26 +70,31 @@
         <p>Mientras espera atención, derivar a Medicina Interna en APS.</p>
         <p>Este paciente puede requerir insulinas de acción rápida, análogos de insulina y un seguimiento más estricto, recursos que no se encuentran disponibles en APS.</p>
       </div>
+
+      <button type="button" class="btn btn-narrow secondary-nav" data-action="navigate" data-page="0">VOLVER</button>
     </section>
 
     <section id="p2" class="page page-center" aria-hidden="true">
-      <div class="page-label">[P2] Definición del proceso (inicio vs seguimiento)</div>
-      <h2>Definición del proceso</h2>
+      <div class="page-label">Elegir flujo · inicio o seguimiento</div>
+      <h2>¿Qué necesita hacer hoy?</h2>
+      <p class="lead">Seleccione si va a iniciar NPH o ajustar un esquema que el paciente ya utiliza.</p>
 
-      <div class="alert alert-warning">
-        <strong>⚠️ Importante</strong>
-        <p>Todo paciente que inicie tratamiento con insulina debe tener <u>glibenclamida suspendida</u>.</p>
+      <div class="stack-actions narrow-actions route-actions">
+        <button type="button" class="btn btn-main" data-action="show-initial-criteria">INICIO DE INSULINA</button>
+        <p class="action-caption">Para definir esquema y dosis inicial de NPH.</p>
+        <button type="button" class="btn btn-success" data-action="navigate" data-page="35">SEGUIMIENTO DE INSULINA</button>
+        <p class="action-caption">Para revisar HGT recientes y ajustar dosis actuales.</p>
       </div>
 
-      <p class="section-prompt">Seleccione el tipo de manejo</p>
-      <div class="stack-actions narrow-actions">
-        <button type="button" class="btn btn-main" data-action="show-initial-criteria">INICIO DE INSULINA</button>
-        <button type="button" class="btn btn-success" data-action="navigate" data-page="35">SEGUIMIENTO DE INSULINA</button>
+      <div class="alert alert-warning compact-warning">
+        <strong>⚠️ Antes de iniciar insulina</strong>
+        <p>La glibenclamida debe estar suspendida.</p>
       </div>
 
       <div id="criterios" class="is-hidden">
-        <div class="card card-blue text-left">
-          <p class="card-title text-center">Datos disponibles para orientar esquema inicial</p>
+        <div class="card card-blue text-left criteria-card">
+          <p class="card-title text-center">Datos para orientar el esquema inicial</p>
+          <p class="card-helper">Complete los datos disponibles. Si no cuenta con alguno, puede dejar ese campo vacío y registrar los criterios clínicos presentes.</p>
           <div class="form-grid">
             <div class="field">
               <label for="hba1c-inicio">HbA1c más reciente (%)</label>
@@ -108,6 +127,7 @@
 
         <div class="card card-red text-left">
           <p class="card-title text-center">Alto riesgo de hipoglicemia</p>
+          <p class="card-helper">Marque todas las condiciones presentes; se usarán para orientar un inicio más conservador.</p>
           <div class="selection-grid">
             <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Adulto mayor frágil" data-action="toggle-selection">Adulto mayor frágil</button>
             <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Enfermedad renal crónica" data-action="toggle-selection">Enfermedad renal crónica</button>
@@ -122,22 +142,24 @@
 
         <button type="button" class="btn btn-main btn-narrow section-action" data-action="define-initial-scheme">SIGUIENTE: DOSIFICACIÓN</button>
       </div>
+
+      <button type="button" class="btn btn-narrow secondary-nav" data-action="navigate" data-page="1">VOLVER</button>
     </section>
 
     <section id="p3" class="page page-center" aria-hidden="true">
-      <div class="page-label">[P3] Cálculo de dosis inicial</div>
-      <h2>Dosificación de inicio de insulina</h2>
-      <p class="lead">Ingrese el peso del paciente y seleccione el riesgo de hipoglicemia para calcular la dosis inicial de insulina NPH.</p>
+      <div class="page-label">Inicio · dosis NPH</div>
+      <h2>Dosis inicial de insulina NPH</h2>
+      <p class="lead">Ingrese el peso. El factor mostrado se propone según la evaluación previa y puede revisarse antes de calcular.</p>
 
       <div id="resumen-esquema-inicio" class="alert alert-info text-left is-hidden"></div>
 
-      <div class="form-grid form-grid-2">
+      <div class="form-grid form-grid-2 dosing-grid">
         <div class="field">
           <label for="peso-paciente">Peso del paciente (kg)</label>
           <input type="number" inputmode="decimal" id="peso-paciente" placeholder="Ej: 70" min="1" max="300" step="0.1">
         </div>
         <div class="field">
-          <label for="factor-dosis">Riesgo de hipoglicemia</label>
+          <label for="factor-dosis">Factor de inicio</label>
           <select id="factor-dosis">
             <option value="0.1">Alto riesgo → adulto mayor, ERC o fragilidad</option>
             <option value="0.2" selected>Riesgo estándar</option>
@@ -146,21 +168,24 @@
         </div>
       </div>
 
-      <div class="card card-blue text-left compact-card">
-        <strong>Orientación clínica:</strong>
-        <ul class="compact-list">
-          <li><strong>0.1 UI/kg:</strong> alto riesgo de hipoglicemia (adulto mayor, ERC, fragilidad)</li>
-          <li><strong>0.2 UI/kg:</strong> paciente estándar</li>
-          <li><strong>0.3 UI/kg:</strong> hiperglicemia marcada o descompensación</li>
-        </ul>
-      </div>
+      <details class="card card-blue text-left compact-card guidance-details">
+        <summary>Ver referencia de factores 0,1–0,3 UI/kg</summary>
+        <div class="guidance-content">
+          <ul class="compact-list">
+            <li><strong>0.1 UI/kg:</strong> alto riesgo de hipoglicemia (adulto mayor, ERC, fragilidad)</li>
+            <li><strong>0.2 UI/kg:</strong> paciente estándar</li>
+            <li><strong>0.3 UI/kg:</strong> hiperglicemia marcada o descompensación</li>
+          </ul>
+        </div>
+      </details>
 
       <div id="preview-dosis" class="alert alert-success is-hidden"></div>
       <button type="button" class="btn btn-main btn-narrow section-action" data-action="calculate-initial">CALCULAR DOSIS Y GENERAR NOTA</button>
+      <button type="button" class="btn btn-narrow secondary-nav" data-action="navigate" data-page="2">VOLVER</button>
     </section>
 
     <section id="p35" class="page page-center" aria-hidden="true">
-      <div class="page-label">[P3.5] Tratamiento concomitante</div>
+      <div class="page-label">Seguimiento · tratamiento actual</div>
       <h2>Tratamiento concomitante disponible en APS</h2>
       <p class="lead">Marque los medicamentos que el paciente utiliza actualmente antes de registrar sus glicemias de seguimiento.</p>
 
@@ -199,45 +224,53 @@
       </div>
 
       <button type="button" class="btn btn-main btn-narrow section-action" data-action="prepare-followup">CONTINUAR AL REGISTRO DE GLICEMIAS</button>
-      <button type="button" class="btn btn-narrow section-action" data-action="navigate" data-page="2">VOLVER</button>
+      <button type="button" class="btn btn-narrow secondary-nav" data-action="navigate" data-page="2">VOLVER</button>
     </section>
 
     <section id="p4" class="page page-center" aria-hidden="true">
-      <div class="page-label">[P4] Seguimiento y ajuste de insulina</div>
+      <div class="page-label">Seguimiento · registro de HGT</div>
       <h2>Seguimiento y ajuste de insulina NPH</h2>
+      <p class="lead">Registre las dosis actuales y las glicemias disponibles. Para ajustar se requieren al menos 3 valores en ayunas.</p>
 
-      <div class="p4-header-grid">
-        <div class="field">
-          <label for="peso-seguimiento">Peso del paciente (kg)</label>
-          <input type="number" inputmode="decimal" id="peso-seguimiento" placeholder="Ej: 70" min="1" max="300" step="0.1">
+      <div class="card followup-setup-card">
+        <div class="p4-header-grid">
+          <div class="field">
+            <label for="peso-seguimiento">Peso del paciente (kg)</label>
+            <input type="number" inputmode="decimal" id="peso-seguimiento" placeholder="Ej: 70" min="1" max="300" step="0.1">
+          </div>
+          <div class="field">
+            <label for="tipo-esquema">Tipo de esquema</label>
+            <select id="tipo-esquema">
+              <option value="2" selected>2 dosis (AM + PM)</option>
+              <option value="am">Solo dosis AM</option>
+              <option value="pm">Solo dosis PM</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="am-actual">Dosis AM actual</label>
+            <input type="text" inputmode="numeric" id="am-actual" maxlength="2" placeholder="00" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="pm-actual">Dosis PM actual</label>
+            <input type="text" inputmode="numeric" id="pm-actual" maxlength="2" placeholder="00" autocomplete="off">
+          </div>
         </div>
-        <div class="field">
-          <label for="tipo-esquema">Tipo de esquema</label>
-          <select id="tipo-esquema">
-            <option value="2" selected>2 dosis (AM + PM)</option>
-            <option value="am">Solo dosis AM</option>
-            <option value="pm">Solo dosis PM</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="am-actual">Dosis AM actual</label>
-          <input type="text" inputmode="numeric" id="am-actual" maxlength="2" placeholder="00" autocomplete="off">
-        </div>
-        <div class="field">
-          <label for="pm-actual">Dosis PM actual</label>
-          <input type="text" inputmode="numeric" id="pm-actual" maxlength="2" placeholder="00" autocomplete="off">
-        </div>
+        <p class="helper-text followup-dose-help">Rango permitido por campo de dosis: 04–99 UI.</p>
       </div>
 
-      <p class="helper-text">⚠️ Rango permitido: dosis entre 04 y 99 unidades.</p>
+      <div class="table-guide text-left">
+        <strong>Registro de glicemias</strong>
+        <span>Puede dejar días sin dato; el cálculo utiliza únicamente los valores ingresados.</span>
+      </div>
 
       <div class="table-wrap">
         <table class="tracking-table">
+          <caption class="sr-only">Registro de glicemias para ajuste de insulina NPH</caption>
           <thead>
             <tr>
               <th scope="col">Día</th>
-              <th scope="col">Ayunas</th>
-              <th scope="col">Antes de las once</th>
+              <th scope="col">Ayunas <span class="th-unit">mg/dL</span></th>
+              <th scope="col">Antes de la once <span class="th-unit">mg/dL</span></th>
             </tr>
           </thead>
           <tbody id="tabla-seguimiento"></tbody>
@@ -258,11 +291,13 @@
       </div>
 
       <div id="resumen-promedios" class="card compact-card is-hidden"></div>
+      <button type="button" class="btn btn-narrow secondary-nav" data-action="navigate" data-page="35">VOLVER</button>
     </section>
 
     <section id="p41" class="page page-center" aria-hidden="true">
-      <div class="page-label">[P4.1] Dosis alta de insulina</div>
-      <h2>Paciente en dosis alta de insulina</h2>
+      <div class="page-label">Seguridad · revisión de dosis alta</div>
+      <h2>Revise la dosis alta antes de continuar</h2>
+      <p class="lead">Seleccione las acciones que correspondan para dejar una conducta explícita en la nota clínica.</p>
 
       <div class="alert alert-danger text-left">
         <p><strong>⚠️ Paciente en dosis alta de insulina (≥0.7 UI/kg/día)</strong></p>
@@ -278,20 +313,21 @@
       </div>
 
       <button type="button" class="btn btn-main btn-narrow section-action" data-action="generate-high-dose-note">GENERAR NOTA CLÍNICA</button>
+      <button type="button" class="btn btn-narrow secondary-nav" data-action="navigate" data-page="4">VOLVER</button>
     </section>
 
     <section id="p5" class="page page-center" aria-hidden="true">
-      <div class="page-label">[P5] Nota clínica automática</div>
-      <h2>Nota clínica estructurada</h2>
-      <p class="lead small-lead">Resumen automático listo para copiar en ficha clínica APS.</p>
+      <div class="page-label">Resultado · nota clínica</div>
+      <h2>Nota clínica lista</h2>
+      <p class="lead small-lead">Revise el resumen y cópielo directamente a la ficha clínica APS.</p>
 
       <div id="nota-clinica" class="nota" role="region" aria-label="Nota clínica generada"></div>
       <button type="button" class="btn btn-success btn-narrow section-action" data-action="copy-note">COPIAR NOTA A FICHA CLÍNICA</button>
       <div id="copy-status" class="copy-status" role="status" aria-live="polite"></div>
 
       <div class="card decision-card">
-        <p class="card-title">Decisión de seguimiento</p>
-        <p class="helper-text">Seleccione conducta final del paciente</p>
+        <p class="card-title">Siguiente paso</p>
+        <p class="helper-text">Seleccione el documento que corresponde al plan del paciente.</p>
         <div class="decision-actions">
           <button type="button" class="btn btn-main" data-action="open-document" data-document-type="seguimiento">SEGUIMIENTO Y AJUSTE</button>
           <button type="button" class="btn btn-success" data-action="open-document" data-document-type="pscv">CONTROL EN PROGRAMA CV</button>
@@ -300,8 +336,9 @@
     </section>
 
     <section id="p6" class="page page-center pdf-preparation-page" aria-hidden="true">
-      <div class="page-label no-print">[P6] Preparación del documento</div>
-      <h2 class="no-print">Informe clínico Insulog APS</h2>
+      <div class="page-label no-print">Documento · datos del paciente</div>
+      <h2 class="no-print">Prepare el documento para entregar</h2>
+      <p class="lead small-lead no-print">Ingrese el nombre y seleccione el tipo de documento que desea generar.</p>
 
       <div class="field patient-field no-print">
         <label for="nombre-paciente">Nombre del paciente</label>
@@ -315,11 +352,14 @@
         <button type="button" class="btn btn-main" data-action="show-document" data-document-type="seguimiento">SEGUIMIENTO Y AJUSTE</button>
         <button type="button" class="btn btn-success" data-action="show-document" data-document-type="pscv">CONTROL PROGRAMA CV</button>
       </div>
+
+      <button type="button" class="btn btn-narrow secondary-nav no-print" data-action="navigate" data-page="5">VOLVER A LA NOTA</button>
     </section>
 
     <section id="p7" class="page pdf-preview-page" aria-hidden="true">
-      <div class="page-label no-print">[P7] Vista previa del documento</div>
+      <div class="page-label no-print">Documento · vista previa</div>
       <h2 class="no-print text-center">Documento listo para imprimir</h2>
+      <p class="lead small-lead no-print text-center">Revise la vista previa antes de imprimir o finalizar.</p>
 
       <div class="pdf-preview-toolbar no-print">
         <button type="button" class="btn" data-action="back-document">VOLVER / CAMBIAR DATOS</button>
