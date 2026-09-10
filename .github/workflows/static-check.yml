@@ -18,7 +18,10 @@ jobs:
 
       - name: Check JavaScript syntax
         run: |
+          node --check app-runtime.js
           node --check app.js
+          node --check patient-document.js
+          node --check app-shell.js
           node --check pdf-enhancements.js
           node --check aps-safety-2026.js
           node --check farmacia-popular.js

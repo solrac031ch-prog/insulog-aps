@@ -21,7 +21,10 @@ def forbid(haystack: str, needles, label: str) -> None:
 
 
 html = text("index.html")
+runtime_js = text("app-runtime.js")
 app = text("app.js")
+patient_document_js = text("patient-document.js")
+shell_js = text("app-shell.js")
 pdf_js = text("pdf-enhancements.js")
 pdf_css = text("pdf-enhancements.css")
 pdf_design = text("pdf-design-2026.css")
@@ -50,11 +53,14 @@ if len(re.findall(r"<head(?:\s|>)", html, re.I)) != 1 or len(re.findall(r"</head
     raise SystemExit("index.html must contain exactly one head")
 
 direct_assets = [
-    "./app.js?v=20260826",
+    "./app-runtime.js?v=20260910-1",
+    "./app.js?v=20260910-1",
+    "./patient-document.js?v=20260910-1",
     "./pdf-enhancements.js?v=20260827-4",
     "./aps-safety-2026.js?v=20260910-1",
     "./farmacia-popular.js?v=20260827-4",
     "./document-flow.js?v=20260910-1",
+    "./app-shell.js?v=20260910-1",
     "./document-flow.css?v=20260910-1",
     "./aps-safety-2026.css?v=20260827-2",
     "./farmacia-popular.css?v=20260827-2",
@@ -65,14 +71,17 @@ forbid(html, ['href="./pdf-enhancements.css', 'href="./pdf-design-2026.css'], "P
 require(pdf_preview_html, ['./styles.css?v=20260826', './pdf-enhancements.css?v=20260827-4', './pdf-design-2026.css?v=20260827-1', './document-flow.css?v=20260910-1', 'id="pdf"'], "Isolated PDF document assets")
 
 script_order = [
-    html.index("./app.js?v=20260826"),
+    html.index("./app-runtime.js?v=20260910-1"),
+    html.index("./app.js?v=20260910-1"),
+    html.index("./patient-document.js?v=20260910-1"),
     html.index("./pdf-enhancements.js?v=20260827-4"),
     html.index("./aps-safety-2026.js?v=20260910-1"),
     html.index("./farmacia-popular.js?v=20260827-4"),
     html.index("./document-flow.js?v=20260910-1"),
+    html.index("./app-shell.js?v=20260910-1"),
 ]
 if script_order != sorted(script_order):
-    raise SystemExit("JavaScript load order must remain app -> PDF -> APS safety -> pharmacy -> document flow")
+    raise SystemExit("JavaScript load order must remain runtime -> app -> patient document -> PDF -> APS safety -> pharmacy -> document flow -> shell")
 
 p6_start = html.index('<section id="p6"')
 p7_start = html.index('<section id="p7"')
@@ -90,6 +99,46 @@ if 'class="aps-safety-box is-hidden"' not in html:
     raise SystemExit("Hypoglycemia review must be hidden directly in HTML")
 if html.index('id="alerta-hipoglicemia-ada"') <= html.index('id="ajustar-seguimiento-btn"'):
     raise SystemExit("Hypoglycemia review must appear after the Adjust button")
+
+# Runtime/navigation boundary: infrastructure only, with legacy compatibility during migration.
+require(
+    runtime_js,
+    [
+        "let globalData = {", "const $ =", "const qsa =", "function showElement",
+        "function nav(pagina)", "function activePageId", "window.InsulogRuntime",
+        "navigation: Object.freeze", "state: Object.freeze", "snapshotRuntimeState",
+    ],
+    "Application runtime boundary",
+)
+forbid(
+    runtime_js,
+    ["calcularInicioMejorado", "calcularSeguimientoPro", "calcularAjuste", "MEDICAMENTOS_APS", "generarDocumento"],
+    "Runtime clinical leakage",
+)
+forbid(
+    app,
+    ["let globalData = {", "const $ =", "const qsa =", "function nav(pagina)",
+     "function setupButtonFeedback", "function registerServiceWorker", "DOMContentLoaded"],
+    "Legacy app runtime leakage",
+)
+require(
+    patient_document_js,
+    ["function generarPDF", "function abrirDocumento", "function generarDocumento", "function bloqueControlFirma"],
+    "Patient document builder boundary",
+)
+forbid(
+    patient_document_js,
+    ["function calcularInicioMejorado", "function calcularSeguimientoPro", "function calcularAjuste", "MEDICAMENTOS_APS"],
+    "Patient document clinical leakage",
+)
+require(
+    shell_js,
+    ["window.InsulogRuntime", "function setupButtonFeedback", "function setupAriaPressed",
+     "function registerServiceWorker", "function init", "handleInput", "runtime.navigation.go(0)",
+     "window.InsulogShell", "DOMContentLoaded"],
+    "Application shell boundary",
+)
+forbid(shell_js, ["globalData", "calcularAjuste", "MEDICAMENTOS_APS", "generarDocumento"], "Shell clinical leakage")
 
 # Core clinical invariants. These protect accidental refactors; intentional clinical changes
 # must update both the implementation and this contract in the same reviewed PR.
@@ -188,8 +237,8 @@ forbid(sw, ["normalizarAsset", "respuestaTexto"], "Service-worker runtime transf
 require(
     sw,
     [
-        'const CACHE_NAME = "insulog-shell-20260910-atomic17"',
-        'const DEPLOYMENT_REVISION = "pdf-isolation-20260910-r1"',
+        'const CACHE_NAME = "insulog-shell-20260910-atomic18"',
+        'const DEPLOYMENT_REVISION = "runtime-navigation-20260910-r1"',
         'new Request(asset, { cache: "reload" })',
         'addEventListener("fetch"', 'caches.delete',
         'event.waitUntil(refreshNavigation.catch(() => undefined))',
@@ -202,9 +251,10 @@ require(
 require(
     sw,
     [
-        "./index.html", "./styles.css?v=20260826", "./app.js?v=20260826",
+        "./index.html", "./styles.css?v=20260826", "./app-runtime.js?v=20260910-1",
+        "./app.js?v=20260910-1", "./patient-document.js?v=20260910-1",
         "./pdf-preview.html?v=20260910-1", "./pdf-enhancements.js?v=20260827-4", "./aps-safety-2026.js?v=20260910-1",
-        "./farmacia-popular.js?v=20260827-4", "./document-flow.js?v=20260910-1",
+        "./farmacia-popular.js?v=20260827-4", "./document-flow.js?v=20260910-1", "./app-shell.js?v=20260910-1",
     ],
     "Critical cached app-shell assets",
 )
@@ -213,7 +263,7 @@ if "followup-flow-2026.js" in html or "followup-flow-2026.js" in sw:
     raise SystemExit("Broken dynamic follow-up flow must not return")
 
 # Privacy: identifiable patient clinical state must remain ephemeral in browser memory.
-runtime = "\n".join([app, pdf_js, doc_js, aps_js, pharmacy_js])
+runtime = "\n".join([runtime_js, app, patient_document_js, pdf_js, doc_js, aps_js, pharmacy_js, shell_js])
 forbid(runtime, ["localStorage", "sessionStorage", "indexedDB"], "Patient data persistence")
 
 print("Insulog application, clinical, pharmacy, PDF, privacy and PWA invariants passed")
