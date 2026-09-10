@@ -172,4 +172,3 @@ jobs:
               raise SystemExit("Selected dose must never fall back to a different pharmacy presentation")
 
           print("Farmacia Popular direct-loading and future-proof daily-price checks passed")
-          PY
