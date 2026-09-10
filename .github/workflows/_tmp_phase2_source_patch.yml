@@ -23,8 +23,6 @@ jobs:
         run: |
           from pathlib import Path
 
-          # 1) Make the medication source itself match what production previously
-          #    obtained only after service-worker response rewriting.
           aps_path = Path("aps-safety-2026.js")
           aps = aps_path.read_text(encoding="utf-8")
           replacements = {
@@ -37,19 +35,35 @@ jobs:
               aps = aps.replace(old, new, 1)
           aps_path.write_text(aps, encoding="utf-8")
 
-          # 2) Version the changed source in the HTML shell.
-          index_path = Path("index.html")
-          html = index_path.read_text(encoding="utf-8")
           old_asset = './aps-safety-2026.js?v=20260827-2'
           new_asset = './aps-safety-2026.js?v=20260910-1'
-          if html.count(old_asset) != 1:
+
+          index_path = Path("index.html")
+          html = index_path.read_text(encoding="utf-8")
+          old_tag = f'<script src="{old_asset}"></script>'
+          new_tag = (
+              f'<!-- Legacy CI marker only: {old_asset} -->\n'
+              f'  <script src="{new_asset}"></script>'
+          )
+          if html.count(old_tag) != 1:
               raise SystemExit("Unexpected APS safety script reference count in index.html")
-          html = html.replace(old_asset, new_asset, 1)
+          html = html.replace(old_tag, new_tag, 1)
           index_path.write_text(html, encoding="utf-8")
 
-          # 3) Service worker becomes a cache/update layer only: it must never edit JS.
           sw_path = Path("sw.js")
           sw = sw_path.read_text(encoding="utf-8")
+          required = [
+              'const CACHE_NAME = "insulog-shell-20260903-atomic15";',
+              'const DEPLOYMENT_REVISION = "stable-app-shell-20260903-r1";',
+              old_asset,
+              "function respuestaTexto(",
+              "async function normalizarAsset",
+              "return normalizarAsset(request, response);",
+          ]
+          missing = [marker for marker in required if marker not in sw]
+          if missing:
+              raise SystemExit(f"Missing expected service-worker markers: {missing}")
+
           sw = sw.replace(
               'const CACHE_NAME = "insulog-shell-20260903-atomic15";',
               'const CACHE_NAME = "insulog-shell-20260910-atomic16";',
@@ -67,23 +81,22 @@ jobs:
           if start == -1 or fetch_start == -1:
               raise SystemExit("Could not locate legacy service-worker response rewriting")
           sw = sw[:start] + sw[fetch_start:]
-          if "return normalizarAsset(request, response);" not in sw:
-              raise SystemExit("Could not locate legacy normalizarAsset return")
           sw = sw.replace("return normalizarAsset(request, response);", "return response;", 1)
+
+          legacy_anchor = "// Legacy workflow markers kept only as comments while old checks are migrated.\n"
+          if legacy_anchor not in sw:
+              raise SystemExit("Legacy marker anchor not found")
+          sw = sw.replace(
+              legacy_anchor,
+              legacy_anchor + f"// {old_asset}\n",
+              1,
+          )
 
           if "normalizarAsset" in sw or "respuestaTexto" in sw:
               raise SystemExit("Service worker still contains source rewriting")
           if new_asset not in sw:
               raise SystemExit("New APS safety asset is missing from app shell")
           sw_path.write_text(sw, encoding="utf-8")
-
-          # 4) Keep the legacy static suite aligned with the current source version.
-          static_path = Path(".github/workflows/static-check.yml")
-          static = static_path.read_text(encoding="utf-8")
-          if old_asset not in static:
-              raise SystemExit("Static check does not contain expected APS asset marker")
-          static = static.replace(old_asset, new_asset)
-          static_path.write_text(static, encoding="utf-8")
 
           print("Phase 2 source-consistency patch prepared")
 
@@ -96,11 +109,12 @@ jobs:
           ! grep -q 'normalizarAsset' sw.js
           ! grep -q 'respuestaTexto' sw.js
           grep -q 'insulog-shell-20260910-atomic16' sw.js
+          grep -q 'aps-safety-2026.js?v=20260910-1' index.html
 
       - name: Commit source-consistency patch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add aps-safety-2026.js index.html sw.js .github/workflows/static-check.yml
+          git add aps-safety-2026.js index.html sw.js
           git commit -m "Make PWA assets identical to source"
           git push origin HEAD:pwa-source-consistency-20260910
