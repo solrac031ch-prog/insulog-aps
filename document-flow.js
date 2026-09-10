@@ -1,6 +1,15 @@
 "use strict";
 
 (() => {
+  const runtime = window.InsulogRuntime;
+  const documents = window.InsulogDocuments;
+
+  if (!runtime) throw new Error("InsulogRuntime debe cargarse antes de document-flow.js");
+  if (!documents) throw new Error("InsulogDocuments debe cargarse antes de document-flow.js");
+
+  const { go } = runtime.navigation;
+  const state = runtime.state;
+  const actions = runtime.actions;
   const FRAME_ID = "pdf-preview-frame";
   const PRINT_BUTTON_ID = "imprimir-documento-btn";
 
@@ -86,41 +95,43 @@
     }
   }
 
-  window.abrirDocumento = function abrirDocumentoPreparacion(tipo) {
-    globalData.tipoDocumento = tipo || globalData.tipoDocumento || "seguimiento";
+  function abrirDocumento({ element } = {}) {
+    const tipo = element?.dataset.documentType || state.get("tipoDocumento") || "seguimiento";
+    state.patch({ tipoDocumento: tipo });
     limpiarVistaPrevia();
-    nav(6);
+    go(6);
     enfocarNombre();
-  };
+  }
 
-  window.mostrarDocumento = function mostrarDocumento(tipo) {
+  function mostrarDocumento({ element } = {}) {
     const input = document.getElementById("nombre-paciente");
     const nombre = input?.value.trim() || "";
 
     if (!nombre) {
       alert("Ingrese el nombre del paciente antes de generar el documento.");
       input?.focus();
-      return;
+      return undefined;
     }
 
-    globalData.tipoDocumento = tipo;
+    const tipo = element?.dataset.documentType || state.get("tipoDocumento") || "seguimiento";
+    state.patch({ tipoDocumento: tipo });
     setPreviewReady(false);
-    nav(7);
+    go(7);
 
     requestAnimationFrame(() => {
-      window.generarDocumento(tipo);
-      // pdf-enhancements.js finaliza el documento en un microtask. Al encolar este
-      // después, copiamos al iframe únicamente cuando el DOM clínico ya está completo.
+      documents.generate(tipo);
       queueMicrotask(() => copiarVistaPreviaAlFrame());
     });
-  };
 
-  window.volverPreparacionDocumento = function volverPreparacionDocumento() {
-    nav(6);
+    return tipo;
+  }
+
+  function volverPreparacionDocumento() {
+    go(6);
     enfocarNombre();
-  };
+  }
 
-  window.imprimirDocumentoAislado = function imprimirDocumentoAislado() {
+  function imprimirDocumentoAislado() {
     const frame = previewFrame();
     if (!frame || frame.dataset.ready !== "true" || !previewPDF()?.innerHTML.trim()) {
       alert("La vista previa aún no está lista para imprimir.");
@@ -129,18 +140,20 @@
 
     frame.contentWindow?.focus();
     frame.contentWindow?.print();
-  };
-
-  const finalizarBase = window.finalizar;
-  if (typeof finalizarBase === "function") {
-    window.finalizar = function finalizarConLimpiezaDocumento() {
-      const resultado = finalizarBase();
-      if (document.getElementById("p0")?.classList.contains("active")) {
-        limpiarVistaPrevia();
-      }
-      return resultado;
-    };
   }
+
+  actions.register("open-document", abrirDocumento);
+  actions.register("show-document", mostrarDocumento);
+  actions.register("back-document", volverPreparacionDocumento);
+  actions.register("print-document", imprimirDocumentoAislado);
+
+  actions.decorate("finish", (next) => (context) => {
+    const resultado = next(context);
+    if (document.getElementById("p0")?.classList.contains("active")) {
+      limpiarVistaPrevia();
+    }
+    return resultado;
+  });
 
   prepararFrame();
 })();
