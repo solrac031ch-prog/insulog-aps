@@ -94,7 +94,7 @@ require(
         "function calcularInicioMejorado", "function analizarGlicemias",
         "function calcularAjuste", "ayunasRaw.length < 3", "preonceRaw.length >= 3",
         "function dosisSegundaDosis", "Math.min(10, Math.max(4, pesoKg * 0.1))",
-        "function calcularSeguimientoPro", "uiKgDia >= 1", "uiKgDia >= 0.7",
+        "function calcularSeguimientoPro", "dosisKg >= 1", "dosisKg >= 0.7",
     ],
     "Core clinical invariants",
 )
