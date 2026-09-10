@@ -12,10 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/icon-32.png?v=20260826">
   <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/icon-180.png?v=20260826">
   <link rel="stylesheet" href="./styles.css?v=20260826">
-  <!-- Legacy CI marker only: ./pdf-enhancements.css?v=20260827-3 -->
-  <link rel="stylesheet" href="./pdf-enhancements.css?v=20260827-4">
-  <link rel="stylesheet" href="./pdf-design-2026.css?v=20260827-1">
-  <link rel="stylesheet" href="./document-flow.css?v=20260831-1">
+  <link rel="stylesheet" href="./document-flow.css?v=20260910-1">
   <link rel="stylesheet" href="./aps-safety-2026.css?v=20260827-2">
   <link rel="stylesheet" href="./farmacia-popular.css?v=20260827-2">
   <title>Insulog APS | Insulinización en APS</title>
@@ -326,11 +323,13 @@
 
       <div class="pdf-preview-toolbar no-print">
         <button type="button" class="btn" onclick="volverPreparacionDocumento()">VOLVER / CAMBIAR DATOS</button>
-        <button type="button" class="btn btn-main" onclick="window.print()">IMPRIMIR</button>
+        <button id="imprimir-documento-btn" type="button" class="btn btn-main" onclick="imprimirDocumentoAislado()" disabled>IMPRIMIR</button>
         <button type="button" class="btn btn-danger" onclick="finalizar()">FINALIZAR</button>
       </div>
 
-      <div id="pdf" class="imprimible-container" aria-live="polite"></div>
+      <div class="pdf-preview-frame-shell no-print">
+        <iframe id="pdf-preview-frame" class="pdf-preview-frame" src="./pdf-preview.html?v=20260910-1" title="Vista previa del documento del paciente" aria-busy="true"></iframe>
+      </div>
     </section>
   </main>
 
@@ -339,11 +338,13 @@
     <p>Basado en protocolos vigentes para el manejo de DM2 en Chile.</p>
   </footer>
 
+  <div id="pdf" class="imprimible-container pdf-render-staging" aria-hidden="true"></div>
+
   <script src="./app.js?v=20260826"></script>
   <!-- Legacy CI marker only: ./pdf-enhancements.js?v=20260827-3 -->
   <script src="./pdf-enhancements.js?v=20260827-4"></script>
   <script src="./aps-safety-2026.js?v=20260910-1"></script>
   <script src="./farmacia-popular.js?v=20260827-4"></script>
-  <script src="./document-flow.js?v=20260827-2"></script>
+  <script src="./document-flow.js?v=20260910-1"></script>
 </body>
 </html>

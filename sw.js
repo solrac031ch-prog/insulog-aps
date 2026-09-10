@@ -1,21 +1,22 @@
 "use strict";
 
-const CACHE_NAME = "insulog-shell-20260910-atomic16";
-const DEPLOYMENT_REVISION = "source-of-truth-20260910-r1";
+const CACHE_NAME = "insulog-shell-20260910-atomic17";
+const DEPLOYMENT_REVISION = "pdf-isolation-20260910-r1";
 
 const APP_SHELL = [
   "./index.html",
+  "./pdf-preview.html?v=20260910-1",
   "./styles.css?v=20260826",
   "./pdf-enhancements.css?v=20260827-4",
   "./pdf-design-2026.css?v=20260827-1",
-  "./document-flow.css?v=20260831-1",
+  "./document-flow.css?v=20260910-1",
   "./aps-safety-2026.css?v=20260827-2",
   "./farmacia-popular.css?v=20260827-2",
   "./app.js?v=20260826",
   "./pdf-enhancements.js?v=20260827-4",
   "./aps-safety-2026.js?v=20260910-1",
   "./farmacia-popular.js?v=20260827-4",
-  "./document-flow.js?v=20260827-2",
+  "./document-flow.js?v=20260910-1",
   "./manifest.webmanifest?v=20260826",
   "./assets/icons/icon-32.png?v=20260826",
   "./assets/icons/icon-180.png?v=20260826",
