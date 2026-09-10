@@ -1,13 +1,13 @@
 "use strict";
 
-const CACHE_NAME = "insulog-shell-20260910-atomic23";
-const DEPLOYMENT_REVISION = "phase7-mobile-ui-20260910-r1";
+const CACHE_NAME = "insulog-shell-20260910-atomic24";
+const DEPLOYMENT_REVISION = "phase7b-screen-polish-20260910-r1";
 const PDF_PREVIEW_PATH = "./pdf-preview.html?v=20260910-1";
 
 const APP_SHELL = [
   "./index.html",
   PDF_PREVIEW_PATH,
-  "./styles.css?v=20260910-1",
+  "./styles.css?v=20260910-2",
   "./pdf-enhancements.css?v=20260827-4",
   "./pdf-design-2026.css?v=20260827-1",
   "./document-flow.css?v=20260910-1",
