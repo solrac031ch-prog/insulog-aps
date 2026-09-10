@@ -1,12 +1,11 @@
 "use strict";
 
 (() => {
-  const generarDocumentoBase = window.generarDocumento;
+  const runtime = window.InsulogRuntime;
+  const documents = window.InsulogDocuments;
 
-  if (typeof generarDocumentoBase !== "function") {
-    console.warn("Insulog: no se encontró generarDocumento para optimizar el registro PDF.");
-    return;
-  }
+  if (!runtime) throw new Error("InsulogRuntime debe cargarse antes de pdf-enhancements.js");
+  if (!documents) throw new Error("InsulogDocuments debe cargarse antes de pdf-enhancements.js");
 
   // Horarios prácticos para el documento del paciente, basados en fichas técnicas oficiales:
   // metformina IR con comidas; metformina XR con comida de la tarde/noche;
@@ -62,12 +61,12 @@
     return titulo?.parentElement || null;
   }
 
-  function actualizarDosisInsulinaPaciente(pdf) {
+  function actualizarDosisInsulinaPaciente(pdf, documentState) {
     const caja = obtenerCajaDosis(pdf);
     if (!caja) return;
 
-    const am = Number(globalData.am) || 0;
-    const pm = Number(globalData.pm) || 0;
+    const am = Number(documentState.am) || 0;
+    const pm = Number(documentState.pm) || 0;
     const indicaciones = [];
 
     if (am > 0) {
@@ -165,68 +164,57 @@
     pdf.classList.add(medicamentos <= 4 ? "pdf-densidad-amplia" : "pdf-densidad-compacta");
   }
 
-  function finalizarDocumentoPaciente(tipo) {
-    const pdf = document.getElementById("pdf");
-    if (!pdf) return;
-    actualizarDosisInsulinaPaciente(pdf);
+  function transformarTablaSeguimiento(pdf) {
+    const tabla = pdf.querySelector(".tabla-registro");
+    if (!tabla) return;
+
+    tabla.classList.add("tabla-registro-hgt");
+
+    const thead = tabla.querySelector("thead");
+    const tbody = tabla.querySelector("tbody");
+
+    if (thead) {
+      thead.innerHTML = `
+        <tr class="grupo-mediciones">
+          <th class="col-fecha" rowspan="2">Fecha</th>
+          <th colspan="2">Ayunas</th>
+          <th colspan="2">Preonce / Precena</th>
+        </tr>
+        <tr>
+          <th class="col-hora-medicion">Hora</th>
+          <th class="col-hgt">HGT<br><span class="unidad-tabla">mg/dL</span></th>
+          <th class="col-hora-medicion">Hora</th>
+          <th class="col-hgt">HGT<br><span class="unidad-tabla">mg/dL</span></th>
+        </tr>`;
+    }
+
+    if (tbody) {
+      tbody.innerHTML = Array.from(
+        { length: 15 },
+        () => "<tr><td></td><td></td><td></td><td></td><td></td></tr>"
+      ).join("");
+    }
+
+    if (!pdf.querySelector(".registro-hgt-ayuda")) {
+      const ayuda = document.createElement("div");
+      ayuda.className = "registro-hgt-ayuda";
+      ayuda.innerHTML = "Registrar <strong>hora y valor del hemoglucotest</strong> en ambas mediciones: ayunas y preonce/precena.";
+      tabla.insertAdjacentElement("beforebegin", ayuda);
+    }
+
+    const indicacionRegistro = Array.from(pdf.querySelectorAll("li"))
+      .find((item) => item.textContent.toLowerCase().includes("registro:"));
+
+    if (indicacionRegistro) {
+      indicacionRegistro.innerHTML = "<b>Registro:</b> Glicemias capilares en ayunas y preonce/precena, anotando hora y valor de cada medición.";
+    }
+  }
+
+  documents.useEnhancer("patient-pdf-enhancements", ({ pdf, tipo, state }) => {
+    transformarTablaSeguimiento(pdf);
+    actualizarDosisInsulinaPaciente(pdf, state);
     actualizarTratamientoPaciente(pdf, tipo);
     marcarEstructuraCarta(pdf);
     aplicarDensidadDocumento(pdf);
-  }
-
-  window.generarDocumento = function generarDocumentoOptimizado(tipo) {
-    const resultado = generarDocumentoBase(tipo);
-    const pdf = document.getElementById("pdf");
-    const tabla = pdf?.querySelector(".tabla-registro");
-
-    if (tabla) {
-      tabla.classList.add("tabla-registro-hgt");
-
-      const thead = tabla.querySelector("thead");
-      const tbody = tabla.querySelector("tbody");
-
-      if (thead) {
-        thead.innerHTML = `
-          <tr class="grupo-mediciones">
-            <th class="col-fecha" rowspan="2">Fecha</th>
-            <th colspan="2">Ayunas</th>
-            <th colspan="2">Preonce / Precena</th>
-          </tr>
-          <tr>
-            <th class="col-hora-medicion">Hora</th>
-            <th class="col-hgt">HGT<br><span class="unidad-tabla">mg/dL</span></th>
-            <th class="col-hora-medicion">Hora</th>
-            <th class="col-hgt">HGT<br><span class="unidad-tabla">mg/dL</span></th>
-          </tr>`;
-      }
-
-      if (tbody) {
-        tbody.innerHTML = Array.from(
-          { length: 15 },
-          () => "<tr><td></td><td></td><td></td><td></td><td></td></tr>"
-        ).join("");
-      }
-
-      if (!pdf.querySelector(".registro-hgt-ayuda")) {
-        const ayuda = document.createElement("div");
-        ayuda.className = "registro-hgt-ayuda";
-        ayuda.innerHTML = "Registrar <strong>hora y valor del hemoglucotest</strong> en ambas mediciones: ayunas y preonce/precena.";
-        tabla.insertAdjacentElement("beforebegin", ayuda);
-      }
-
-      const indicacionRegistro = Array.from(pdf.querySelectorAll("li"))
-        .find((item) => item.textContent.toLowerCase().includes("registro:"));
-
-      if (indicacionRegistro) {
-        indicacionRegistro.innerHTML = "<b>Registro:</b> Glicemias capilares en ayunas y preonce/precena, anotando hora y valor de cada medición.";
-      }
-    }
-
-    // aps-safety-2026.js envuelve esta función después de cargar este módulo y agrega
-    // el tratamiento clínico de forma sincrónica. El microtask corre al final de esa
-    // cadena y deja el documento final en lenguaje pensado para el paciente.
-    queueMicrotask(() => finalizarDocumentoPaciente(tipo));
-
-    return resultado;
-  };
+  });
 })();

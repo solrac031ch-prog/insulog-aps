@@ -2,9 +2,13 @@
 
 (() => {
   const runtime = window.InsulogRuntime;
+  const app = window.InsulogApp;
+
   if (!runtime) throw new Error("InsulogRuntime debe cargarse antes de app-shell.js");
+  if (!app) throw new Error("InsulogApp debe cargarse antes de app-shell.js");
 
   const { all, byId } = runtime.dom;
+  const actions = runtime.actions;
 
   function setupButtonFeedback() {
     document.addEventListener("pointerdown", (event) => {
@@ -21,6 +25,25 @@
     all(".selection-btn, .action-btn").forEach((button) => button.setAttribute("aria-pressed", "false"));
   }
 
+  function setupActionDelegation() {
+    document.addEventListener("click", (event) => {
+      const element = event.target.closest("[data-action]");
+      if (!element || element.disabled) return;
+
+      const action = element.dataset.action;
+      if (!action) return;
+
+      try {
+        const result = actions.invoke(action, { element, event });
+        if (result && typeof result.catch === "function") {
+          result.catch((error) => console.error(`Error ejecutando acción ${action}:`, error));
+        }
+      } catch (error) {
+        console.error(`Error ejecutando acción ${action}:`, error);
+      }
+    });
+  }
+
   function registerServiceWorker() {
     if (!("serviceWorker" in navigator)) return;
 
@@ -35,11 +58,8 @@
     const fecha = byId("fecha-hoy");
     if (fecha) fecha.textContent = new Date().toLocaleDateString("es-CL");
 
-    if (typeof handleInput !== "function") {
-      throw new Error("La validación de entradas clínicas no está disponible");
-    }
-
-    document.addEventListener("input", handleInput);
+    document.addEventListener("input", app.inputs.handle);
+    setupActionDelegation();
     setupButtonFeedback();
     setupAriaPressed();
     registerServiceWorker();

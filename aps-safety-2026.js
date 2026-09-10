@@ -1,10 +1,18 @@
 "use strict";
 
 (() => {
+  const runtime = window.InsulogRuntime;
   const clinicalEngine = window.InsulogClinicalEngine;
-  if (!clinicalEngine) {
-    throw new Error("InsulogClinicalEngine debe cargarse antes de aps-safety-2026.js");
-  }
+  const app = window.InsulogApp;
+
+  if (!runtime) throw new Error("InsulogRuntime debe cargarse antes de aps-safety-2026.js");
+  if (!clinicalEngine) throw new Error("InsulogClinicalEngine debe cargarse antes de aps-safety-2026.js");
+  if (!app) throw new Error("InsulogApp debe cargarse antes de aps-safety-2026.js");
+
+  const { go } = runtime.navigation;
+  const state = runtime.state;
+  const actions = runtime.actions;
+  const renderNotaClinica = app.notes.render;
 
   const NOTA_EFICACIA = "* pp = puntos porcentuales. Descensos orientativos de HbA1c observados en estudios poblacionales; varían con HbA1c basal, dosis, adherencia, función renal y tratamiento previo. No sumar cifras de forma mecánica ni usarlas para calcular la dosis de NPH.";
 
@@ -141,14 +149,6 @@
       </label>`;
   }
 
-  function grupoMedicamentosHTML(titulo, meds, tipo) {
-    return `
-      <section class="aps-med-section aps-med-section-${tipo}">
-        <div class="aps-med-section-title">${titulo}</div>
-        <div class="aps-med-grid">${meds.map((med) => opcionMedicamentoHTML(med, tipo.includes("aps") ? "__SCOPE__" : "__SCOPE__")).join("")}</div>
-      </section>`;
-  }
-
   function sincronizarSelectorDosis(input) {
     const med = buscarMedicamento(input);
     const label = input?.closest("label");
@@ -265,11 +265,11 @@
     p2.insertAdjacentElement("afterend", page);
 
     page.querySelector("#continuar-dosificacion-inicio")?.addEventListener("click", () => {
-      globalData.tratamientoConcomitante = tratamientoTexto("inicio");
-      nav(3);
+      state.patch({ tratamientoConcomitante: tratamientoTexto("inicio") });
+      go(3);
     });
 
-    page.querySelector("#volver-criterios-inicio")?.addEventListener("click", () => nav(2));
+    page.querySelector("#volver-criterios-inicio")?.addEventListener("click", () => go(2));
   }
 
   function actualizarTerminologia() {
@@ -343,7 +343,7 @@
     if (!evento) {
       safetyState.revisionHipo = null;
       ocultarRevisionHipoglicemia();
-      window.calcularSeguimientoPro();
+      actions.invoke("calculate-followup");
       return;
     }
 
@@ -352,7 +352,7 @@
       requirioAyuda
     };
 
-    window.calcularSeguimientoPro();
+    actions.invoke("calculate-followup");
   }
 
   function normalizarNotaSeguimiento() {
@@ -372,7 +372,7 @@
       "ALERTA DOSIS ALTA / POSIBLE SOBREINSULINIZACIÓN (≥0,7 UI/kg/día):"
     ));
 
-    const tratamiento = globalData.tratamientoConcomitante || "No registrado";
+    const tratamiento = state.get("tratamientoConcomitante") || "No registrado";
     if (!lineas.some((linea) => linea.startsWith("Tratamiento concomitante:"))) {
       const indiceEsquema = lineas.findIndex((linea) => linea.startsWith("Esquema actual:"));
       lineas.splice(indiceEsquema >= 0 ? indiceEsquema + 1 : 2, 0, `Tratamiento concomitante: ${tratamiento}`);
@@ -415,142 +415,105 @@
       .map((input) => parseInt(input.value, 10))
       .filter((value) => Number.isFinite(value));
 
-    globalData.amActual = am;
-    globalData.pmActual = pm;
-    globalData.am = am;
-    globalData.pm = pm;
-    globalData.promAy = promedio(ayunas);
-    globalData.promPre = promedio(preonce);
-    globalData.promedioGlobal = promedio([...ayunas, ...preonce]);
-    globalData.dosisKg = (am + pm) / peso;
-    globalData.acciones = "";
-    globalData.tratamientoConcomitante = tratamientoTexto("seguimiento");
+    state.patch({
+      amActual: am,
+      pmActual: pm,
+      am,
+      pm,
+      promAy: promedio(ayunas),
+      promPre: promedio(preonce),
+      promedioGlobal: promedio([...ayunas, ...preonce]),
+      dosisKg: (am + pm) / peso,
+      acciones: "",
+      tratamientoConcomitante: tratamientoTexto("seguimiento")
+    });
 
-    const nota = `SEGUIMIENTO APS\nALERTA: HIPOGLICEMIA NIVEL 3 REFERIDA (requirió asistencia de otra persona).\nNo se realiza ajuste automático de NPH.\nPromedios descriptivos sin excluir valores: Ayunas ${globalData.promAy} mg/dL | Preonce ${globalData.promPre} mg/dL\nPromedio capilar global del registro: ${globalData.promedioGlobal} mg/dL\nEsquema actual: AM ${am} UI | PM ${pm} UI\nTratamiento concomitante: ${globalData.tratamientoConcomitante}\nConducta: reevaluación clínica prioritaria del esquema de insulina y de las causas del evento. Revisar técnica de administración, horario, ingesta, ejercicio, función renal, fragilidad y apoyo del paciente.\nReforzar educación para prevención y tratamiento de hipoglicemia.`;
+    const data = state.snapshot();
+    const nota = `SEGUIMIENTO APS\nALERTA: HIPOGLICEMIA NIVEL 3 REFERIDA (requirió asistencia de otra persona).\nNo se realiza ajuste automático de NPH.\nPromedios descriptivos sin excluir valores: Ayunas ${data.promAy} mg/dL | Preonce ${data.promPre} mg/dL\nPromedio capilar global del registro: ${data.promedioGlobal} mg/dL\nEsquema actual: AM ${am} UI | PM ${pm} UI\nTratamiento concomitante: ${data.tratamientoConcomitante}\nConducta: reevaluación clínica prioritaria del esquema de insulina y de las causas del evento. Revisar técnica de administración, horario, ingesta, ejercicio, función renal, fragilidad y apoyo del paciente.\nReforzar educación para prevención y tratamiento de hipoglicemia.`;
 
     renderNotaClinica(nota);
-    nav(5);
+    go(5);
     return true;
   }
 
-  const definirEsquemaInicioBase = window.definirEsquemaInicio;
-  if (typeof definirEsquemaInicioBase === "function") {
-    window.definirEsquemaInicio = function definirEsquemaInicioConTratamiento() {
-      const resultado = definirEsquemaInicioBase();
-      const paginaDosisActiva = document.getElementById("p3")?.classList.contains("active");
-      if (paginaDosisActiva && document.getElementById("p25")) nav(25);
-      return resultado;
-    };
-  }
+  actions.decorate("define-initial-scheme", (next) => (context) => {
+    const resultado = next(context);
+    const paginaDosisActiva = document.getElementById("p3")?.classList.contains("active");
+    if (paginaDosisActiva && document.getElementById("p25")) go(25);
+    return resultado;
+  });
 
-  const calcularInicioBase = window.calcularInicioMejorado;
-  if (typeof calcularInicioBase === "function") {
-    window.calcularInicioMejorado = function calcularInicioConContexto() {
-      globalData.tratamientoConcomitante = tratamientoTexto("inicio");
-      const resultado = calcularInicioBase();
-      const nota = document.getElementById("nota-clinica");
-      if (document.getElementById("p5")?.classList.contains("active") && nota?.dataset.rawText) {
-        const texto = nota.dataset.rawText;
-        if (!texto.includes("Tratamiento concomitante:")) {
-          renderNotaClinica(`${texto}\nTratamiento concomitante: ${globalData.tratamientoConcomitante}`);
-        }
+  actions.decorate("calculate-initial", (next) => (context) => {
+    state.patch({ tratamientoConcomitante: tratamientoTexto("inicio") });
+    const resultado = next(context);
+    const nota = document.getElementById("nota-clinica");
+    if (document.getElementById("p5")?.classList.contains("active") && nota?.dataset.rawText) {
+      const texto = nota.dataset.rawText;
+      if (!texto.includes("Tratamiento concomitante:")) {
+        renderNotaClinica(`${texto}\nTratamiento concomitante: ${state.get("tratamientoConcomitante")}`);
       }
-      return resultado;
-    };
-  }
+    }
+    return resultado;
+  });
 
-  const prepSegBase = window.prepSeg;
-  if (typeof prepSegBase === "function") {
-    window.prepSeg = function prepSegConSeguridadLimpia() {
+  actions.decorate("prepare-followup", (next) => (context) => {
+    safetyState.revisionHipo = null;
+    safetyState.clasificacionHipo = "";
+    ocultarRevisionHipoglicemia();
+    return next(context);
+  });
+
+  actions.decorate("calculate-followup", (next) => (context) => {
+    state.patch({ tratamientoConcomitante: tratamientoTexto("seguimiento") });
+
+    const eventoHipo = evaluarHipoglicemiaADA();
+    safetyState.clasificacionHipo = eventoHipo?.nota || "";
+
+    if (!eventoHipo) {
       safetyState.revisionHipo = null;
-      safetyState.clasificacionHipo = "";
       ocultarRevisionHipoglicemia();
-      return prepSegBase();
-    };
-  }
-
-  const calcularSeguimientoBase = window.calcularSeguimientoPro;
-  if (typeof calcularSeguimientoBase === "function") {
-    window.calcularSeguimientoPro = function calcularSeguimientoConSeguridad() {
-      globalData.tratamientoConcomitante = tratamientoTexto("seguimiento");
-
-      const eventoHipo = evaluarHipoglicemiaADA();
-      safetyState.clasificacionHipo = eventoHipo?.nota || "";
-
-      if (!eventoHipo) {
-        safetyState.revisionHipo = null;
-        ocultarRevisionHipoglicemia();
-        const resultado = calcularSeguimientoBase();
-        if (document.getElementById("p5")?.classList.contains("active")) {
-          normalizarNotaSeguimiento();
-        }
-        return resultado;
-      }
-
-      const firmaActual = firmaRegistroGlicemias();
-      const revisionValida = safetyState.revisionHipo?.firma === firmaActual;
-
-      if (!revisionValida) {
-        safetyState.revisionHipo = null;
-        mostrarRevisionHipoglicemia(eventoHipo);
-        return undefined;
-      }
-
-      ocultarRevisionHipoglicemia();
-
-      if (safetyState.revisionHipo.requirioAyuda) {
-        safetyState.clasificacionHipo = evaluarHipoglicemiaADA(true)?.nota || "";
-        const resultado = manejarHipoglicemiaNivel3();
-        if (document.getElementById("p5")?.classList.contains("active")) {
-          safetyState.revisionHipo = null;
-        }
-        return resultado;
-      }
-
-      const resultado = calcularSeguimientoBase();
+      const resultado = next(context);
       if (document.getElementById("p5")?.classList.contains("active")) {
         normalizarNotaSeguimiento();
-        safetyState.revisionHipo = null;
-      } else if (!document.getElementById("p4")?.classList.contains("active")) {
+      }
+      return resultado;
+    }
+
+    const firmaActual = firmaRegistroGlicemias();
+    const revisionValida = safetyState.revisionHipo?.firma === firmaActual;
+
+    if (!revisionValida) {
+      safetyState.revisionHipo = null;
+      mostrarRevisionHipoglicemia(eventoHipo);
+      return undefined;
+    }
+
+    ocultarRevisionHipoglicemia();
+
+    if (safetyState.revisionHipo.requirioAyuda) {
+      safetyState.clasificacionHipo = evaluarHipoglicemiaADA(true)?.nota || "";
+      const resultado = manejarHipoglicemiaNivel3();
+      if (document.getElementById("p5")?.classList.contains("active")) {
         safetyState.revisionHipo = null;
       }
       return resultado;
-    };
-  }
+    }
 
-  const generarNotaDosisAltaBase = window.generarNotaDosisAlta;
-  if (typeof generarNotaDosisAltaBase === "function") {
-    window.generarNotaDosisAlta = function generarNotaDosisAltaSegura() {
-      const resultado = generarNotaDosisAltaBase();
+    const resultado = next(context);
+    if (document.getElementById("p5")?.classList.contains("active")) {
       normalizarNotaSeguimiento();
-      return resultado;
-    };
-  }
+      safetyState.revisionHipo = null;
+    } else if (!document.getElementById("p4")?.classList.contains("active")) {
+      safetyState.revisionHipo = null;
+    }
+    return resultado;
+  });
 
-  const generarDocumentoBase = window.generarDocumento;
-  if (typeof generarDocumentoBase === "function") {
-    window.generarDocumento = function generarDocumentoConContexto(tipo) {
-      const resultado = generarDocumentoBase(tipo);
-      const pdf = document.getElementById("pdf");
-      if (!pdf) return resultado;
-
-      pdf.innerHTML = pdf.innerHTML.replace(/ADA 2024/g, "ADA 2026");
-
-      const tratamiento = globalData.tratamientoConcomitante || "No registrado";
-      if (tratamiento !== "No registrado" && !pdf.querySelector(".tratamiento-pdf")) {
-        const bloque = document.createElement("div");
-        bloque.className = "tratamiento-pdf";
-        bloque.innerHTML = `<b>Tratamiento concomitante registrado:</b><br>${tratamiento}`;
-
-        const dosis = Array.from(pdf.querySelectorAll("div"))
-          .find((element) => element.textContent.includes("Dosis Actual Indicada"));
-        if (dosis) dosis.insertAdjacentElement("afterend", bloque);
-        else pdf.insertAdjacentElement("afterbegin", bloque);
-      }
-
-      return resultado;
-    };
-  }
+  actions.decorate("generate-high-dose-note", (next) => (context) => {
+    const resultado = next(context);
+    normalizarNotaSeguimiento();
+    return resultado;
+  });
 
   insertarPaginaTratamientoInicio();
   enriquecerTratamientoSeguimiento();
