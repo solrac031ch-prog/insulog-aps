@@ -6,6 +6,7 @@ on:
   push:
     branches: [main]
     paths:
+      - "index.html"
       - "farmacia-popular.js"
       - "farmacia-popular.css"
       - "scripts/update_farmacia_cerro_navia.py"
@@ -43,7 +44,6 @@ jobs:
           family_for_row = ns["family_for_row"]
           recognized_by_app = ns["recognized_by_app"]
 
-          # Una marca nueva con principio activo/dosis conocida debe entrar automáticamente.
           nueva_marca_10 = {
               "product": "MARCA NUEVA 10 MG X 30 COMP",
               "principle": "Empagliflozina 10 mg",
@@ -55,7 +55,6 @@ jobs:
           assert is_match("empagliflozina", nueva_marca_10)
           assert recognized_by_app(nueva_marca_10)
 
-          # Se tolera el error ortográfico que hoy usa la fuente para Jardiance.
           typo_fuente_25 = {
               "product": "OTRA MARCA 25 MG X 30 COMP",
               "principle": "EMPAGLIFOZINA 25MG",
@@ -66,7 +65,6 @@ jobs:
           assert is_match("empagliflozina", typo_fuente_25)
           assert recognized_by_app(typo_fuente_25)
 
-          # Una dosis nueva no debe perderse ni entrar silenciosamente al selector clínico.
           dosis_nueva = {
               "product": "MARCA NUEVA 5 MG X 30 COMP",
               "principle": "Empagliflozina 5 mg",
@@ -78,7 +76,6 @@ jobs:
           assert is_match("empagliflozina", dosis_nueva)
           assert not recognized_by_app(dosis_nueva)
 
-          # Una nueva marca de la combinación 12,5/850 ya contemplada debe entrar sola.
           combo_850 = {
               "product": "NUEVA DUO 12,5/850 MG X 60 COMP",
               "principle": "Empagliflozina/Metformina",
@@ -89,8 +86,6 @@ jobs:
           assert is_match("empaMet12_5_1000", combo_850)
           assert recognized_by_app(combo_850)
 
-          # Una presentación de metformina fuera de las alternativas particulares actuales
-          # debe quedar para revisión, no desaparecer.
           metformina_1000 = {
               "product": "METFORMINA 1000 MG X 30 COMP",
               "principle": "Metformina",
@@ -112,6 +107,7 @@ jobs:
         run: |
           from pathlib import Path
 
+          html = Path("index.html").read_text(encoding="utf-8")
           js = Path("farmacia-popular.js").read_text(encoding="utf-8")
           sw = Path("sw.js").read_text(encoding="utf-8")
           workflow = Path(".github/workflows/sync-farmacia-cerro-navia.yml").read_text(encoding="utf-8")
@@ -120,23 +116,35 @@ jobs:
           for token in [
               "farmaciapopularonline.cl/consultor?farmacia=cerro%20navia",
               "metformina500", "metformina750", "empagliflozina", "empaMet12_5_1000", "vildaMet",
-              "farmacia-popular-status", "cache: \"no-store\"",
+              "farmacia-popular-status", 'cache: "no-store"',
               'const candidatos = variante ? matches.filter((item) => item.variant === variante) : matches',
               "Stock publicado", "12,5/850 mg/día", "12.5/850", "asegurarDosisEmpaMet"
           ]:
               if token not in js:
                   raise SystemExit(f"Missing Farmacia Popular UI marker: {token}")
 
-          for asset in [
-              "./farmacia-popular.css?v=20260827-1",
-              "./farmacia-popular.js?v=20260827-3"
-          ]:
+          current_assets = [
+              "./farmacia-popular.css?v=20260827-2",
+              "./farmacia-popular.js?v=20260827-4"
+          ]
+          for asset in current_assets:
+              if asset not in html:
+                  raise SystemExit(f"Farmacia Popular must be loaded directly by index.html: {asset}")
               if asset not in sw:
                   raise SystemExit(f"Farmacia Popular app-shell asset missing: {asset}")
 
+          for legacy in [
+              "./farmacia-popular.css?v=20260827-1",
+              "./farmacia-popular.js?v=20260827-3",
+              "normalizarAsset", "respuestaTexto"
+          ]:
+              if legacy in sw:
+                  raise SystemExit(f"Obsolete Farmacia Popular/PWA marker remains: {legacy}")
+
           for token in [
               "schedule:", "workflow_dispatch:", "fetch-depth: 0",
-              "Validate generated pharmacy data", "for attempt in 1 2 3",
+              "Skip scheduled retry if data is already current today",
+              "America/Santiago", "Validate generated pharmacy data", "for attempt in 1 2 3",
               "git reset --hard origin/main", "python scripts/update_farmacia_cerro_navia.py"
           ]:
               if token not in workflow:
@@ -163,4 +171,5 @@ jobs:
           if 'const candidatos = filtrados.length ? filtrados : matches' in js:
               raise SystemExit("Selected dose must never fall back to a different pharmacy presentation")
 
-          print("Farmacia Popular future-proof daily-price integration checks passed")
+          print("Farmacia Popular direct-loading and future-proof daily-price checks passed")
+          PY
