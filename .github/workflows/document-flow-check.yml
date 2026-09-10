@@ -102,7 +102,7 @@ jobs:
               if asset not in sw:
                   raise SystemExit(f"Current isolated document asset missing from app shell: {asset}")
 
-          if 'const CACHE_NAME = "insulog-shell-20260910-atomic20"' not in sw:
+          if 'const CACHE_NAME = "insulog-shell-20260910-atomic21"' not in sw:
               raise SystemExit("PDF isolation must ship with a fresh PWA shell")
 
           print("P6/P7 isolated preview and one-page Letter checks passed")
