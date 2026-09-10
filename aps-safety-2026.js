@@ -1,6 +1,11 @@
 "use strict";
 
 (() => {
+  const clinicalEngine = window.InsulogClinicalEngine;
+  if (!clinicalEngine) {
+    throw new Error("InsulogClinicalEngine debe cargarse antes de aps-safety-2026.js");
+  }
+
   const NOTA_EFICACIA = "* pp = puntos porcentuales. Descensos orientativos de HbA1c observados en estudios poblacionales; varían con HbA1c basal, dosis, adherencia, función renal y tratamiento previo. No sumar cifras de forma mecánica ni usarlas para calcular la dosis de NPH.";
 
   const MEDICAMENTOS_APS = [
@@ -88,9 +93,7 @@
   ];
 
   const safetyState = {
-    discordantes: [],
     clasificacionHipo: "",
-    scope: "seguimiento",
     revisionHipo: null
   };
 
@@ -282,39 +285,6 @@
     if (strong) strong.textContent = "⚠️ Dosis alta de insulina (≥0,7 UI/kg/día): evaluar posible sobreinsulinización";
   }
 
-  function detectarDiscordantes(datos, nombre) {
-    if (datos.length < 4) return [];
-
-    return datos.flatMap((valor, index) => {
-      if (valor < 70) return [];
-      const resto = datos.filter((_, i) => i !== index);
-      const promedioResto = resto.reduce((a, b) => a + b, 0) / resto.length;
-      return valor > promedioResto + 50 ? [`${nombre} ${valor} mg/dL`] : [];
-    });
-  }
-
-  const analizarGlicemiasBase = window.analizarGlicemias;
-  window.analizarGlicemias = function analizarGlicemiasSinExcluir(valores, nombre) {
-    const datos = valores.filter((v) => Number.isFinite(v));
-    const discordantes = detectarDiscordantes(datos, nombre);
-    safetyState.discordantes.push(...discordantes);
-
-    return {
-      datos,
-      usados: [...datos],
-      promedio: datos.length ? datos.reduce((a, b) => a + b, 0) / datos.length : null,
-      min: datos.length ? Math.min(...datos) : null,
-      hipoSevera: datos.some((v) => v < 54),
-      hipo: datos.some((v) => v < 70),
-      excluidos: [],
-      discordantes
-    };
-  };
-
-  if (typeof analizarGlicemiasBase !== "function") {
-    console.warn("Insulog APS: no se encontró analizarGlicemias base.");
-  }
-
   function inputsGlicemiaSeguimiento() {
     return Array.from(document.querySelectorAll("#p4 .glicemia"));
   }
@@ -325,28 +295,14 @@
       .join("|");
   }
 
-  function evaluarHipoglicemiaADA() {
-    const valores = inputsGlicemiaSeguimiento()
+  function valoresGlicemiaSeguimiento() {
+    return inputsGlicemiaSeguimiento()
       .map((input) => parseInt(input.value, 10))
       .filter((value) => Number.isFinite(value));
+  }
 
-    const valoresHipo = valores.filter((value) => value < 70);
-    if (!valoresHipo.length) return null;
-
-    const minimo = Math.min(...valoresHipo);
-    if (minimo < 54) {
-      return {
-        nivel: 2,
-        minimo,
-        nota: "Hipoglicemia nivel 2 detectada (<54 mg/dL): requiere acción inmediata y reevaluación del tratamiento."
-      };
-    }
-
-    return {
-      nivel: 1,
-      minimo,
-      nota: "Hipoglicemia nivel 1 detectada (<70 y ≥54 mg/dL): revisar causas y reforzar prevención."
-    };
+  function evaluarHipoglicemiaADA(requirioAyuda = false) {
+    return clinicalEngine.classifyHypoglycemia(valoresGlicemiaSeguimiento(), requirioAyuda);
   }
 
   function ocultarRevisionHipoglicemia() {
@@ -420,10 +376,6 @@
     if (!lineas.some((linea) => linea.startsWith("Tratamiento concomitante:"))) {
       const indiceEsquema = lineas.findIndex((linea) => linea.startsWith("Esquema actual:"));
       lineas.splice(indiceEsquema >= 0 ? indiceEsquema + 1 : 2, 0, `Tratamiento concomitante: ${tratamiento}`);
-    }
-
-    if (safetyState.discordantes.length && !lineas.some((linea) => linea.startsWith("Valores discordantes:"))) {
-      lineas.push(`Valores discordantes: ${[...new Set(safetyState.discordantes)].join(", ")}. Se mantienen en el promedio; verificar técnica, horario, alimentación y contexto clínico antes de excluirlos manualmente.`);
     }
 
     if (safetyState.clasificacionHipo && !lineas.some((linea) => linea.startsWith("Clasificación de hipoglicemia:"))) {
@@ -521,8 +473,6 @@
   if (typeof calcularSeguimientoBase === "function") {
     window.calcularSeguimientoPro = function calcularSeguimientoConSeguridad() {
       globalData.tratamientoConcomitante = tratamientoTexto("seguimiento");
-      safetyState.discordantes = [];
-      safetyState.scope = "seguimiento";
 
       const eventoHipo = evaluarHipoglicemiaADA();
       safetyState.clasificacionHipo = eventoHipo?.nota || "";
@@ -549,7 +499,7 @@
       ocultarRevisionHipoglicemia();
 
       if (safetyState.revisionHipo.requirioAyuda) {
-        safetyState.clasificacionHipo = "Hipoglicemia nivel 3 referida: el episodio requirió asistencia de otra persona para su tratamiento.";
+        safetyState.clasificacionHipo = evaluarHipoglicemiaADA(true)?.nota || "";
         const resultado = manejarHipoglicemiaNivel3();
         if (document.getElementById("p5")?.classList.contains("active")) {
           safetyState.revisionHipo = null;

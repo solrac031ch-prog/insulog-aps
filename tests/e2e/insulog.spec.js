@@ -199,6 +199,22 @@ test("seguimiento PM con ayunas 160 mg/dL aumenta exactamente 2 UI", async ({ pa
   expect(dose).toEqual({ am: 0, pm: 22 });
 });
 
+test("glicemia discordante se conserva en el promedio y en la nota clínica", async ({ page }) => {
+  await openFollowupTable(page);
+
+  await page.locator("#peso-seguimiento").fill("70");
+  await page.locator("#tipo-esquema").selectOption("pm");
+  await page.locator("#pm-actual").fill("20");
+  await fillFasting(page, [100, 100, 100, 300]);
+  await page.locator("#ajustar-seguimiento-btn").click();
+
+  await expectActivePage(page, "p5");
+  const result = await page.evaluate(() => ({ pm: globalData.pm, promAy: globalData.promAy }));
+  expect(result).toEqual({ pm: 22, promAy: 150 });
+  await expect(page.locator("#nota-clinica")).toContainText("Valores discordantes: Ayunas 300 mg/dL");
+  await expect(page.locator("#nota-clinica")).toContainText("Se mantienen en el promedio");
+});
+
 test("la alerta de hipoglicemia aparece solo después de presionar Ajustar dosis", async ({ page }) => {
   await openFollowupTable(page);
 
@@ -211,8 +227,41 @@ test("la alerta de hipoglicemia aparece solo después de presionar Ajustar dosis
   await page.locator("#ajustar-seguimiento-btn").click();
   await expectActivePage(page, "p4");
   await expect(page.locator("#alerta-hipoglicemia-ada")).toBeVisible();
+  await expect(page.locator("#hipo-ada-titulo")).toContainText("nivel 1");
   await expect(page.locator("#hipo-sin-ayuda")).toBeVisible();
   await expect(page.locator("#hipo-con-ayuda")).toBeVisible();
+});
+
+test("HGT menor de 54 mg/dL se presenta como hipoglicemia nivel 2", async ({ page }) => {
+  await openFollowupTable(page);
+
+  await page.locator("#peso-seguimiento").fill("70");
+  await page.locator("#tipo-esquema").selectOption("pm");
+  await page.locator("#pm-actual").fill("20");
+  await fillFasting(page, [53, 105, 110]);
+  await page.locator("#ajustar-seguimiento-btn").click();
+
+  await expectActivePage(page, "p4");
+  await expect(page.locator("#hipo-ada-titulo")).toContainText("nivel 2");
+  await expect(page.locator("#hipo-ada-descripcion")).toContainText("<54 mg/dL");
+});
+
+test("hipoglicemia con asistencia mantiene nivel 3 y no ajusta NPH automáticamente", async ({ page }) => {
+  await openFollowupTable(page);
+
+  await page.locator("#peso-seguimiento").fill("70");
+  await page.locator("#tipo-esquema").selectOption("pm");
+  await page.locator("#pm-actual").fill("20");
+  await fillFasting(page, [60, 105, 110]);
+  await page.locator("#ajustar-seguimiento-btn").click();
+  await expect(page.locator("#alerta-hipoglicemia-ada")).toBeVisible();
+  await page.locator("#hipo-con-ayuda").click();
+
+  await expectActivePage(page, "p5");
+  const dose = await page.evaluate(() => ({ am: globalData.am, pm: globalData.pm }));
+  expect(dose).toEqual({ am: 0, pm: 20 });
+  await expect(page.locator("#nota-clinica")).toContainText("HIPOGLICEMIA NIVEL 3 REFERIDA");
+  await expect(page.locator("#nota-clinica")).toContainText("No se realiza ajuste automático de NPH");
 });
 
 test("P6 solo prepara el documento y P7 contiene la vista previa aislada", async ({ page }) => {

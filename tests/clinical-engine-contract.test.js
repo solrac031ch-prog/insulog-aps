@@ -38,6 +38,34 @@ assert.equal(engine.assessDoseSafety(0.69).warning, "");
 assert.match(engine.assessDoseSafety(0.7).warning, /Dosis ≥0\.7 UI\/kg\/día/);
 assert.match(engine.assessDoseSafety(1).warning, /Dosis ≥1 UI\/kg\/día/);
 
+const hypoglycemiaCases = [
+  { values: [70, 90, 120], assistance: false, expected: null },
+  { values: [69, 100, 110], assistance: false, expected: { nivel: 1, minimo: 69 } },
+  { values: [54, 100, 110], assistance: false, expected: { nivel: 1, minimo: 54 } },
+  { values: [53, 100, 110], assistance: false, expected: { nivel: 2, minimo: 53 } },
+  { values: [69, 53, 110], assistance: false, expected: { nivel: 2, minimo: 53 } },
+  { values: [60, 100, 110], assistance: true, expected: { nivel: 3, minimo: 60 } }
+];
+
+for (const testCase of hypoglycemiaCases) {
+  const original = [...testCase.values];
+  const result = engine.classifyHypoglycemia(testCase.values, testCase.assistance);
+  assert.deepEqual(testCase.values, original, "La clasificación de hipoglicemia no debe mutar la entrada");
+
+  if (testCase.expected === null) {
+    assert.equal(result, null);
+    continue;
+  }
+
+  assert.equal(result.nivel, testCase.expected.nivel);
+  assert.equal(result.minimo, testCase.expected.minimo);
+  assert.equal(Object.isFrozen(result), true, "La clasificación de hipoglicemia debe ser inmutable");
+}
+
+assert.match(engine.classifyHypoglycemia([69], false).nota, /nivel 1/);
+assert.match(engine.classifyHypoglycemia([53], false).nota, /nivel 2/);
+assert.match(engine.classifyHypoglycemia([60], true).nota, /nivel 3 referida/);
+
 const atPointSeven = engine.calculateFollowup({
   weightKg: 100,
   regimenType: "2",
