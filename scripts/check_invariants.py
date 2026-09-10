@@ -55,8 +55,8 @@ if len(re.findall(r"<head(?:\s|>)", html, re.I)) != 1 or len(re.findall(r"</head
 
 direct_assets = [
     "./app-runtime.js?v=20260910-1",
-    "./clinical-engine.js?v=20260910-1",
-    "./app.js?v=20260910-2",
+    "./clinical-engine.js?v=20260910-2",
+    "./app.js?v=20260910-3",
     "./patient-document.js?v=20260910-1",
     "./pdf-enhancements.js?v=20260827-4",
     "./aps-safety-2026.js?v=20260910-1",
@@ -74,8 +74,8 @@ require(pdf_preview_html, ['./styles.css?v=20260826', './pdf-enhancements.css?v=
 
 script_order = [
     html.index("./app-runtime.js?v=20260910-1"),
-    html.index("./clinical-engine.js?v=20260910-1"),
-    html.index("./app.js?v=20260910-2"),
+    html.index("./clinical-engine.js?v=20260910-2"),
+    html.index("./app.js?v=20260910-3"),
     html.index("./patient-document.js?v=20260910-1"),
     html.index("./pdf-enhancements.js?v=20260827-4"),
     html.index("./aps-safety-2026.js?v=20260910-1"),
@@ -153,7 +153,9 @@ require(
         "function analyzeGlucose", "value < 54", "value < 70",
         "function calculateAdjustment", "analysis.promedio < 80", "analysis.promedio <= 130", "analysis.promedio <= 180",
         "function calculateSecondDose", "Math.min(10, Math.max(4, weightKg * 0.1))",
-        "function calculateFollowup", "preElevenValues.length >= 3", "dosePerKg >= 1", "dosePerKg >= 0.7",
+        "function assessDoseSafety", "dosePerKg >= 1", "dosePerKg >= 0.7",
+        "requiresHighDoseReview", "blocksAutomaticEscalation",
+        "function calculateFollowup", "preElevenValues.length >= 3",
     ],
     "Pure clinical engine invariants",
 )
@@ -174,9 +176,14 @@ require(
         "function calcularAjuste", "clinicalEngine.calculateAdjustment",
         "function dosisSegundaDosis", "clinicalEngine.calculateSecondDose",
         "function calcularSeguimientoPro", "ayunasRaw.length < 3", "clinicalEngine.calculateFollowup",
-        "resultado.dosisKg >= 0.7",
+        "resultado.requiresHighDoseReview",
     ],
     "Clinical UI adapter invariants",
+)
+forbid(
+    app,
+    ["resultado.dosisKg >= 0.7", "resultado.dosisKg >= 1"],
+    "Clinical thresholds duplicated in UI adapter",
 )
 
 # APS safety/formulary is the source of truth.
@@ -262,8 +269,8 @@ forbid(sw, ["normalizarAsset", "respuestaTexto"], "Service-worker runtime transf
 require(
     sw,
     [
-        'const CACHE_NAME = "insulog-shell-20260910-atomic19"',
-        'const DEPLOYMENT_REVISION = "clinical-engine-20260910-r1"',
+        'const CACHE_NAME = "insulog-shell-20260910-atomic20"',
+        'const DEPLOYMENT_REVISION = "clinical-engine-contract-20260910-r2"',
         'new Request(asset, { cache: "reload" })',
         'addEventListener("fetch"', 'caches.delete',
         'event.waitUntil(refreshNavigation.catch(() => undefined))',
@@ -277,7 +284,7 @@ require(
     sw,
     [
         "./index.html", "./styles.css?v=20260826", "./app-runtime.js?v=20260910-1",
-        "./clinical-engine.js?v=20260910-1", "./app.js?v=20260910-2", "./patient-document.js?v=20260910-1",
+        "./clinical-engine.js?v=20260910-2", "./app.js?v=20260910-3", "./patient-document.js?v=20260910-1",
         "./pdf-preview.html?v=20260910-1", "./pdf-enhancements.js?v=20260827-4", "./aps-safety-2026.js?v=20260910-1",
         "./farmacia-popular.js?v=20260827-4", "./document-flow.js?v=20260910-1", "./app-shell.js?v=20260910-1",
     ],
