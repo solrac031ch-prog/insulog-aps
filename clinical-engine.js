@@ -116,6 +116,36 @@
     };
   }
 
+  function classifyHypoglycemia(values, requiredAssistance = false) {
+    const data = values.filter((value) => Number.isFinite(value));
+    const hypoglycemicValues = data.filter((value) => value < 70);
+    if (!hypoglycemicValues.length) return null;
+
+    const minimum = Math.min(...hypoglycemicValues);
+
+    if (requiredAssistance) {
+      return Object.freeze({
+        nivel: 3,
+        minimo: minimum,
+        nota: "Hipoglicemia nivel 3 referida: el episodio requirió asistencia de otra persona para su tratamiento."
+      });
+    }
+
+    if (minimum < 54) {
+      return Object.freeze({
+        nivel: 2,
+        minimo: minimum,
+        nota: "Hipoglicemia nivel 2 detectada (<54 mg/dL): requiere acción inmediata y reevaluación del tratamiento."
+      });
+    }
+
+    return Object.freeze({
+      nivel: 1,
+      minimo: minimum,
+      nota: "Hipoglicemia nivel 1 detectada (<70 y ≥54 mg/dL): revisar causas y reforzar prevención."
+    });
+  }
+
   function calculateAdjustment(analysis, doseName) {
     if (!analysis || analysis.promedio === null) {
       return { ajuste: 0, texto: `${doseName}: sin datos suficientes para ajuste` };
@@ -352,6 +382,7 @@
     calculateInitialDose,
     detectDiscordantHighs,
     analyzeGlucose,
+    classifyHypoglycemia,
     calculateAdjustment,
     calculateSecondDose,
     assessDoseSafety,
