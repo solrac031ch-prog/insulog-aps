@@ -64,7 +64,6 @@ async function captureVisual(page, testInfo, key) {
     caret: "hide",
     fullPage: false
   });
-  await testInfo.attach(`${key}.png`, { path, contentType: "image/png" });
 
   const hash = await perceptualHash(page, screenshot);
   const expected = baseline.profiles[key];
