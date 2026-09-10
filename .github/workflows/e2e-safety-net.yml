@@ -56,6 +56,15 @@ jobs:
       - name: Run Insulog browser safety net
         run: npm run test:e2e
 
+      - name: Upload visual contract captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: insulog-visual-contract
+          path: test-results/**/*.png
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload Playwright diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4

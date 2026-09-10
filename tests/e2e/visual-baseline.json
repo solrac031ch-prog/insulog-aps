@@ -1,0 +1,13 @@
+{
+  "version": "phase7c-20260910-r1",
+  "hashBits": 64,
+  "defaultTolerance": 6,
+  "profiles": {
+    "mobile-p0": { "hash": "ecf28ee880000000", "tolerance": 6 },
+    "mobile-p2": { "hash": "d8daceb4b0000000", "tolerance": 6 },
+    "mobile-p4": { "hash": "93938504859387a0", "tolerance": 6 },
+    "desktop-p0": { "hash": "3233332323033300", "tolerance": 6 },
+    "desktop-p2": { "hash": "3333336133033300", "tolerance": 6 },
+    "desktop-p4": { "hash": "714b4b4b4b433333", "tolerance": 6 }
+  }
+}
