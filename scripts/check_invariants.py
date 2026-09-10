@@ -190,9 +190,9 @@ require(
     [
         'const CACHE_NAME = "insulog-shell-20260910-atomic17"',
         'const DEPLOYMENT_REVISION = "pdf-isolation-20260910-r1"',
-        'new Request(asset, { cache: "reload" })', 'cache.match("./index.html")',
+        'new Request(asset, { cache: "reload" })',
         'addEventListener("fetch"', 'caches.delete',
-        'event.waitUntil(refreshIndex.catch(() => undefined))',
+        'event.waitUntil(refreshNavigation.catch(() => undefined))',
         'event.waitUntil(refreshAsset.catch(() => undefined))', "fetchFresh",
         'const PDF_PREVIEW_PATH = "./pdf-preview.html?v=20260910-1"',
         'url.pathname.endsWith("/pdf-preview.html")', 'cache.match(navigationAsset)',
