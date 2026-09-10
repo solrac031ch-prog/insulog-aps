@@ -42,6 +42,24 @@ La composición actual se realiza así:
 
 Los únicos exports de aplicación permitidos en `window` son APIs namespaced: `InsulogRuntime`, `InsulogApp`, `InsulogDocuments` e `InsulogShell`; `InsulogClinicalEngine` permanece como el namespace independiente del motor clínico.
 
+## Estado de la Fase 7A — fundación visual mobile-first
+
+La primera parte de la Fase 7 está integrada. Esta etapa modifica presentación y ergonomía, pero no cambia reglas clínicas, IDs funcionales ni flujos protegidos.
+
+Contratos visuales actuales:
+
+- `styles.css` es la hoja base única de la interfaz clínica y concentra tokens, espaciado, tipografía, controles, cards, alertas, formularios y tabla de seguimiento;
+- en escritorio, la aplicación mantiene un shell centrado con superficie y jerarquía visual clara;
+- en viewport móvil (≤760 px), la aplicación ocupa la pantalla completa, elimina bordes/sombras del contenedor y respeta `safe-area-inset`;
+- botones clínicos tienen superficie táctil mínima de 50 px y los campos principales de 48 px;
+- selecciones clínicas presentan un estado visual explícito sin depender solo del color;
+- la tabla HGT mantiene scroll contenido dentro de su wrapper, cabecera visible y realce de la fila activa;
+- existe soporte para `prefers-reduced-motion`;
+- el PDF continúa aislado en su iframe y mantiene sus estilos de impresión específicos;
+- el asset visual está versionado como `styles.css?v=20260910-1` y el shell PWA correspondiente como `atomic23`.
+
+Esta etapa no se considera el cierre completo de Fase 7: todavía pueden refinarse jerarquía de contenido, componentes de pantallas individuales y validación visual por snapshots.
+
 ## Mapa actual de responsabilidades
 
 | Área | Archivo principal | Responsabilidad actual | Riesgo de acoplamiento |
@@ -49,6 +67,7 @@ Los únicos exports de aplicación permitidos en `window` son APIs namespaced: `
 | Motor clínico puro | `clinical-engine.js` | Inicio NPH, análisis HGT, hipoglicemia, ajustes, segunda dosis, seguimiento y seguridad de dosis | Bajo mientras permanezca sin DOM y cubierto por regresión |
 | Runtime | `app-runtime.js` | Estado efímero, navegación, utilidades DOM y registro/decoración/invocación de acciones | Bajo |
 | Adaptador clínico/UI | `app.js` | Lectura y validación de inputs, llamada al motor, actualización de estado y presentación de resultados | Bajo-medio |
+| Sistema visual de app | `styles.css` | Tokens, layout desktop/mobile, controles, formularios, cards, alertas, tabla HGT y nota clínica | Bajo mientras conserve IDs/DOM funcional y pase E2E |
 | Capa APS 2026 | `aps-safety-2026.js` | Formulario farmacológico, interacción de seguridad, confirmación de asistencia y normalización de nota mediante decoradores explícitos | Bajo-medio |
 | Shell de aplicación | `app-shell.js` | Inicialización, delegación de `data-action`, feedback de controles y registro del service worker | Bajo |
 | Documento clínico | `patient-document.js` | Construcción semántica del documento y pipeline de enhancers | Bajo-medio |
@@ -58,7 +77,7 @@ Los únicos exports de aplicación permitidos en `window` son APIs namespaced: `
 | Farmacia Popular | `farmacia-popular.js`, `farmacia-popular.css` | Presenta precio/stock de datos sincronizados | Bajo mientras permanezca desacoplado del algoritmo |
 | Datos de farmacia | `data/farmacia-cerro-navia.json` | Snapshot público de precios, stock y discovery | Bajo |
 | Sincronización farmacia | `scripts/update_farmacia_cerro_navia.py` + workflow | Consulta, normaliza, valida y publica datos | Bajo respecto de clínica |
-| PWA/cache | `sw.js` | Caché y actualización atómica del app shell | Medio: debe versionarse junto con cambios de assets ejecutables |
+| PWA/cache | `sw.js` | Caché y actualización atómica del app shell | Medio: debe versionarse junto con cambios de assets ejecutables o visuales relevantes |
 | HTML shell | `index.html` | Pantallas P0–P7 y declaración semántica de acciones | Bajo-medio |
 
 ## Flujos que se consideran contrato
@@ -113,7 +132,7 @@ La suite de pruebas protege tres niveles:
 
 1. **Contrato unitario del motor:** límites y estructuras de retorno.
 2. **Matriz de regresión clínica:** casos sintéticos de inicio, ajustes, intensificación, hipoglicemia, discordantes y dosis alta.
-3. **E2E con Chromium:** flujo real desde interfaz hasta nota/documento y verificación de la arquitectura de Fase 6.
+3. **E2E con Chromium:** flujo real desde interfaz hasta nota/documento, arquitectura de Fase 6 y comportamiento básico en viewport móvil.
 
 Entre los escenarios de navegador protegidos están:
 
@@ -149,17 +168,20 @@ Entre los escenarios de navegador protegidos están:
 - exports globales de aplicación distintos de los namespaces autorizados;
 - persistencia de datos identificables del paciente;
 - transformaciones de JavaScript clínico desde el service worker;
-- mezcla de revisiones PWA al publicar nuevos assets ejecutables.
+- mezcla de revisiones PWA al publicar nuevos assets ejecutables;
+- pérdida de los tamaños táctiles, del breakpoint mobile-first o del soporte de movimiento reducido definidos en Fase 7A;
+- uso de workarounds de `zoom` o scroll horizontal forzado para resolver problemas de layout móvil.
 
 ## Deuda técnica para fases posteriores
 
 1. Consolidar las múltiples capas CSS del PDF en un sistema de impresión más simple y predecible.
 2. Simplificar el versionado del app shell/PWA para evitar repetir manualmente revisiones de assets en HTML, service worker y checks.
 3. Reducir el acoplamiento directo al DOM de `app.js` y `aps-safety-2026.js` mediante componentes/controladores pequeños cuando eso facilite cambios visuales futuros.
-4. Incorporar pruebas visuales con snapshots una vez que el diseño estable sea aprobado.
+4. Incorporar pruebas visuales con snapshots cuando la jerarquía de pantallas de Fase 7 quede estabilizada.
 5. Versionar explícitamente el protocolo clínico y asociar cada futura modificación clínica a una matriz de casos esperados revisada.
 6. Separar progresivamente la generación de texto clínico de la manipulación DOM cuando aporte valor, sin reabrir reglas ya estabilizadas.
 7. Evaluar migración futura a módulos ES nativos solo cuando aporte una ventaja concreta; no es necesaria para mantener la separación actual.
+8. Continuar Fase 7 con revisión de contenido visible y componentes por pantalla (P0–P7) antes de introducir cambios funcionales nuevos.
 
 ## Regla de aceptación para refactors futuros
 
@@ -172,6 +194,7 @@ Un PR de refactor no clínico debe:
 - mantener `clinical-engine.js` libre de dependencias del navegador;
 - conservar el action registry y las APIs namespaced sin introducir globals sueltos;
 - mantener `index.html` libre de JavaScript inline;
+- conservar el contrato mobile-first sin depender de zoom o hacks de overflow;
 - explicar qué responsabilidad mueve y qué deuda técnica elimina.
 
 Cualquier cambio intencional de dosis, umbral, criterio o conducta clínica debe tratarse como cambio clínico explícito, no como refactor, y debe actualizar primero sus casos esperados y documentación de protocolo.
