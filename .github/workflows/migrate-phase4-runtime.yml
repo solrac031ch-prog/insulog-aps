@@ -19,9 +19,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: phase4-runtime-navigation-boundary
+          fetch-depth: 0
 
       - name: Apply deterministic runtime migration
-        run: python scripts/migrate_phase4_runtime.py
+        run: |
+          # The migration still validates the workflow edits it was designed with,
+          # but workflow files themselves are committed directly outside this bot token.
+          git show origin/main:.github/workflows/static-check.yml > .github/workflows/static-check.yml
+          git show origin/main:.github/workflows/document-flow-check.yml > .github/workflows/document-flow-check.yml
+          python scripts/migrate_phase4_runtime.py
+          git checkout HEAD -- .github/workflows/static-check.yml .github/workflows/document-flow-check.yml
 
       - name: Validate migrated JavaScript syntax
         run: |
@@ -39,7 +46,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app.js patient-document.js index.html sw.js scripts/check_invariants.py tests/e2e/insulog.spec.js .github/workflows/static-check.yml .github/workflows/document-flow-check.yml
+          git add app.js patient-document.js index.html sw.js scripts/check_invariants.py tests/e2e/insulog.spec.js
           if git diff --cached --quiet; then
             echo "No migration changes to commit"
             exit 0
