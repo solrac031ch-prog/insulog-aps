@@ -44,7 +44,7 @@ Los únicos exports de aplicación permitidos en `window` son APIs namespaced: `
 
 ## Estado de la Fase 7A — fundación visual mobile-first
 
-La primera parte de la Fase 7 está integrada. Esta etapa modifica presentación y ergonomía, pero no cambia reglas clínicas, IDs funcionales ni flujos protegidos.
+La primera parte de la Fase 7 está completada. Esta etapa modifica presentación y ergonomía, pero no cambia reglas clínicas, IDs funcionales ni flujos protegidos.
 
 Contratos visuales actuales:
 
@@ -53,12 +53,29 @@ Contratos visuales actuales:
 - en viewport móvil (≤760 px), la aplicación ocupa la pantalla completa, elimina bordes/sombras del contenedor y respeta `safe-area-inset`;
 - botones clínicos tienen superficie táctil mínima de 50 px y los campos principales de 48 px;
 - selecciones clínicas presentan un estado visual explícito sin depender solo del color;
-- la tabla HGT mantiene scroll contenido dentro de su wrapper, cabecera visible y realce de la fila activa;
 - existe soporte para `prefers-reduced-motion`;
-- el PDF continúa aislado en su iframe y mantiene sus estilos de impresión específicos;
-- el asset visual está versionado como `styles.css?v=20260910-1` y el shell PWA correspondiente como `atomic23`.
+- el PDF continúa aislado en su iframe y mantiene sus estilos de impresión específicos.
 
-Esta etapa no se considera el cierre completo de Fase 7: todavía pueden refinarse jerarquía de contenido, componentes de pantallas individuales y validación visual por snapshots.
+## Estado de la Fase 7B — jerarquía y navegación clínica
+
+La segunda parte de la Fase 7 se considera completada. P0–P7 mantienen los mismos IDs y acciones funcionales, pero la interfaz visible deja de exponer la nomenclatura interna del prototipo y prioriza la tarea clínica de cada pantalla.
+
+Contratos de experiencia actuales:
+
+- los rótulos visibles usan lenguaje clínico (`Seguridad`, `Inicio`, `Seguimiento`, `Resultado`, `Documento`) en vez de códigos `[P0]`–`[P7]`;
+- la pantalla dinámica P2.5 conserva su ID técnico, pero muestra `Inicio · tratamiento actual` mediante la capa visual;
+- P0 prioriza el CTA de inicio y deja fuentes clínicas en divulgación progresiva mediante `details`;
+- P1 presenta las exclusiones como checklist antes de la decisión Sí/No;
+- P2 explica claramente la diferencia entre inicio y seguimiento y mantiene visible la advertencia de suspensión de glibenclamida;
+- P3 mantiene los factores 0,1–0,3 UI/kg, pero su referencia extensa queda plegable para reducir carga visual;
+- P4 separa contexto de dosis y registro HGT, informa el mínimo de 3 ayunas y permite días sin dato;
+- en 390 px la tabla HGT usa ancho nativo (`table-layout: fixed`) y no requiere scroll horizontal interno;
+- existen acciones `VOLVER` secundarias en puntos donde el destino previo es inequívoco, sin alterar el flujo principal;
+- P41, P5, P6 y P7 expresan explícitamente revisión de seguridad, resultado, preparación y vista previa;
+- el asset visual está versionado como `styles.css?v=20260910-2` y el shell PWA correspondiente como `atomic24`;
+- `tests/e2e/mobile-layout.spec.js` verifica la jerarquía de portada y mide en navegador real que la tabla HGT no exceda su contenedor a 390×844.
+
+Fase 7B no modifica `clinical-engine.js`, las reglas de NPH, hipoglicemia, dosis alta, Farmacia Popular ni la generación semántica del documento del paciente.
 
 ## Mapa actual de responsabilidades
 
@@ -67,7 +84,7 @@ Esta etapa no se considera el cierre completo de Fase 7: todavía pueden refinar
 | Motor clínico puro | `clinical-engine.js` | Inicio NPH, análisis HGT, hipoglicemia, ajustes, segunda dosis, seguimiento y seguridad de dosis | Bajo mientras permanezca sin DOM y cubierto por regresión |
 | Runtime | `app-runtime.js` | Estado efímero, navegación, utilidades DOM y registro/decoración/invocación de acciones | Bajo |
 | Adaptador clínico/UI | `app.js` | Lectura y validación de inputs, llamada al motor, actualización de estado y presentación de resultados | Bajo-medio |
-| Sistema visual de app | `styles.css` | Tokens, layout desktop/mobile, controles, formularios, cards, alertas, tabla HGT y nota clínica | Bajo mientras conserve IDs/DOM funcional y pase E2E |
+| Sistema visual de app | `styles.css` | Tokens, layout desktop/mobile, controles, formularios, jerarquía de pantallas, navegación secundaria, tabla HGT y nota clínica | Bajo mientras conserve IDs/DOM funcional y pase E2E |
 | Capa APS 2026 | `aps-safety-2026.js` | Formulario farmacológico, interacción de seguridad, confirmación de asistencia y normalización de nota mediante decoradores explícitos | Bajo-medio |
 | Shell de aplicación | `app-shell.js` | Inicialización, delegación de `data-action`, feedback de controles y registro del service worker | Bajo |
 | Documento clínico | `patient-document.js` | Construcción semántica del documento y pipeline de enhancers | Bajo-medio |
@@ -78,7 +95,7 @@ Esta etapa no se considera el cierre completo de Fase 7: todavía pueden refinar
 | Datos de farmacia | `data/farmacia-cerro-navia.json` | Snapshot público de precios, stock y discovery | Bajo |
 | Sincronización farmacia | `scripts/update_farmacia_cerro_navia.py` + workflow | Consulta, normaliza, valida y publica datos | Bajo respecto de clínica |
 | PWA/cache | `sw.js` | Caché y actualización atómica del app shell | Medio: debe versionarse junto con cambios de assets ejecutables o visuales relevantes |
-| HTML shell | `index.html` | Pantallas P0–P7 y declaración semántica de acciones | Bajo-medio |
+| HTML shell | `index.html` | Pantallas P0–P7, contenido visible y declaración semántica de acciones | Bajo-medio |
 
 ## Flujos que se consideran contrato
 
@@ -109,7 +126,8 @@ Contratos protegidos:
 - nivel 1/2 se clasifica en el motor y nivel 3 se activa cuando el usuario confirma que el episodio requirió asistencia;
 - ante nivel 3 no se realiza ajuste automático de NPH;
 - exclusividad farmacológica actual se conserva;
-- la capa APS compone el flujo mediante decoradores del action registry y no mediante monkey patches globales.
+- la capa APS compone el flujo mediante decoradores del action registry y no mediante monkey patches globales;
+- la tabla de captura debe permanecer utilizable sin scroll horizontal interno en 390 px.
 
 ### Documento
 
@@ -132,7 +150,7 @@ La suite de pruebas protege tres niveles:
 
 1. **Contrato unitario del motor:** límites y estructuras de retorno.
 2. **Matriz de regresión clínica:** casos sintéticos de inicio, ajustes, intensificación, hipoglicemia, discordantes y dosis alta.
-3. **E2E con Chromium:** flujo real desde interfaz hasta nota/documento, arquitectura de Fase 6 y comportamiento básico en viewport móvil.
+3. **E2E con Chromium:** flujo real desde interfaz hasta nota/documento, arquitectura de Fase 6 y comportamiento mobile-first de Fase 7.
 
 Entre los escenarios de navegador protegidos están:
 
@@ -152,9 +170,11 @@ Entre los escenarios de navegador protegidos están:
 - separación P6/P7;
 - PDF de una sola página Letter;
 - no persistencia del nombre del paciente;
-- ausencia de overflow horizontal básico en viewport móvil.
+- ausencia de overflow horizontal básico en viewport móvil;
+- portada sin código interno visible y fuentes clínicas plegadas por defecto;
+- tabla HGT sin scroll horizontal interno en viewport 390×844.
 
-## Invariantes de arquitectura
+## Invariantes de arquitectura y UX
 
 `scripts/check_invariants.py` debe impedir, entre otras regresiones:
 
@@ -169,19 +189,20 @@ Entre los escenarios de navegador protegidos están:
 - persistencia de datos identificables del paciente;
 - transformaciones de JavaScript clínico desde el service worker;
 - mezcla de revisiones PWA al publicar nuevos assets ejecutables;
-- pérdida de los tamaños táctiles, del breakpoint mobile-first o del soporte de movimiento reducido definidos en Fase 7A;
-- uso de workarounds de `zoom` o scroll horizontal forzado para resolver problemas de layout móvil.
+- pérdida de tamaños táctiles, breakpoint mobile-first o soporte de movimiento reducido;
+- uso de workarounds de `zoom` o scroll horizontal forzado;
+- pérdida de los rótulos clínicos, divulgación progresiva, navegación secundaria o contrato de tabla HGT nativa definidos en Fase 7B.
 
 ## Deuda técnica para fases posteriores
 
 1. Consolidar las múltiples capas CSS del PDF en un sistema de impresión más simple y predecible.
 2. Simplificar el versionado del app shell/PWA para evitar repetir manualmente revisiones de assets en HTML, service worker y checks.
-3. Reducir el acoplamiento directo al DOM de `app.js` y `aps-safety-2026.js` mediante componentes/controladores pequeños cuando eso facilite cambios visuales futuros.
-4. Incorporar pruebas visuales con snapshots cuando la jerarquía de pantallas de Fase 7 quede estabilizada.
-5. Versionar explícitamente el protocolo clínico y asociar cada futura modificación clínica a una matriz de casos esperados revisada.
-6. Separar progresivamente la generación de texto clínico de la manipulación DOM cuando aporte valor, sin reabrir reglas ya estabilizadas.
-7. Evaluar migración futura a módulos ES nativos solo cuando aporte una ventaja concreta; no es necesaria para mantener la separación actual.
-8. Continuar Fase 7 con revisión de contenido visible y componentes por pantalla (P0–P7) antes de introducir cambios funcionales nuevos.
+3. Reducir el acoplamiento directo al DOM de `app.js` y `aps-safety-2026.js` mediante componentes/controladores pequeños cuando eso facilite cambios futuros.
+4. Incorporar regresión visual con screenshots/snapshots ahora que la jerarquía de pantallas está estabilizada.
+5. Validar la experiencia final en Safari iOS/PWA y al menos un viewport Android además de Chromium desktop emulado.
+6. Versionar explícitamente el protocolo clínico y asociar cada futura modificación clínica a una matriz de casos esperados revisada.
+7. Separar progresivamente la generación de texto clínico de la manipulación DOM cuando aporte valor, sin reabrir reglas ya estabilizadas.
+8. Evaluar migración futura a módulos ES nativos solo cuando aporte una ventaja concreta; no es necesaria para mantener la separación actual.
 
 ## Regla de aceptación para refactors futuros
 
@@ -194,7 +215,7 @@ Un PR de refactor no clínico debe:
 - mantener `clinical-engine.js` libre de dependencias del navegador;
 - conservar el action registry y las APIs namespaced sin introducir globals sueltos;
 - mantener `index.html` libre de JavaScript inline;
-- conservar el contrato mobile-first sin depender de zoom o hacks de overflow;
+- conservar el contrato mobile-first y la tabla HGT sin depender de zoom o hacks de overflow;
 - explicar qué responsabilidad mueve y qué deuda técnica elimina.
 
 Cualquier cambio intencional de dosis, umbral, criterio o conducta clínica debe tratarse como cambio clínico explícito, no como refactor, y debe actualizar primero sus casos esperados y documentación de protocolo.
