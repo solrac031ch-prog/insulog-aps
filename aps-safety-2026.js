@@ -60,7 +60,7 @@
     },
     {
       value: "empagliflozina",
-      label: "Empagliflozina 10 mg",
+      label: "Empagliflozina",
       availability: "particular",
       groups: ["sglt2"],
       efficacy: "HbA1c: ↓≈0,7–0,8 pp*; referencia comparativa con 25 mg ≈0,77 pp. El efecto depende de la dosis y la función renal.",
@@ -73,7 +73,7 @@
       availability: "particular",
       groups: ["sglt2"],
       efficacy: "HbA1c: efecto combinado variable y generalmente mayor que cada componente aislado; no es correcto sumar sus cifras de forma automática.",
-      doses: ["12,5/1.000 mg/día"],
+      doses: ["12,5/850 mg/día", "12,5/1.000 mg/día"],
       safety: "Aplican precauciones de ambos componentes: por metformina considerar función renal, tolerancia gastrointestinal y vitamina B12; por iSGLT2 considerar DKA/euglucémica, infecciones genitourinarias, depleción de volumen y suspensión 3–4 días antes de cirugía o durante ayuno/enfermedad grave."
     },
     {
