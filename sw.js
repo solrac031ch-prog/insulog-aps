@@ -1,7 +1,7 @@
 "use strict";
 
-const CACHE_NAME = "insulog-shell-20260910-atomic21";
-const DEPLOYMENT_REVISION = "phase5-clinical-boundary-20260910-r3";
+const CACHE_NAME = "insulog-shell-20260910-atomic22";
+const DEPLOYMENT_REVISION = "phase6-explicit-ui-actions-20260910-r1";
 const PDF_PREVIEW_PATH = "./pdf-preview.html?v=20260910-1";
 
 const APP_SHELL = [
@@ -13,15 +13,15 @@ const APP_SHELL = [
   "./document-flow.css?v=20260910-1",
   "./aps-safety-2026.css?v=20260827-2",
   "./farmacia-popular.css?v=20260827-2",
-  "./app-runtime.js?v=20260910-1",
+  "./app-runtime.js?v=20260910-2",
   "./clinical-engine.js?v=20260910-3",
-  "./app.js?v=20260910-3",
-  "./patient-document.js?v=20260910-1",
-  "./pdf-enhancements.js?v=20260827-4",
-  "./aps-safety-2026.js?v=20260910-2",
+  "./app.js?v=20260910-4",
+  "./patient-document.js?v=20260910-2",
+  "./pdf-enhancements.js?v=20260910-5",
+  "./aps-safety-2026.js?v=20260910-3",
   "./farmacia-popular.js?v=20260827-4",
-  "./document-flow.js?v=20260910-1",
-  "./app-shell.js?v=20260910-1",
+  "./document-flow.js?v=20260910-2",
+  "./app-shell.js?v=20260910-2",
   "./manifest.webmanifest?v=20260826",
   "./assets/icons/icon-32.png?v=20260826",
   "./assets/icons/icon-180.png?v=20260826",
