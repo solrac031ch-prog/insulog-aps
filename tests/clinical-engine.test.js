@@ -43,14 +43,15 @@ approx(dosisDoble.dosePerKg, 0.2);
 const dosisConservadora = engine.calculateInitialDose({ weightKg: 70, factor: 0.1, scheme: "monodosis_pm" });
 assert.deepEqual({ total: dosisConservadora.total, am: dosisConservadora.am, pm: dosisConservadora.pm }, { total: 8, am: 0, pm: 8 });
 
-// Análisis de HGT y umbrales de ajuste.
+// Análisis de HGT: conserva todos los valores y solo marca discordantes para revisión clínica.
 const valores = [100, 100, 100, 200];
 const copiaValores = [...valores];
-const analisisOutlier = engine.analyzeGlucose(valores, "Ayunas");
+const analisisDiscordante = engine.analyzeGlucose(valores, "Ayunas");
 assert.deepEqual(valores, copiaValores, "El motor no debe mutar la entrada");
-assert.deepEqual(analisisOutlier.usados, [100, 100, 100]);
-assert.deepEqual(analisisOutlier.excluidos, ["Ayunas 200 mg/dL"]);
-assert.equal(analisisOutlier.promedio, 100);
+assert.deepEqual(analisisDiscordante.usados, [100, 100, 100, 200]);
+assert.deepEqual(analisisDiscordante.excluidos, []);
+assert.deepEqual(analisisDiscordante.discordantes, ["Ayunas 200 mg/dL"]);
+assert.equal(analisisDiscordante.promedio, 125);
 
 const casosAjuste = [
   { values: [53, 100, 100], expected: -4 },
@@ -71,7 +72,7 @@ assert.equal(engine.calculateSecondDose(30), 4);
 assert.equal(engine.calculateSecondDose(70), 8);
 assert.equal(engine.calculateSecondDose(150), 10);
 
-// Seguimiento: equivalencia de los principales caminos del algoritmo previo.
+// Seguimiento: equivalencia de los principales caminos del algoritmo efectivo previo al refactor.
 const pmSinPreonce = engine.calculateFollowup({
   weightKg: 70,
   regimenType: "pm",
@@ -125,6 +126,19 @@ const pmConHipo = engine.calculateFollowup({
 });
 assert.deepEqual({ am: pmConHipo.am, pm: pmConHipo.pm }, { am: 0, pm: 16 });
 assert.match(pmConHipo.explicacion, /No se agrega dosis AM por presencia de hipoglicemia/);
+
+const discordanteConImpacto = engine.calculateFollowup({
+  weightKg: 70,
+  regimenType: "pm",
+  amDose: 0,
+  pmDose: 20,
+  fastingValues: [100, 100, 100, 300],
+  preElevenValues: []
+});
+assert.equal(discordanteConImpacto.promAy, 150);
+assert.equal(discordanteConImpacto.pm, 22);
+assert.deepEqual(discordanteConImpacto.discordantes, ["Ayunas 300 mg/dL"]);
+assert.match(discordanteConImpacto.explicacion, /Se mantienen en el promedio/);
 
 const dosisUnoPorKg = engine.calculateFollowup({
   weightKg: 70,

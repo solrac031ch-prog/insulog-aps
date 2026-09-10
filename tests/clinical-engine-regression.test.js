@@ -117,17 +117,20 @@ for (const testCase of adjustmentCases) {
   assert.equal(adjustment.ajuste, testCase.expected, `ajuste en ${testCase.value} mg/dL`);
 }
 
-// 4) Análisis HGT: no muta entradas y conserva la lógica histórica de outliers.
+// 4) Análisis HGT: no muta entradas, detecta discordantes y los conserva en el promedio.
 const rawGlucose = [100, 100, 100, 151];
 const rawSnapshot = [...rawGlucose];
-const outlier = engine.analyzeGlucose(rawGlucose, "Ayunas");
+const discordant = engine.analyzeGlucose(rawGlucose, "Ayunas");
 assert.deepEqual(rawGlucose, rawSnapshot, "analyzeGlucose no debe mutar la entrada");
-assert.deepEqual(outlier.usados, [100, 100, 100]);
-assert.deepEqual(outlier.excluidos, ["Ayunas 151 mg/dL"]);
+assert.deepEqual(discordant.usados, [100, 100, 100, 151]);
+assert.deepEqual(discordant.excluidos, []);
+assert.deepEqual(discordant.discordantes, ["Ayunas 151 mg/dL"]);
+assert.equal(discordant.promedio, 112.75);
 
-const hypoOutlier = engine.analyzeGlucose([60, 100, 100, 220], "Ayunas");
-assert.ok(hypoOutlier.usados.includes(60), "Una hipoglicemia nunca se elimina como outlier");
-assert.equal(hypoOutlier.hipo, true);
+const hypoDiscordant = engine.analyzeGlucose([60, 100, 100, 220], "Ayunas");
+assert.ok(hypoDiscordant.usados.includes(60), "Una hipoglicemia nunca se elimina del análisis");
+assert.equal(hypoDiscordant.hipo, true);
+assert.deepEqual(hypoDiscordant.excluidos, []);
 
 // 5) Segunda dosis: mínimo 4, redondeo par y máximo 10 UI.
 const secondDoseCases = [
@@ -168,6 +171,19 @@ const pmCases = [
 for (const testCase of pmCases) {
   assert.deepEqual(pickDose(engine.calculateFollowup(testCase.input)), testCase.expected, testCase.name);
 }
+
+const discordantAffectsAdjustment = engine.calculateFollowup({
+  weightKg: 70,
+  regimenType: "pm",
+  amDose: 0,
+  pmDose: 20,
+  fastingValues: [100, 100, 100, 300],
+  preElevenValues: []
+});
+assert.equal(discordantAffectsAdjustment.promAy, 150);
+assert.deepEqual(pickDose(discordantAffectsAdjustment), { am: 0, pm: 22, scheme: "pm" });
+assert.deepEqual(discordantAffectsAdjustment.discordantes, ["Ayunas 300 mg/dL"]);
+hasWarning(discordantAffectsAdjustment, /Se mantienen en el promedio/);
 
 // 7) Seguimiento AM: ajuste AM solo con >=3 pre-once y agrega PM por ayunas >130.
 const amCases = [
@@ -260,4 +276,4 @@ const atOne = engine.calculateFollowup({
 assert.equal(atOne.dosisKg, 1);
 hasWarning(atOne, /Dosis ≥1 UI\/kg\/día/);
 
-console.log(`Clinical regression matrix passed: ${initialSchemeCases.length + roundCases.length + initialDoseCases.length + adjustmentCases.length + secondDoseCases.length + pmCases.length + amCases.length + 7} grouped cases`);
+console.log(`Clinical regression matrix passed: ${initialSchemeCases.length + roundCases.length + initialDoseCases.length + adjustmentCases.length + secondDoseCases.length + pmCases.length + amCases.length + 8} grouped cases`);
