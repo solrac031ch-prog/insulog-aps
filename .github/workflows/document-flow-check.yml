@@ -42,31 +42,42 @@ jobs:
 
           if 'id="pdf"' in p6:
               raise SystemExit("P6 must stop at the three document buttons")
-          if p6.count('mostrarDocumento(') != 3:
-              raise SystemExit("P6 must contain exactly three document actions")
+          if p6.count('data-action="show-document"') != 3:
+              raise SystemExit("P6 must contain exactly three declarative document actions")
           if 'id="pdf"' in p7:
               raise SystemExit("P7 must not render the PDF in the parent document")
           if 'id="pdf-preview-frame"' not in p7:
               raise SystemExit("P7 must own the isolated preview iframe")
           if html.index('id="pdf"') < main_end:
               raise SystemExit("Parent PDF staging node must live outside the application main")
+          if 'onclick=' in html:
+              raise SystemExit("Document flow must not depend on inline JavaScript")
 
           for marker in [
-              'imprimirDocumentoAislado()', 'id="imprimir-documento-btn"',
+              'data-action="print-document"', 'id="imprimir-documento-btn"',
               './pdf-preview.html?v=20260910-1', 'pdf-render-staging'
           ]:
               if marker not in html:
                   raise SystemExit(f"Missing isolated document host marker: {marker}")
 
           for marker in [
-              'window.mostrarDocumento', 'nav(7)',
+              'const documents = window.InsulogDocuments',
+              'actions.register("show-document"', 'go(7)',
               'Ingrese el nombre del paciente antes de generar el documento.',
-              'window.generarDocumento(tipo)', 'window.volverPreparacionDocumento',
+              'documents.generate(tipo)', 'actions.register("back-document"',
               'copiarVistaPreviaAlFrame', 'contentDocument', 'queueMicrotask',
-              'window.imprimirDocumentoAislado', 'frame.contentWindow?.print()'
+              'actions.register("print-document"', 'frame.contentWindow?.print()',
+              'actions.decorate("finish"'
           ]:
               if marker not in js:
                   raise SystemExit(f"Missing isolated document behavior: {marker}")
+
+          for forbidden in [
+              'window.mostrarDocumento', 'window.generarDocumento', 'window.volverPreparacionDocumento',
+              'window.imprimirDocumentoAislado', 'window.finalizar', 'globalData'
+          ]:
+              if forbidden in js:
+                  raise SystemExit(f"Legacy document global returned: {forbidden}")
 
           for marker in [
               '.pdf-preview-frame-shell', '.pdf-preview-frame', '.pdf-render-staging',
@@ -97,12 +108,12 @@ jobs:
           for asset in [
               './pdf-preview.html?v=20260910-1',
               './document-flow.css?v=20260910-1',
-              './document-flow.js?v=20260910-1'
+              './document-flow.js?v=20260910-2'
           ]:
               if asset not in sw:
                   raise SystemExit(f"Current isolated document asset missing from app shell: {asset}")
 
-          if 'const CACHE_NAME = "insulog-shell-20260910-atomic21"' not in sw:
-              raise SystemExit("PDF isolation must ship with a fresh PWA shell")
+          if 'const CACHE_NAME = "insulog-shell-20260910-atomic22"' not in sw:
+              raise SystemExit("Phase 6 document flow must ship with a fresh PWA shell")
 
-          print("P6/P7 isolated preview and one-page Letter checks passed")
+          print("P6/P7 explicit-action preview and one-page Letter checks passed")
