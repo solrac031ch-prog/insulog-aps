@@ -19,6 +19,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check app-runtime.js
+          node --check clinical-engine.js
           node --check app.js
           node --check patient-document.js
           node --check app-shell.js
@@ -27,6 +28,9 @@ jobs:
           node --check farmacia-popular.js
           node --check document-flow.js
           node --check sw.js
+
+      - name: Run clinical engine equivalence tests
+        run: node tests/clinical-engine.test.js
 
       - name: Validate manifest JSON
         run: python -m json.tool manifest.webmanifest > /dev/null
