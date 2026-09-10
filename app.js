@@ -231,7 +231,7 @@ function calcularSeguimientoPro() {
   `;
   showElement(resumen, true);
 
-  if (resultado.dosisKg >= 0.7) {
+  if (resultado.requiresHighDoseReview) {
     nav(41);
     return;
   }
