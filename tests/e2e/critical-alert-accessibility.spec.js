@@ -33,7 +33,8 @@ test("la alerta de hipoglicemia se anuncia y queda dentro del viewport tras ajus
   await expect(alerta).toHaveAttribute("role", "alert");
   await expect(alerta).toHaveAttribute("aria-live", "polite");
   await expect(alerta).toHaveAttribute("aria-hidden", "false");
-  await expect(page.locator("#hipo-ada-titulo")).toContainText("nivel 1");
+  await expect(page.locator("#hipo-ada-titulo")).toContainText("Hipoglicemia detectada");
+  await expect(page.locator(".aps-hypo-question")).toContainText("nivel 3");
   await expect(page.locator("#hipo-sin-ayuda")).toBeVisible();
   await expect(page.locator("#hipo-con-ayuda")).toBeVisible();
 
@@ -41,6 +42,40 @@ test("la alerta de hipoglicemia se anuncia y queda dentro del viewport tras ajus
     const rect = element.getBoundingClientRect();
     return rect.top < window.innerHeight && rect.bottom > 0;
   })).toBe(true);
+});
+
+test("no aparece revisión de hipoglicemia si todos los HGT son >=70", async ({ page }) => {
+  await openFollowupTable(page);
+
+  await page.locator("#peso-seguimiento").fill("70");
+  await page.locator("#tipo-esquema").selectOption("pm");
+  await page.locator("#pm-actual").fill("20");
+  await fillValues(page.locator("#tabla-seguimiento .ay"), [80, 105, 110]);
+
+  const alerta = page.locator("#alerta-hipoglicemia-ada");
+  await expect(alerta).toHaveAttribute("aria-hidden", "true");
+  await page.locator("#ajustar-seguimiento-btn").click();
+  await expect(alerta).toHaveAttribute("aria-hidden", "true");
+  await expect(alerta).toBeHidden();
+  await expect(page.locator("#p5")).toHaveClass(/active/);
+});
+
+test("un HGT <70 pregunta por nivel 3 y la respuesta afirmativa bloquea titulación", async ({ page }) => {
+  await openFollowupTable(page);
+
+  await page.locator("#peso-seguimiento").fill("70");
+  await page.locator("#tipo-esquema").selectOption("pm");
+  await page.locator("#pm-actual").fill("20");
+  await fillValues(page.locator("#tabla-seguimiento .ay"), [58, 105, 110]);
+
+  await page.locator("#ajustar-seguimiento-btn").click();
+  await expect(page.locator("#alerta-hipoglicemia-ada")).toBeVisible();
+  await expect(page.locator(".aps-hypo-question")).toContainText("nivel 3");
+  await page.locator("#hipo-con-ayuda").click();
+
+  await expect(page.locator("#p5")).toHaveClass(/active/);
+  await expect(page.locator("#nota-clinica")).toContainText("HIPOGLICEMIA NIVEL 3");
+  await expect(page.locator("#nota-clinica")).toContainText("No se realiza ajuste automático de NPH");
 });
 
 test("la revisión de dosis alta lleva el foco al encabezado clínico de P41", async ({ page }) => {
