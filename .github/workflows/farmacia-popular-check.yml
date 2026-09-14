@@ -10,6 +10,7 @@ on:
       - "farmacia-popular.js"
       - "farmacia-popular.css"
       - "scripts/update_farmacia_cerro_navia.py"
+      - "scripts/app_shell_release.py"
       - "data/farmacia-cerro-navia.json"
       - ".github/workflows/sync-farmacia-cerro-navia.yml"
       - ".github/workflows/farmacia-popular-check.yml"
@@ -106,7 +107,12 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
+          import sys
 
+          sys.path.insert(0, "scripts")
+          from app_shell_release import compute_release
+
+          release = compute_release()
           html = Path("index.html").read_text(encoding="utf-8")
           js = Path("farmacia-popular.js").read_text(encoding="utf-8")
           sw = Path("sw.js").read_text(encoding="utf-8")
@@ -124,8 +130,8 @@ jobs:
                   raise SystemExit(f"Missing Farmacia Popular UI marker: {token}")
 
           current_assets = [
-              "./farmacia-popular.css?v=20260827-2",
-              "./farmacia-popular.js?v=20260827-4"
+              f"./farmacia-popular.css?v={release}",
+              f"./farmacia-popular.js?v={release}"
           ]
           for asset in current_assets:
               if asset not in html:
@@ -133,11 +139,7 @@ jobs:
               if asset not in sw:
                   raise SystemExit(f"Farmacia Popular app-shell asset missing: {asset}")
 
-          for legacy in [
-              "./farmacia-popular.css?v=20260827-1",
-              "./farmacia-popular.js?v=20260827-3",
-              "normalizarAsset", "respuestaTexto"
-          ]:
+          for legacy in ["normalizarAsset", "respuestaTexto"]:
               if legacy in sw:
                   raise SystemExit(f"Obsolete Farmacia Popular/PWA marker remains: {legacy}")
 
@@ -151,16 +153,10 @@ jobs:
                   raise SystemExit(f"Daily pharmacy sync resilience marker missing: {token}")
 
           for token in [
-              '/Consultor/ObtenerMedicamentos',
-              'requests.Session()',
-              'data={"Texto": texto}',
-              'SEARCH_TERMS = ("metfor", "empag", "vilda")',
-              'tr.find_all(["td", "th"])',
-              '"source_mode": "server_search"',
-              '"schema_version": 2',
-              'query_filtered_rows',
-              'No se encontró la tabla de medicamentos de Cerro Navia',
-              '{"12.5/850", "12.5/1000"}',
+              '/Consultor/ObtenerMedicamentos', 'requests.Session()', 'data={"Texto": texto}',
+              'SEARCH_TERMS = ("metfor", "empag", "vilda")', 'tr.find_all(["td", "th"])',
+              '"source_mode": "server_search"', '"schema_version": 2', 'query_filtered_rows',
+              'No se encontró la tabla de medicamentos de Cerro Navia', '{"12.5/850", "12.5/1000"}',
               '"empagliflozina" in combined and "metformina" not in combined',
               'MONITORED_FAMILIES', 'family_for_row', 'recognized_by_app',
               '"requires_clinical_review"', '"unrecognized_presentations"'
@@ -171,4 +167,4 @@ jobs:
           if 'const candidatos = filtrados.length ? filtrados : matches' in js:
               raise SystemExit("Selected dose must never fall back to a different pharmacy presentation")
 
-          print("Farmacia Popular direct-loading and future-proof daily-price checks passed")
+          print(f"Farmacia Popular direct-loading and daily-price checks passed for release {release}")
