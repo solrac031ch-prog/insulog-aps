@@ -14,6 +14,7 @@ on:
       - "pdf-preview.html"
       - "index.html"
       - "sw.js"
+      - "scripts/app_shell_release.py"
       - ".github/workflows/pdf-design-check.yml"
 
 permissions:
@@ -30,7 +31,12 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
+          import sys
 
+          sys.path.insert(0, "scripts")
+          from app_shell_release import compute_release
+
+          release = compute_release()
           design = Path("pdf-design-2026.css").read_text(encoding="utf-8")
           structure = Path("pdf-enhancements.css").read_text(encoding="utf-8")
           flow = Path("document-flow.css").read_text(encoding="utf-8")
@@ -74,21 +80,16 @@ jobs:
               raise SystemExit("document-flow.css must not override patient-document visual components")
 
           forbidden_design = [
-              "overflow: hidden",
-              "height: 16.4px",
-              "height: 17.2px",
-              "height: 17.5px",
-              "font-size: 9.4px",
-              "zoom:",
-              "width: 108.7%"
+              "overflow: hidden", "height: 16.4px", "height: 17.2px",
+              "height: 17.5px", "font-size: 9.4px", "zoom:", "width: 108.7%"
           ]
           for token in forbidden_design:
               if token in design:
                   raise SystemExit(f"Unreadable PDF compression workaround returned: {token}")
 
-          structure_asset = "./pdf-enhancements.css?v=20260914-1"
-          design_asset = "./pdf-design-2026.css?v=20260914-1"
-          flow_asset = "./document-flow.css?v=20260914-1"
+          structure_asset = f"./pdf-enhancements.css?v={release}"
+          design_asset = f"./pdf-design-2026.css?v={release}"
+          flow_asset = f"./document-flow.css?v={release}"
           for asset in [structure_asset, design_asset, flow_asset]:
               if f'href="{asset}"' not in preview:
                   raise SystemExit(f"PDF preview missing current asset: {asset}")
@@ -100,7 +101,7 @@ jobs:
 
           if 'href="./pdf-enhancements.css' in html or 'href="./pdf-design-2026.css' in html:
               raise SystemExit("PDF presentation CSS must remain isolated from the parent application")
-          if './pdf-preview.html?v=20260914-1' not in sw:
+          if f'./pdf-preview.html?v={release}' not in sw:
               raise SystemExit("Current isolated preview page must be available offline")
 
-          print("Patient PDF keeps a readable Letter contract with a single visual authority")
+          print(f"Patient PDF readable Letter contract OK for release {release}")
