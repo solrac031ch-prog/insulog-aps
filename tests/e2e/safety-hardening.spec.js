@@ -1,6 +1,7 @@
 "use strict";
 const { test, expect } = require("@playwright/test");
 
+// This file also serves as the explicit CI trigger after fail-safe hardening changes.
 test("autotest fail-safe is healthy on normal load", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#insulog-safety-lock")).toHaveCount(0);
