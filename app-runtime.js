@@ -17,6 +17,7 @@
   });
 
   let runtimeState = { ...INITIAL_STATE };
+  let hasNavigated = false;
   const actionHandlers = new Map();
 
   const byId = (id) => document.getElementById(id);
@@ -32,7 +33,8 @@
   }
 
   function go(pagina) {
-    const { focusHeading = true } = arguments[1] || {};
+    const options = arguments[1] || {};
+    const focusHeading = options.focusHeading ?? hasNavigated;
     const targetId = `p${pagina}`;
 
     all(".page").forEach((page) => {
@@ -53,6 +55,8 @@
       heading.setAttribute("tabindex", "-1");
       requestAnimationFrame(() => heading.focus({ preventScroll: true }));
     }
+
+    hasNavigated = true;
   }
 
   function snapshotState() {
