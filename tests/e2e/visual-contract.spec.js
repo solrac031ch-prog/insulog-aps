@@ -56,19 +56,19 @@ async function perceptualHash(page, screenshotBuffer) {
   }, src);
 }
 
-async function settleVisual(page) {
-  await page.evaluate(async () => {
+async function settleVisual(page, { resetScroll = true } = {}) {
+  await page.evaluate(async (shouldResetScroll) => {
     document.documentElement.style.scrollBehavior = "auto";
     document.body.style.scrollBehavior = "auto";
     if (document.fonts?.ready) await document.fonts.ready;
-    window.scrollTo(0, 0);
-  });
-  await page.waitForFunction(() => window.scrollY === 0);
+    if (shouldResetScroll) window.scrollTo(0, 0);
+  }, resetScroll);
+  if (resetScroll) await page.waitForFunction(() => window.scrollY === 0);
   await page.waitForTimeout(80);
 }
 
 async function captureVisual(page, testInfo, key, options = {}) {
-  await settleVisual(page);
+  await settleVisual(page, { resetScroll: !options.focusSelector });
 
   if (options.focusSelector) {
     const target = page.locator(options.focusSelector);
