@@ -187,8 +187,14 @@
     style.id = "phase6b-styles";
     style.textContent = `
       .best-review-actions.phase6b-actions { grid-template-columns: repeat(3,minmax(0,1fr)); }
-      .best-modify-panel { margin-top: 14px; padding: 16px; border: 1px solid #bdd8f8; border-radius: var(--radius); background: #f7fbff; }
-      .best-modify-panel textarea { min-height: 88px; resize: vertical; }
+      .best-modify-panel { margin-top: 14px; padding: 18px; border: 1px solid #bdd8f8; border-radius: 18px; background: linear-gradient(180deg, #f8fbff 0%, #f3f8ff 100%); }
+      .best-modify-reason-field { width: 100%; max-width: none; margin: 16px 0 0; }
+      .best-modify-reason-field label { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+      .phase6b-field-hint { flex: 0 0 auto; padding: 3px 8px; border-radius: 999px; background: #e9f3ff; color: var(--primary-strong); font-size: .72rem; font-weight: 800; letter-spacing: .02em; }
+      .best-modify-panel textarea { width: 100%; min-height: 132px; box-sizing: border-box; padding: 14px 16px; resize: vertical; border: 1.5px solid var(--border-color); border-radius: 16px; background: #fff; color: var(--text-strong); font: inherit; font-size: 1rem; line-height: 1.5; box-shadow: 0 4px 14px rgba(15, 39, 71, .05); transition: border-color .15s ease, box-shadow .15s ease, background .15s ease; }
+      .best-modify-panel textarea::placeholder { color: #8b98aa; opacity: 1; }
+      .best-modify-panel textarea:focus { outline: none; border-color: #2f80ed; background: #fff; box-shadow: 0 0 0 4px rgba(47, 128, 237, .14), 0 6px 18px rgba(15, 39, 71, .07); }
+      .phase6b-reason-helper { margin: 8px 2px 0; font-size: .82rem; line-height: 1.4; }
       .best-final-summary { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: var(--surface-soft); line-height: 1.5; }
       .phase6b-final-dose { margin-top: 5px; }
       @media (max-width: 620px) {
@@ -222,7 +228,11 @@
           <div class="field"><label for="best-final-am">NPH final AM (UI)</label><input id="best-final-am" type="number" inputmode="numeric" min="0" max="150" step="1"></div>
           <div class="field"><label for="best-final-pm">NPH final PM (UI)</label><input id="best-final-pm" type="number" inputmode="numeric" min="0" max="150" step="1"></div>
         </div>
-        <div class="field"><label for="best-modify-reason">Motivo de la modificación</label><textarea id="best-modify-reason" maxlength="500" placeholder="Ej: patrón alimentario, técnica, comorbilidad, preferencia clínica o contexto del paciente"></textarea></div>
+        <div class="field best-modify-reason-field">
+          <label for="best-modify-reason">Motivo de la modificación <span class="phase6b-field-hint">Obligatorio</span></label>
+          <textarea id="best-modify-reason" maxlength="500" rows="4" aria-describedby="best-modify-reason-help" placeholder="Describa brevemente el criterio clínico que justifica el cambio…"></textarea>
+          <p id="best-modify-reason-help" class="helper-text phase6b-reason-helper">Ej.: patrón alimentario, riesgo de hipoglicemia, técnica de administración, comorbilidades o contexto del paciente.</p>
+        </div>
         <div class="best-review-actions">
           <button type="button" class="btn btn-main" data-action="best-review-modify-save">GUARDAR DECISIÓN</button>
           <button type="button" class="btn" data-action="best-review-modify-cancel">CANCELAR</button>
