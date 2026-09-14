@@ -32,20 +32,37 @@
   gap: 12px;
 }
 
-.aps-med-option {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  padding: 12px 13px;
+.aps-med-card {
+  overflow: hidden;
   border: 1px solid #dfe3e8;
   border-radius: 11px;
   background: #fff;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.aps-med-card:hover {
+  border-color: #b8c7dc;
+}
+
+.aps-med-card:focus-within {
+  border-color: #79a9e8;
+  box-shadow: 0 0 0 3px rgba(11, 99, 206, 0.1);
+}
+
+.aps-med-option {
+  display: flex;
+  width: 100%;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 13px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   text-align: left;
   line-height: 1.25;
 }
 
 .aps-med-option:hover {
-  border-color: #b8c7dc;
   background: #fbfcff;
 }
 
@@ -108,9 +125,62 @@
   cursor: not-allowed;
 }
 
+.aps-med-details {
+  margin: 0 12px;
+  border-top: 1px solid #edf0f4;
+}
+
+.aps-med-details > summary,
+.aps-med-secondary-details > summary,
+.aps-efficacy-details > summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.aps-med-details > summary::-webkit-details-marker,
+.aps-med-secondary-details > summary::-webkit-details-marker,
+.aps-efficacy-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.aps-med-details > summary {
+  position: relative;
+  min-height: 34px;
+  padding: 9px 28px 8px 0;
+  color: #476483;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.aps-med-details > summary::after,
+.aps-med-secondary-details > summary::after,
+.aps-efficacy-details > summary::after {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  content: "+";
+  transform: translateY(-50%);
+  color: #0b63ce;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.aps-med-details[open] > summary::after,
+.aps-med-secondary-details[open] > summary::after,
+.aps-efficacy-details[open] > summary::after {
+  content: "−";
+}
+
+.aps-med-details-body {
+  display: grid;
+  gap: 8px;
+  padding: 0 0 10px;
+}
+
 .aps-med-safety {
   display: block;
-  padding-top: 6px;
+  padding-top: 7px;
   border-top: 1px solid #edf0f4;
   color: #6d3a31;
   font-size: 0.72rem;
@@ -121,12 +191,61 @@
   color: #8b2c1f;
 }
 
-.aps-efficacy-note {
-  margin: 16px 0 0;
-  padding: 10px 12px;
+.aps-med-section-secondary {
+  margin-top: 16px;
+}
+
+.aps-med-secondary-details {
+  border: 1px solid #cfd9e7;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.aps-med-secondary-details > summary {
+  position: relative;
+  min-height: 44px;
+  padding: 13px 42px 12px 14px;
+  color: #34465f;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.aps-med-secondary-details > summary::after {
+  right: 14px;
+}
+
+.aps-med-secondary-details > .aps-med-grid {
+  padding: 0 12px 12px;
+}
+
+.aps-efficacy-details {
+  margin-top: 14px;
   border-left: 3px solid #8da9d4;
-  border-radius: 6px;
+  border-radius: 7px;
   background: #f7f9fc;
+}
+
+.aps-efficacy-details > summary {
+  position: relative;
+  min-height: 42px;
+  padding: 12px 38px 10px 12px;
+  color: #526581;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.aps-efficacy-details > summary::after {
+  right: 12px;
+}
+
+.aps-efficacy-note {
+  margin: 0;
+  padding: 0 12px 12px;
+  border-left: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--muted);
   font-size: 0.76rem;
   line-height: 1.45;
@@ -192,8 +311,16 @@
   }
 
   .aps-med-dose-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 4px;
+  }
+
+  .aps-context-card {
+    margin-top: 14px;
+  }
+
+  .aps-med-option {
+    padding: 11px 12px;
   }
 }
 
@@ -202,12 +329,21 @@
     display: none !important;
   }
 
+  .aps-med-details,
+  .aps-med-secondary-details,
+  .aps-efficacy-details,
   .aps-med-efficacy,
   .aps-med-dose-row,
   .aps-med-safety,
   .aps-efficacy-note,
   .aps-med-section-title {
     display: none !important;
+  }
+
+  .aps-med-card {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .aps-med-section + .aps-med-section {

@@ -43,10 +43,10 @@
     const target = byId(targetId);
     const heading = target?.querySelector("h1, h2");
 
-    window.scrollTo({
-      top: 0,
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
-    });
+    // Cada pantalla es una vista clínica independiente. Mantener el scroll
+    // previo puede abrir una vista nueva en medio de una tabla o formulario.
+    // El salto inmediato también hace reproducibles las capturas de regresión.
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 
     if (heading) {
       heading.setAttribute("tabindex", "-1");
@@ -119,7 +119,7 @@
   }
 
   window.InsulogRuntime = Object.freeze({
-    version: "2026.09.10-phase6",
+    version: "2026.09.14-phase8a",
     dom: Object.freeze({ byId, all, show: showElement }),
     navigation: Object.freeze({ go, activePageId }),
     state: Object.freeze({
