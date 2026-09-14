@@ -1,4 +1,4 @@
-// Final Phase 6B browser contract: data sufficiency, professional override and document sync.
+// Final Phase 6B browser contract: data sufficiency, professional override, history and document sync.
 const { test, expect } = require("@playwright/test");
 
 async function expectActivePage(page, id) {
@@ -30,6 +30,15 @@ async function openFollowupResult(page) {
   await expect(page.locator("#nota-clinica")).toContainText("PM: 22 UI");
 }
 
+async function modifyTo21(page, reason = "Contexto clínico y patrón alimentario del paciente") {
+  await page.locator("#best-review-modify").click();
+  await expect(page.locator("#best-modify-panel")).toBeVisible();
+  await page.locator("#best-final-am").fill("0");
+  await page.locator("#best-final-pm").fill("21");
+  await page.locator("#best-modify-reason").fill(reason);
+  await page.getByRole("button", { name: "GUARDAR DECISIÓN", exact: true }).click();
+}
+
 test("6B muestra suficiencia de HGT en tiempo real", async ({ page }) => {
   await gotoFollowup(page);
   await page.locator("#tipo-esquema").selectOption("pm");
@@ -51,12 +60,7 @@ test("6B muestra suficiencia de HGT en tiempo real", async ({ page }) => {
 
 test("6B separa recomendación Clinical r2 y pauta final modificada", async ({ page }) => {
   await openFollowupResult(page);
-  await page.locator("#best-review-modify").click();
-  await expect(page.locator("#best-modify-panel")).toBeVisible();
-  await page.locator("#best-final-am").fill("0");
-  await page.locator("#best-final-pm").fill("21");
-  await page.locator("#best-modify-reason").fill("Contexto clínico y patrón alimentario del paciente");
-  await page.getByRole("button", { name: "GUARDAR DECISIÓN", exact: true }).click();
+  await modifyTo21(page);
 
   await expect(page.locator("#best-review-status")).toContainText("Plan modificado");
   await expect(page.locator("#best-final-decision-summary")).toContainText("PM 21 UI");
@@ -66,15 +70,15 @@ test("6B separa recomendación Clinical r2 y pauta final modificada", async ({ p
 
   const state = await page.evaluate(() => window.InsulogRuntime.state.snapshot());
   expect({ enginePm: state.pm, finalPm: state.professionalPm, decision: state.professionalDecision }).toEqual({ enginePm: 22, finalPm: 21, decision: "modificada" });
+
+  const rawNote = await page.locator("#nota-clinica").getAttribute("data-raw-text");
+  expect(rawNote).toContain("Recomendación Insulog Clinical r2: PM 22 UI");
+  expect(rawNote).toContain("Decisión final del profesional: Modificada (PM 21 UI)");
 });
 
 test("6B sincroniza la pauta profesional con documento/PDF sin alterar el cálculo", async ({ page }) => {
   await openFollowupResult(page);
-  await page.locator("#best-review-modify").click();
-  await page.locator("#best-final-am").fill("0");
-  await page.locator("#best-final-pm").fill("21");
-  await page.locator("#best-modify-reason").fill("Ajuste clínico deliberado por contexto del paciente");
-  await page.getByRole("button", { name: "GUARDAR DECISIÓN", exact: true }).click();
+  await modifyTo21(page, "Ajuste clínico deliberado por contexto del paciente");
 
   await page.locator("#p5").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
   await expectActivePage(page, "p6");
@@ -106,19 +110,43 @@ test("6B bloquea documento cuando la decisión es reevaluar", async ({ page }) =
   expect(message).toContain("ACEPTAR o MODIFICAR PLAN");
 });
 
-test("6B guarda en historial la decisión profesional modificada", async ({ page }) => {
+test("6B guarda en historial recomendación y decisión profesional modificada", async ({ page }) => {
   await openFollowupResult(page);
-  await page.locator("#best-review-modify").click();
-  await page.locator("#best-final-am").fill("0");
-  await page.locator("#best-final-pm").fill("21");
-  await page.locator("#best-modify-reason").fill("Preferencia clínica documentada para titulación conservadora");
-  await page.getByRole("button", { name: "GUARDAR DECISIÓN", exact: true }).click();
+  await modifyTo21(page, "Preferencia clínica documentada para titulación conservadora");
 
   await page.locator("#best-history-alias").fill("PX-6B");
   await page.locator("#best-history-save-card").getByRole("button", { name: "GUARDAR CASO", exact: true }).click();
+  await expect(page.locator("#best-history-status")).toContainText("PX-6B");
   await page.locator("#best-history-save-card").getByRole("button", { name: "VER HISTORIAL", exact: true }).click();
   await expectActivePage(page, "p8");
-  await expect(page.locator("#best-history-list")).toContainText("PX-6B");
-  await expect(page.locator("#best-history-list")).toContainText("Modificada por profesional");
-  await expect(page.locator("#best-history-list")).toContainText("Decisión final: PM 21 UI");
+
+  const history = page.locator("#best-history-list");
+  await expect(history).toContainText("PX-6B");
+  await expect(history).toContainText("Modificada por el profesional");
+  await expect(history).toContainText("Recomendación Insulog Clinical r2: PM 22 UI");
+  await expect(history).toContainText("Decisión final profesional: PM 21 UI");
+  await expect(history).toContainText("Preferencia clínica documentada para titulación conservadora");
+  await expect(history).toContainText("Datos suficientes");
+
+  const records = await page.evaluate(() => window.InsulogPhase6BDocumentSync.history.read());
+  expect(records).toHaveLength(1);
+  expect(records[0].systemDose.pm).toBe(22);
+  expect(records[0].finalDose.pm).toBe(21);
+  expect(records[0].professionalDecision).toBe("modificada");
+});
+
+test("6B historial sigue siendo efímero y se borra al recargar", async ({ page }) => {
+  await openFollowupResult(page);
+  await page.locator("#best-review-accept").click();
+  await page.locator("#best-history-alias").fill("PX-EPHEMERAL");
+  await page.locator("#best-history-save-card").getByRole("button", { name: "GUARDAR CASO", exact: true }).click();
+  await page.locator("#best-history-save-card").getByRole("button", { name: "VER HISTORIAL", exact: true }).click();
+  await expect(page.locator("#best-history-list")).toContainText("PX-EPHEMERAL");
+
+  await page.reload();
+  await page.locator("#p0 details").getByText("Fuentes clínicas y versión", { exact: true }).click();
+  await page.locator("#best-history-home-entry").click();
+  await expectActivePage(page, "p8");
+  await expect(page.locator("#best-history-list")).toContainText("No hay registros guardados");
+  await expect(page.locator("#best-history-list")).not.toContainText("PX-EPHEMERAL");
 });
