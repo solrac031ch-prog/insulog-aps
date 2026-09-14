@@ -56,7 +56,14 @@ async function perceptualHash(page, screenshotBuffer) {
   }, src);
 }
 
+async function settleAtTop(page) {
+  await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
+  await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(0);
+  await page.waitForTimeout(80);
+}
+
 async function captureVisual(page, testInfo, key) {
+  await settleAtTop(page);
   const path = testInfo.outputPath(`${key}.png`);
   const screenshot = await page.screenshot({
     path,
@@ -66,6 +73,7 @@ async function captureVisual(page, testInfo, key) {
   });
 
   const hash = await perceptualHash(page, screenshot);
+  console.log(`VISUAL_HASH ${key} ${hash}`);
   const expected = baseline.profiles[key];
   const tolerance = expected?.tolerance ?? baseline.defaultTolerance ?? 6;
 
@@ -90,10 +98,14 @@ async function gotoFlowSelection(page) {
   await expect(page.locator("#p2")).toHaveClass(/active/);
 }
 
-async function gotoFollowup(page) {
+async function gotoFollowupMedication(page) {
   await gotoFlowSelection(page);
   await page.locator("#p2").getByRole("button", { name: "SEGUIMIENTO DE INSULINA", exact: true }).click();
   await expect(page.locator("#p35")).toHaveClass(/active/);
+}
+
+async function gotoFollowup(page) {
+  await gotoFollowupMedication(page);
   await page.locator("#p35").getByRole("button", { name: "CONTINUAR AL REGISTRO DE GLICEMIAS", exact: true }).click();
   await expect(page.locator("#p4")).toHaveClass(/active/);
 }
@@ -116,6 +128,11 @@ for (const profile of [
     test(`selección de flujo ${profile.name}`, async ({ page }, testInfo) => {
       await gotoFlowSelection(page);
       await captureVisual(page, testInfo, `${profile.name}-p2`);
+    });
+
+    test(`tratamiento concomitante ${profile.name}`, async ({ page }, testInfo) => {
+      await gotoFollowupMedication(page);
+      await captureVisual(page, testInfo, `${profile.name}-p35`);
     });
 
     test(`seguimiento HGT ${profile.name}`, async ({ page }, testInfo) => {
