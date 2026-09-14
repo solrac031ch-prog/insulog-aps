@@ -88,11 +88,11 @@
 
     const p41 = byId("p41");
     const heading = p41?.querySelector("h2");
-    if (heading) heading.textContent = "Revise la dosis basal antes de continuar";
+    if (heading) heading.textContent = "Revise dosis alta / posible sobreinsulinización";
     const strong = p41?.querySelector(".alert-danger strong");
-    if (strong) strong.textContent = "⚠️ Dosis basal ≥0,5 UI/kg/día: no escalar automáticamente";
+    if (strong) strong.textContent = "⚠️ dosis alta de insulina basal: no escalar automáticamente si alcanza ≥0,5 UI/kg/día";
     const lead = p41?.querySelector(".lead");
-    if (lead) lead.textContent = "La Vía Clínica DM2 2026 establece 0,5 UI/kg/día como dosis máxima de insulina basal. Revise causas de sobreinsulinización y necesidad de intensificación/derivación.";
+    if (lead) lead.textContent = "La Vía Clínica DM2 2026 establece 0,5 UI/kg/día como dosis máxima de insulina basal. Revise técnica, adherencia, patrón glicémico y necesidad de intensificación o derivación.";
   }
 
   function protectLevel3Hypoglycemia() {
