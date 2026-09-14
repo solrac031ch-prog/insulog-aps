@@ -3,97 +3,123 @@
 (function exposeClinicalEngine(root, factory) {
   const engine = factory();
 
-  if (typeof module === "object" && module.exports) {
-    module.exports = engine;
-  }
-
-  if (root) {
-    root.InsulogClinicalEngine = engine;
-  }
+  if (typeof module === "object" && module.exports) module.exports = engine;
+  if (root) root.InsulogClinicalEngine = engine;
 })(typeof globalThis !== "undefined" ? globalThis : this, () => {
-  function roundEven(value) {
+  const TARGET_PROFILES = Object.freeze({
+    7: Object.freeze({ hba1c: 7, lower: 80, upper: 130, high10: 180 }),
+    8: Object.freeze({ hba1c: 8, lower: 100, upper: 150, high10: 200 }),
+    8.5: Object.freeze({ hba1c: 8.5, lower: 100, upper: 160, high10: 220 })
+  });
+
+  function roundUnits(value) {
     if (!Number.isFinite(value)) return 0;
-    return Math.max(0, Math.ceil(value / 2) * 2);
+    return Math.max(0, Math.round(value));
   }
 
-  function suggestInitialScheme({
-    hba1c,
-    fasting,
-    casual,
-    initiationCriteria = [],
-    catabolic = [],
-    hypoRisk = []
-  } = {}) {
-    const criteria = [];
+  // Alias conservado por compatibilidad con consumidores previos.
+  function roundEven(value) { return roundUnits(value); }
 
-    if (!Number.isNaN(hba1c) && hba1c > 9) criteria.push(`HbA1c ${hba1c}%`);
-    if (!Number.isNaN(fasting) && fasting > 250) criteria.push(`Glicemia en ayunas ${fasting} mg/dL`);
-    if (!Number.isNaN(casual) && casual >= 300) criteria.push(`Glicemia casual/post carga/PTGO ${casual} mg/dL`);
-    criteria.push(...initiationCriteria, ...catabolic);
+  function normalizeTargetA1c(value = 7) {
+    const target = Number(value);
+    if (target >= 8.5) return 8.5;
+    if (target >= 8) return 8;
+    return 7;
+  }
+
+  function targetProfile(value = 7) { return TARGET_PROFILES[normalizeTargetA1c(value)]; }
+
+  function containsAcuteEmergency(values = []) {
+    return values.some((value) => /cetoacidosis|cetosis|cetonuria|hiperosmolar|crisis hiperglic[eé]mica/i.test(String(value)));
+  }
+
+  function assessInsulinSensitivity({ age, bmi, egfr, hypoRisk = [] } = {}) {
+    const ageValue = Number(age);
+    const bmiValue = Number(bmi);
+    const egfrValue = Number(egfr);
+    const sensitive = hypoRisk.length > 0 ||
+      (Number.isFinite(bmiValue) && bmiValue < 20) ||
+      (Number.isFinite(egfrValue) && egfrValue < 60) ||
+      (Number.isFinite(ageValue) && ageValue > 70);
+
+    if (sensitive) return Object.freeze({ category: "sensitive", factor: 0.1, label: "Insulinosensible" });
+
+    const resistant = Number.isFinite(bmiValue) && bmiValue >= 30 &&
+      Number.isFinite(egfrValue) && egfrValue >= 60 &&
+      Number.isFinite(ageValue) && ageValue < 70;
+
+    if (resistant) return Object.freeze({ category: "resistant", factor: 0.2, label: "Insulinorresistente" });
+    return Object.freeze({ category: "usual", factor: 0.2, label: "Sensibilidad usual" });
+  }
+
+  function suggestInitialScheme({ hba1c, fasting, casual, initiationCriteria = [], catabolic = [], hypoRisk = [], age, bmi, egfr } = {}) {
+    const hba1cValue = Number(hba1c);
+    const fastingValue = Number(fasting);
+    const casualValue = Number(casual);
+    const allClinicalFlags = [...initiationCriteria, ...catabolic];
+    const emergency = containsAcuteEmergency(allClinicalFlags);
+    const sensitivity = assessInsulinSensitivity({ age, bmi, egfr, hypoRisk });
+
+    if (emergency) {
+      return Object.freeze({
+        emergency: true,
+        emergencyReason: "Sospecha de crisis hiperglicémica/cetosis: este flujo ambulatorio de NPH no corresponde. Derivar inmediatamente a Unidad de Emergencia Hospitalaria.",
+        criteria: [], criteriaText: "", patientPreference: initiationCriteria.some((item) => /deseo|acepta/i.test(String(item))),
+        scheme: "stop", schemeText: "No iniciar titulación ambulatoria", reason: "Posible complicación hiperglicémica aguda.",
+        catabolicText: catabolic.join(", "), hypoRiskText: hypoRisk.join(", "), factor: 0, sensitivity
+      });
+    }
+
+    const criteria = [];
+    const patientPreference = initiationCriteria.some((item) => /deseo|acepta/i.test(String(item)));
+    const clinicalInitiationCriteria = initiationCriteria.filter((item) => !/deseo|acepta/i.test(String(item)));
+
+    if (Number.isFinite(hba1cValue) && hba1cValue > 10) criteria.push(`HbA1c ${hba1cValue}% (>10%)`);
+    if (Number.isFinite(casualValue) && casualValue >= 300 && catabolic.length > 0) criteria.push(`Glicemia casual ${casualValue} mg/dL con síntomas de descompensación`);
+    criteria.push(...clinicalInitiationCriteria, ...catabolic.filter((item) => !containsAcuteEmergency([item])));
 
     let scheme = "monodosis_pm";
     let schemeText = "NPH monodosis nocturna";
-    let reason = "Datos insuficientes para justificar doble dosis o hiperglicemia principalmente en ayunas; se sugiere inicio conservador.";
+    let reason = "Inicio con insulina basal NPH en monodosis, con titulación posterior según protocolo APS.";
 
-    const highSeverity =
-      (!Number.isNaN(hba1c) && hba1c >= 11) ||
-      (!Number.isNaN(fasting) && fasting >= 250) ||
-      (!Number.isNaN(casual) && casual >= 300) ||
-      catabolic.length > 0;
-
-    if (highSeverity && hypoRisk.length === 0) {
-      scheme = "doble_dosis";
-      schemeText = "NPH doble dosis AM + PM";
-      reason = "HbA1c/glicemias marcadamente elevadas o síntomas catabólicos, compatible con hiperglicemia sostenida.";
+    if (Number.isFinite(fastingValue) && fastingValue <= 130 && criteria.length > 0) {
+      scheme = "monodosis_am";
+      schemeText = "NPH monodosis matinal";
+      reason = "La glicemia de ayuno está en rango; se prioriza NPH diurna para el patrón hiperglicémico no nocturno.";
     }
+    if (hypoRisk.length > 0) reason += " Se utiliza inicio conservador por riesgo de hipoglicemia.";
 
-    let factor = 0.2;
-    if (hypoRisk.length > 0) {
-      scheme = "monodosis_pm";
-      schemeText = "NPH monodosis nocturna con inicio conservador";
-      reason = "Alto riesgo de hipoglicemia; se sugiere dosis menor, ajuste progresivo y control precoz.";
-      factor = 0.1;
-    }
-
-    return {
-      criteria,
-      criteriaText: criteria.join(", "),
-      scheme,
-      schemeText,
-      reason,
-      catabolicText: catabolic.join(", "),
-      hypoRiskText: hypoRisk.join(", "),
-      factor
-    };
+    return Object.freeze({
+      emergency: false, emergencyReason: "", criteria, criteriaText: criteria.join(", "), patientPreference,
+      scheme, schemeText, reason, catabolicText: catabolic.join(", "), hypoRiskText: hypoRisk.join(", "),
+      factor: sensitivity.factor, sensitivity
+    });
   }
 
   function calculateInitialDose({ weightKg, factor, scheme } = {}) {
-    let total = roundEven(weightKg * factor);
-    total = Math.max(4, total);
+    const weight = Number(weightKg);
+    if (!Number.isFinite(weight) || weight <= 0) return Object.freeze({ total: 0, am: 0, pm: 0, dosePerKg: Number.NaN });
 
+    let safeFactor = Number(factor);
+    if (!Number.isFinite(safeFactor)) safeFactor = 0.2;
+    if (scheme !== "doble_dosis" && safeFactor > 0.2) safeFactor = 0.2;
+    if (scheme === "doble_dosis" && safeFactor > 0.3) safeFactor = 0.3;
+    safeFactor = Math.max(0.1, safeFactor);
+
+    const total = Math.max(4, roundUnits(weight * safeFactor));
     let am = 0;
     let pm = total;
+    if (scheme === "monodosis_am") { am = total; pm = 0; }
+    else if (scheme === "doble_dosis") { am = roundUnits(total * (2 / 3)); pm = Math.max(0, total - am); }
 
-    if (scheme === "doble_dosis") {
-      am = roundEven(total * 0.66);
-      pm = Math.max(0, total - am);
-    }
-
-    return {
-      total,
-      am,
-      pm,
-      dosePerKg: total / weightKg
-    };
+    return Object.freeze({ total, am, pm, dosePerKg: total / weight, factorApplied: safeFactor });
   }
 
   function detectDiscordantHighs(values, name) {
     const data = values.filter((value) => Number.isFinite(value));
     if (data.length < 4) return [];
-
     return data.flatMap((value, index) => {
       if (value < 70) return [];
-
       const rest = data.filter((_, currentIndex) => currentIndex !== index);
       const restAverage = rest.reduce((a, b) => a + b, 0) / rest.length;
       return value > restAverage + 50 ? [`${name} ${value} mg/dL`] : [];
@@ -102,116 +128,65 @@
 
   function analyzeGlucose(values, name) {
     const data = values.filter((value) => Number.isFinite(value));
-    const discordant = detectDiscordantHighs(data, name);
-
-    return {
-      datos: data,
-      usados: [...data],
-      promedio: data.length ? data.reduce((a, b) => a + b, 0) / data.length : null,
-      min: data.length ? Math.min(...data) : null,
-      hipoSevera: data.some((value) => value < 54),
-      hipo: data.some((value) => value < 70),
-      excluidos: [],
-      discordantes: discordant
-    };
+    const minimum = data.length ? Math.min(...data) : null;
+    return Object.freeze({
+      datos: data, usados: [...data], promedio: data.length ? data.reduce((a, b) => a + b, 0) / data.length : null,
+      min: minimum, hypoglycemiaLevel2: minimum !== null && minimum < 54, hipo: minimum !== null && minimum < 70,
+      excluidos: [], discordantes: detectDiscordantHighs(data, name)
+    });
   }
 
-  function classifyHypoglycemia(values, requiredAssistance = false) {
+  function classifyHypoglycemia(values = [], requiredAssistance = false) {
     const data = values.filter((value) => Number.isFinite(value));
     const hypoglycemicValues = data.filter((value) => value < 70);
+    const minimum = hypoglycemicValues.length ? Math.min(...hypoglycemicValues) : null;
+
+    if (requiredAssistance) return Object.freeze({
+      nivel: 3, minimo: minimum, urgent: true,
+      nota: "Hipoglicemia nivel 3 referida: requirió asistencia de otra persona. Derivación inmediata a Unidad de Emergencia Hospitalaria y sin titulación automática de NPH."
+    });
     if (!hypoglycemicValues.length) return null;
+    if (minimum < 54) return Object.freeze({ nivel: 2, minimo: minimum, urgent: false, nota: "Hipoglicemia nivel 2 detectada (<54 mg/dL): requiere tratamiento inmediato del episodio y reevaluación del esquema." });
+    return Object.freeze({ nivel: 1, minimo: minimum, urgent: false, nota: "Hipoglicemia nivel 1 detectada (<70 y ≥54 mg/dL): revisar causas y reforzar prevención." });
+  }
 
-    const minimum = Math.min(...hypoglycemicValues);
+  function calculateAdjustment(analysis, doseName, currentDose = 0, targetA1c = 7) {
+    if (!analysis || analysis.min === null) return Object.freeze({ ajuste: 0, percent: 0, newDose: Number(currentDose) || 0, texto: `${doseName}: sin datos suficientes para ajuste` });
 
-    if (requiredAssistance) {
-      return Object.freeze({
-        nivel: 3,
-        minimo: minimum,
-        nota: "Hipoglicemia nivel 3 referida: el episodio requirió asistencia de otra persona para su tratamiento."
-      });
-    }
+    const profile = targetProfile(targetA1c);
+    const reference = analysis.min;
+    let percent = 0;
+    if (reference < profile.lower) percent = analysis.hipo ? -20 : -10;
+    else if (reference <= profile.upper) percent = 0;
+    else if (reference <= profile.high10) percent = 10;
+    else percent = 20;
 
-    if (minimum < 54) {
-      return Object.freeze({
-        nivel: 2,
-        minimo: minimum,
-        nota: "Hipoglicemia nivel 2 detectada (<54 mg/dL): requiere acción inmediata y reevaluación del tratamiento."
-      });
-    }
+    const dose = Math.max(0, Number(currentDose) || 0);
+    const newDose = Math.max(0, roundUnits(dose * (1 + percent / 100)));
+    const ajuste = newDose - dose;
+    let action = "mantener";
+    if (percent > 0) action = `aumentar ${percent}%`;
+    if (percent < 0) action = `disminuir ${Math.abs(percent)}%`;
 
     return Object.freeze({
-      nivel: 1,
-      minimo: minimum,
-      nota: "Hipoglicemia nivel 1 detectada (<70 y ≥54 mg/dL): revisar causas y reforzar prevención."
+      ajuste, percent, newDose, reference, target: profile,
+      texto: `${doseName}: ${action} usando el menor de los controles (${reference} mg/dL), meta preprandial ${profile.lower}-${profile.upper} mg/dL para HbA1c objetivo <${profile.hba1c}%.`
     });
   }
 
-  function calculateAdjustment(analysis, doseName) {
-    if (!analysis || analysis.promedio === null) {
-      return { ajuste: 0, texto: `${doseName}: sin datos suficientes para ajuste` };
-    }
-
-    if (analysis.hipoSevera) {
-      return { ajuste: -4, texto: `${doseName}: reducir 4 UI por glicemia <54 mg/dL. Priorizar seguridad y evaluación clínica` };
-    }
-
-    if (analysis.hipo) {
-      return { ajuste: -4, texto: `${doseName}: reducir 4 UI por glicemia <70 mg/dL` };
-    }
-
-    if (analysis.promedio < 80) {
-      return { ajuste: -2, texto: `${doseName}: reducir 2 UI por promedio 70-79 mg/dL` };
-    }
-
-    if (analysis.promedio <= 130) {
-      return { ajuste: 0, texto: `${doseName}: mantener por promedio en meta 80-130 mg/dL` };
-    }
-
-    if (analysis.promedio <= 180) {
-      return { ajuste: 2, texto: `${doseName}: aumentar 2 UI por promedio 131-180 mg/dL` };
-    }
-
-    return { ajuste: 4, texto: `${doseName}: aumentar 4 UI por promedio >180 mg/dL` };
-  }
-
-  function calculateSecondDose(weightKg) {
-    return roundEven(Math.min(10, Math.max(4, weightKg * 0.1)));
-  }
+  function calculateSecondDose(weightKg) { return Math.max(4, roundUnits(Number(weightKg) * 0.1)); }
 
   function assessDoseSafety(dosePerKg) {
-    if (!Number.isFinite(dosePerKg)) {
-      return Object.freeze({
-        level: "unknown",
-        requiresHighDoseReview: false,
-        blocksAutomaticEscalation: false,
-        warning: ""
-      });
-    }
-
-    if (dosePerKg >= 1) {
-      return Object.freeze({
-        level: "stop",
-        requiresHighDoseReview: true,
-        blocksAutomaticEscalation: true,
-        warning: "Dosis ≥1 UI/kg/día: no seguir escalando automáticamente en APS sin evaluación clínica; revisar técnica, adherencia, lipohipertrofia, alimentación y considerar derivación."
-      });
-    }
-
-    if (dosePerKg >= 0.7) {
-      return Object.freeze({
-        level: "high",
-        requiresHighDoseReview: true,
-        blocksAutomaticEscalation: false,
-        warning: "Dosis ≥0.7 UI/kg/día: dosis alta; revisar técnica, adherencia, sitios de punción, alimentación y necesidad de evaluación por Medicina Interna APS."
-      });
-    }
-
-    return Object.freeze({
-      level: "standard",
-      requiresHighDoseReview: false,
-      blocksAutomaticEscalation: false,
-      warning: ""
+    if (!Number.isFinite(dosePerKg)) return Object.freeze({ level: "unknown", requiresHighDoseReview: false, blocksAutomaticEscalation: false, warning: "" });
+    if (dosePerKg >= 0.5) return Object.freeze({
+      level: "stop", requiresHighDoseReview: true, blocksAutomaticEscalation: true,
+      warning: "Dosis basal total ≥0,5 UI/kg/día: no escalar automáticamente. Evaluar posible sobreinsulinización, técnica, adherencia, alimentación, variabilidad/patrón glicémico y necesidad de derivación o intensificación especializada."
     });
+    if (dosePerKg >= 0.4) return Object.freeze({
+      level: "review", requiresHighDoseReview: true, blocksAutomaticEscalation: false,
+      warning: "Dosis basal total ≥0,4 UI/kg/día: revisar técnica, adherencia, patrón glicémico y riesgo de hipoglicemia antes de seguir escalando."
+    });
+    return Object.freeze({ level: "standard", requiresHighDoseReview: false, blocksAutomaticEscalation: false, warning: "" });
   }
 
   function regimenLabel(regimenType) {
@@ -220,173 +195,76 @@
     return "NPH solo PM";
   }
 
-  function calculateFollowup({
-    weightKg,
-    regimenType,
-    amDose,
-    pmDose,
-    fastingValues = [],
-    preElevenValues = []
-  } = {}) {
+  function calculateFollowup({ weightKg, regimenType, amDose, pmDose, fastingValues = [], preLunchValues = [], preElevenValues = [], targetA1c = 7 } = {}) {
+    const weight = Number(weightKg);
     let am = Number(amDose) || 0;
     let pm = Number(pmDose) || 0;
-
     if (regimenType === "am") pm = 0;
     if (regimenType === "pm") am = 0;
 
+    const preValues = preLunchValues.length ? preLunchValues : preElevenValues;
     const fasting = analyzeGlucose(fastingValues, "Ayunas");
-    const preEleven = preElevenValues.length >= 3 ? analyzeGlucose(preElevenValues, "Pre-once") : null;
-    const fastingUpperTarget = 130;
-    const preElevenUpperTarget = 130;
-    const pmAdjustment = calculateAdjustment(fasting, "PM");
-    const amAdjustment = preEleven
-      ? calculateAdjustment(preEleven, "AM")
-      : { ajuste: 0, texto: "AM: sin datos suficientes de pre-once para ajuste" };
-    const fastingHypo = fasting.hipo || fasting.hipoSevera;
-    const preElevenHypo = preEleven ? preEleven.hipo || preEleven.hipoSevera : false;
-    const anyHypo = fastingHypo || preElevenHypo;
+    const preLunch = preValues.length >= 3 ? analyzeGlucose(preValues, "Pre-almuerzo") : null;
+    const pmAdjustment = calculateAdjustment(fasting, "PM", pm, targetA1c);
+    const amAdjustment = preLunch ? calculateAdjustment(preLunch, "AM", am, targetA1c) : Object.freeze({ ajuste: 0, percent: 0, newDose: am, texto: "AM: sin al menos 3 glicemias pre-almuerzo para ajuste" });
 
     let newAm = am;
     let newPm = pm;
-    let finalRegimen = regimenType;
     const reasoning = [];
     const warnings = [];
 
-    if (anyHypo) {
-      if (regimenType === "pm") {
-        newPm = roundEven(pm + pmAdjustment.ajuste);
-        reasoning.push(pmAdjustment.texto);
-        reasoning.push("No se agrega dosis AM por presencia de hipoglicemia; reevaluar causa antes de intensificar.");
-      } else if (regimenType === "am") {
-        newAm = preElevenHypo ? roundEven(am + amAdjustment.ajuste) : roundEven(am - 2);
-        reasoning.push(preElevenHypo ? amAdjustment.texto : "AM: reducir 2 UI por hipoglicemia registrada con monodosis AM.");
-        reasoning.push("No se agrega dosis PM por presencia de hipoglicemia; reevaluar causa antes de intensificar.");
-      } else {
-        newPm = roundEven(pm + pmAdjustment.ajuste);
-        newAm = preEleven ? roundEven(am + amAdjustment.ajuste) : am;
-        reasoning.push(pmAdjustment.texto, amAdjustment.texto);
-      }
+    if (regimenType === "pm") { newPm = pmAdjustment.newDose; reasoning.push(pmAdjustment.texto); }
+    else if (regimenType === "am") { if (preLunch) newAm = amAdjustment.newDose; reasoning.push(amAdjustment.texto); }
+    else { newPm = pmAdjustment.newDose; newAm = preLunch ? amAdjustment.newDose : am; reasoning.push(pmAdjustment.texto, amAdjustment.texto); }
 
-      warnings.push("Hipoglicemia: priorizar seguridad. Revisar técnica de administración, horarios, ingesta, ejercicio, función renal y fragilidad.");
-    } else if (regimenType === "pm") {
-      newPm = roundEven(pm + pmAdjustment.ajuste);
-      reasoning.push(pmAdjustment.texto);
+    const anyHypo = fasting.hipo || Boolean(preLunch?.hipo);
+    if (anyHypo) warnings.push("Hipoglicemia registrada: no intensificar el esquema ni agregar una segunda dosis hasta reevaluar causas y seguridad.");
+    if (fasting.hypoglycemiaLevel2) warnings.push("Hipoglicemia nivel 2 en ayunas (<54 mg/dL): tratamiento inmediato del episodio y reevaluación de NPH PM.");
+    else if (fasting.hipo) warnings.push("Hipoglicemia nivel 1 en ayunas: reevaluar NPH PM y causas precipitantes.");
+    if (preLunch?.hypoglycemiaLevel2) warnings.push("Hipoglicemia nivel 2 pre-almuerzo (<54 mg/dL): tratamiento inmediato del episodio y reevaluación de NPH AM.");
+    else if (preLunch?.hipo) warnings.push("Hipoglicemia nivel 1 pre-almuerzo: reevaluar NPH AM y causas precipitantes.");
 
-      if (preEleven && preEleven.promedio > preElevenUpperTarget) {
-        newAm = calculateSecondDose(weightKg);
-        finalRegimen = "2";
-        reasoning.push(`AM: agregar ${newAm} UI de NPH antes del desayuno por promedio pre-once ${Math.round(preEleven.promedio)} mg/dL sobre meta. Se intensifica desde monodosis PM a esquema AM + PM.`);
-      } else if (preEleven) {
-        reasoning.push(`AM: no se agrega dosis matinal porque promedio pre-once ${Math.round(preEleven.promedio)} mg/dL está en meta.`);
-      } else {
-        reasoning.push("AM: no se puede evaluar intensificación a dosis matinal por falta de al menos 3 glicemias pre-once.");
-      }
-    } else if (regimenType === "am") {
-      newAm = preEleven ? roundEven(am + amAdjustment.ajuste) : am;
-      reasoning.push(amAdjustment.texto);
-
-      if (fasting.promedio > fastingUpperTarget) {
-        newPm = calculateSecondDose(weightKg);
-        finalRegimen = "2";
-        reasoning.push(`PM: agregar ${newPm} UI de NPH antes de dormir por promedio ayunas ${Math.round(fasting.promedio)} mg/dL sobre meta. Se intensifica desde monodosis AM a esquema AM + PM.`);
-      } else {
-        reasoning.push(`PM: no se agrega dosis nocturna porque promedio ayunas ${Math.round(fasting.promedio)} mg/dL está en meta.`);
-      }
-    } else {
-      newPm = roundEven(pm + pmAdjustment.ajuste);
-      newAm = preEleven ? roundEven(am + amAdjustment.ajuste) : am;
-      reasoning.push(pmAdjustment.texto, amAdjustment.texto);
+    const currentPerKg = Number.isFinite(weight) && weight > 0 ? (am + pm) / weight : Number.NaN;
+    const projectedPerKg = Number.isFinite(weight) && weight > 0 ? (newAm + newPm) / weight : Number.NaN;
+    const projectedSafety = assessDoseSafety(projectedPerKg);
+    if (newAm + newPm > am + pm && projectedSafety.blocksAutomaticEscalation) {
+      newAm = am; newPm = pm;
+      warnings.push("La titulación propuesta superaría 0,5 UI/kg/día de insulina basal; se bloqueó el aumento automático y se requiere reevaluación clínica.");
     }
 
-    newAm = Math.max(0, newAm);
-    newPm = Math.max(0, newPm);
-
-    const dosePerKg = (newAm + newPm) / weightKg;
+    const dosePerKg = Number.isFinite(weight) && weight > 0 ? (newAm + newPm) / weight : Number.NaN;
     const doseSafety = assessDoseSafety(dosePerKg);
-    const excluded = [...fasting.excluidos, ...(preEleven ? preEleven.excluidos : [])];
-    const discordant = [...fasting.discordantes, ...(preEleven ? preEleven.discordantes : [])];
+    if (doseSafety.warning) warnings.push(doseSafety.warning);
 
-    if (fasting.hipoSevera) {
-      warnings.push("Hipoglicemia severa en ayunas: considerar evaluación clínica precoz y reducción de NPH PM.");
-    } else if (fasting.hipo) {
-      warnings.push("Hipoglicemia en ayunas: reducir NPH PM y evaluar causas.");
-    }
+    const discordant = [...fasting.discordantes, ...(preLunch ? preLunch.discordantes : [])];
+    const availableValues = [...fasting.datos, ...(preLunch ? preLunch.datos : [])];
+    const globalAverage = availableValues.length ? availableValues.reduce((a, b) => a + b, 0) / availableValues.length : null;
+    if (discordant.length) warnings.push(`Valores discordantes: ${discordant.join(", ")}. Se conservan como dato clínico y no se excluyen automáticamente.`);
 
-    if (preEleven?.hipoSevera) {
-      warnings.push("Hipoglicemia severa pre-once: considerar evaluación clínica precoz y reducción de NPH AM.");
-    } else if (preEleven?.hipo) {
-      warnings.push("Hipoglicemia pre-once: reducir NPH AM y evaluar causas.");
-    }
-
-    if (newAm === 0 && (regimenType === "2" || regimenType === "am")) {
-      warnings.push("Dosis AM queda en 0 UI: interpretar como suspensión de dosis matinal.");
-    }
-
-    if (newPm === 0 && (regimenType === "2" || regimenType === "pm")) {
-      warnings.push("Dosis PM queda en 0 UI: interpretar como suspensión de dosis nocturna.");
-    }
-
-    if (doseSafety.warning) {
-      warnings.push(doseSafety.warning);
-    }
-
-    const availableAverages = [
-      fasting.promedio,
-      preEleven?.promedio ?? null
-    ].filter((value) => value !== null);
-
-    const globalAverage = availableAverages.length
-      ? availableAverages.reduce((a, b) => a + b, 0) / availableAverages.length
-      : null;
-
-    const estimatedHba1c = globalAverage !== null
-      ? ((globalAverage + 46.7) / 28.7).toFixed(1)
-      : "N/A";
-
+    const profile = targetProfile(targetA1c);
     const explanation = [
-      `Esquema final sugerido: ${regimenLabel(finalRegimen)}`,
+      `Esquema final sugerido: ${regimenLabel(regimenType)}`,
+      `Meta individualizada: HbA1c <${profile.hba1c}% (preprandial ${profile.lower}-${profile.upper} mg/dL).`,
       ...reasoning,
-      excluded.length ? `Valores altos aislados excluidos del promedio: ${excluded.join(", ")}` : "",
-      discordant.length ? `Valores discordantes: ${discordant.join(", ")}. Se mantienen en el promedio; verificar técnica, horario, alimentación y contexto clínico antes de excluirlos manualmente.` : "",
       warnings.length ? `Advertencias: ${warnings.join(" ")}` : ""
     ].filter(Boolean).join("\n");
 
-    return {
-      amActual: am,
-      pmActual: pm,
-      am: newAm,
-      pm: newPm,
-      schemeFinal: finalRegimen,
-      schemeLabel: regimenLabel(finalRegimen),
-      fasting,
-      preEleven,
+    return Object.freeze({
+      amActual: am, pmActual: pm, am: Math.max(0, newAm), pm: Math.max(0, newPm),
+      schemeFinal: regimenType, schemeLabel: regimenLabel(regimenType), fasting, preLunch, preEleven: preLunch,
       promAy: fasting.promedio !== null ? Math.round(fasting.promedio) : "N/A",
-      promPre: preEleven?.promedio !== null && preEleven ? Math.round(preEleven.promedio) : "N/A",
-      promedioGlobal: globalAverage !== null ? Math.round(globalAverage) : "N/A",
-      hba1cEstimada: estimatedHba1c,
-      dosisKg: dosePerKg,
-      doseSafety,
-      requiresHighDoseReview: doseSafety.requiresHighDoseReview,
-      blocksAutomaticEscalation: doseSafety.blocksAutomaticEscalation,
-      razonamiento: reasoning,
-      advertencias: warnings,
-      excluidos: excluded,
-      discordantes: discordant,
-      explicacion: explanation
-    };
+      promPre: preLunch?.promedio !== null && preLunch ? Math.round(preLunch.promedio) : "N/A",
+      minAy: fasting.min !== null ? fasting.min : "N/A", minPre: preLunch?.min !== null && preLunch ? preLunch.min : "N/A",
+      promedioGlobal: globalAverage !== null ? Math.round(globalAverage) : "N/A", dosisKg: dosePerKg, currentDosePerKg: currentPerKg,
+      doseSafety, requiresHighDoseReview: doseSafety.requiresHighDoseReview, blocksAutomaticEscalation: doseSafety.blocksAutomaticEscalation,
+      razonamiento: reasoning, advertencias: warnings, excluidos: [], discordantes: discordant, explicacion: explanation,
+      targetA1c: normalizeTargetA1c(targetA1c)
+    });
   }
 
   return Object.freeze({
-    roundEven,
-    suggestInitialScheme,
-    calculateInitialDose,
-    detectDiscordantHighs,
-    analyzeGlucose,
-    classifyHypoglycemia,
-    calculateAdjustment,
-    calculateSecondDose,
-    assessDoseSafety,
-    calculateFollowup,
-    regimenLabel
+    TARGET_PROFILES, roundUnits, roundEven, normalizeTargetA1c, targetProfile, assessInsulinSensitivity,
+    suggestInitialScheme, calculateInitialDose, detectDiscordantHighs, analyzeGlucose, classifyHypoglycemia,
+    calculateAdjustment, calculateSecondDose, assessDoseSafety, calculateFollowup, regimenLabel
   });
 });
