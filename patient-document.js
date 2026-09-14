@@ -19,9 +19,14 @@
 
   function bloqueControlFirma() {
     return `
-      <div style="display:flex;justify-content:space-between;margin-top:15px;font-size:12px;gap:20px;">
-        <div style="background:#f9f9f9;padding:10px;border-radius:5px;border:1px solid #eee;"><b>Próximo Control:</b> ____/____/____<br><b>Hora:</b> ________</div>
-        <div style="text-align:center;width:200px;border-top:1px solid #000;margin-top:35px;padding-top:5px;"><b>Firma y Timbre Médico</b></div>
+      <div class="pdf-firma-control">
+        <div class="pdf-control-box">
+          <div><strong>Próximo control:</strong> ____/____/____</div>
+          <div><strong>Hora:</strong> __________</div>
+        </div>
+        <div class="pdf-signature">
+          <span class="pdf-signature-line">Firma y timbre médico</span>
+        </div>
       </div>`;
   }
 
@@ -35,6 +40,66 @@
     enhancers.push({ name, handler });
   }
 
+  function bloqueDosis(am, pm) {
+    const lineas = [];
+
+    if (am > 0) {
+      lineas.push(`
+        <div class="pdf-insulina-line">
+          <span class="pdf-insulina-etiqueta">AM</span>
+          <span class="pdf-insulina-horario">antes del desayuno</span>
+          <strong>${am} UI</strong>
+        </div>`);
+    }
+
+    if (pm > 0) {
+      lineas.push(`
+        <div class="pdf-insulina-line">
+          <span class="pdf-insulina-etiqueta">PM</span>
+          <span class="pdf-insulina-horario">antes de dormir</span>
+          <strong>${pm} UI</strong>
+        </div>`);
+    }
+
+    return `
+      <section class="pdf-insulina-paciente">
+        <div class="pdf-insulina-title">Insulina NPH indicada</div>
+        <div class="pdf-insulina-pautas">
+          ${lineas.length ? lineas.join("") : "<div class=\"pdf-empty-state\">Sin dosis de NPH indicada en este documento.</div>"}
+        </div>
+      </section>`;
+  }
+
+  function tablaRegistro() {
+    return `
+      <div class="pdf-table-title">Registro de control - 15 días</div>
+      <div class="registro-hgt-ayuda">Anote <strong>hora y HGT</strong> en ambas mediciones. Use mg/dL.</div>
+      <table class="tabla-registro tabla-registro-hgt">
+        <thead>
+          <tr class="grupo-mediciones">
+            <th class="col-fecha" rowspan="2">Fecha</th>
+            <th colspan="2">Ayunas</th>
+            <th colspan="2">Preonce / Precena</th>
+          </tr>
+          <tr>
+            <th class="col-hora-medicion">Hora</th>
+            <th class="col-hgt">HGT<br><span class="unidad-tabla">mg/dL</span></th>
+            <th class="col-hora-medicion">Hora</th>
+            <th class="col-hgt">HGT<br><span class="unidad-tabla">mg/dL</span></th>
+          </tr>
+        </thead>
+        <tbody>${Array.from({ length: 15 }, () => "<tr><td></td><td></td><td></td><td></td><td></td></tr>").join("")}</tbody>
+      </table>`;
+  }
+
+  function bloqueIndicaciones(titulo, items) {
+    return `
+      <section class="pdf-indicaciones">
+        <div class="pdf-section-title">${escapeHTML(titulo)}</div>
+        <ul class="pdf-clean-list">${items.map((item) => `<li>${item}</li>`).join("")}</ul>
+      </section>`;
+  }
+
   function generarDocumento(tipo = state.get("tipoDocumento") || "seguimiento") {
     state.patch({ tipoDocumento: tipo });
     const data = state.snapshot();
@@ -42,93 +107,92 @@
     const fecha = new Date().toLocaleDateString("es-CL");
 
     const titulos = {
-      inicio: "INICIO DE INSULINA NPH",
-      seguimiento: "SEGUIMIENTO Y AJUSTE DE INSULINA NPH",
-      pscv: "CONTROL EN PROGRAMA DE SALUD CARDIOVASCULAR"
+      inicio: "Inicio de insulina NPH",
+      seguimiento: "Seguimiento y ajuste de insulina NPH",
+      pscv: "Control en Programa de Salud Cardiovascular"
+    };
+
+    const subtitulos = {
+      inicio: "Indicaciones para el paciente y registro de hemoglucotest",
+      seguimiento: "Indicaciones para el paciente y registro de hemoglucotest",
+      pscv: "Resumen de indicaciones para continuidad de cuidados"
     };
 
     const tituloDoc = titulos[tipo] || titulos.seguimiento;
+    const subtituloDoc = subtitulos[tipo] || subtitulos.seguimiento;
     const am = Number(data.am) || 0;
     const pm = Number(data.pm) || 0;
 
-    const dosis = `
-      <div style="margin:15px 0;padding:15px;border:2px solid #0052cc;border-radius:10px;background:#f0f7ff;">
-        <b style="font-size:14px;color:#0052cc;text-transform:uppercase;letter-spacing:.5px;">Dosis Actual Indicada</b>
-        <div style="margin-top:10px;display:flex;justify-content:space-around;align-items:center;">
-          <div style="text-align:center;"><span style="font-size:11px;color:#555;">MAÑANA (AM)</span><br><b style="font-size:24px;">${am} <small style="font-size:14px;">UI</small></b></div>
-          <div style="height:40px;border-left:1px solid #bcd9ff;"></div>
-          <div style="text-align:center;"><span style="font-size:11px;color:#555;">NOCHE (PM)</span><br><b style="font-size:24px;">${pm} <small style="font-size:14px;">UI</small></b></div>
+    const header = `
+      <header class="pdf-doc-header">
+        <div class="pdf-doc-brand">
+          <div class="pdf-doc-kicker">Insulog APS - apoyo clínico</div>
+          <h1 class="pdf-doc-title">${escapeHTML(tituloDoc)}</h1>
+          <div class="pdf-doc-subtitle">${escapeHTML(subtituloDoc)}</div>
         </div>
+        <div class="pdf-doc-meta"><strong>Fecha</strong><br>${escapeHTML(fecha)}</div>
+      </header>
+      <div class="pdf-patient-row">
+        <span class="pdf-patient-label">Paciente</span>
+        <span class="pdf-patient-name">${escapeHTML(nombre)}</span>
       </div>`;
 
-    const tabla = `
-      <div style="margin-top:15px;margin-bottom:5px;"><b style="font-size:12px;color:#1a2b3c;">REGISTRO DE CONTROL (15 DÍAS)</b></div>
-      <table class="tabla-registro">
-        <thead><tr><th class="col-fecha">Fecha</th><th class="col-hora">Hora</th><th class="col-glic">Glicemia Ayunas</th><th class="col-glic">Antes de las once</th></tr></thead>
-        <tbody>${Array.from({ length: 15 }, () => "<tr><td></td><td></td><td></td><td></td></tr>").join("")}</tbody>
-      </table>`;
-
-    const header = `
-      <div style="border-bottom:2px solid #0052cc;padding-bottom:10px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;">
-        <div><b style="font-size:18px;color:#0052cc;">${tituloDoc}</b><br><span style="font-size:12px;color:#666;">Plataforma de Apoyo Clínico Insulog APS</span></div>
-        <div style="text-align:right;font-size:12px;"><b>Fecha:</b> ${fecha}</div>
-      </div>
-      <div style="margin-bottom:15px;font-size:14px;"><b>Paciente:</b> <span style="border-bottom:1px dotted #333;">${escapeHTML(nombre)}</span></div>`;
-
+    const dosis = bloqueDosis(am, pm);
     let cuerpo = "";
 
     if (tipo === "inicio") {
       cuerpo = `
         ${dosis}
-        <div style="margin:15px 0;">
-          <b style="font-size:12px;text-transform:uppercase;">Indicaciones del Facultativo:</b>
-          <ul style="margin-top:5px;padding-left:20px;font-size:12px;line-height:1.5;">
-            <li><b>Educación:</b> Coordinar con enfermería técnica de administración y sitios de punción.</li>
-            <li><b>Nutrición:</b> Evaluación por nutricionista para ajuste de plan alimentario.</li>
-            <li><b>Seguimiento:</b> Control médico en 15 días con este registro completo.</li>
-          </ul>
-        </div>
-        ${tabla}
+        ${bloqueIndicaciones("Indicaciones del facultativo", [
+          "<strong>Educación:</strong> coordinar con enfermería técnica de administración y sitios de punción.",
+          "<strong>Nutrición:</strong> evaluación por nutricionista para ajuste de plan alimentario.",
+          "<strong>Seguimiento:</strong> control médico en 15 días con este registro completo."
+        ])}
+        ${tablaRegistro()}
         ${bloqueControlFirma()}`;
     } else if (tipo === "seguimiento") {
       const acciones = data.acciones
-        ? data.acciones.split("\n").filter(Boolean).map((accion) => `<li>${escapeHTML(accion.replace("- ", ""))}</li>`).join("")
-        : "";
+        ? data.acciones
+          .split("\n")
+          .filter(Boolean)
+          .map((accion) => escapeHTML(accion.replace("- ", "")))
+        : [];
 
       cuerpo = `
         ${dosis}
-        <div style="margin:15px 0;">
-          <b style="font-size:12px;text-transform:uppercase;">Indicaciones de Continuidad:</b>
-          <ul style="margin-top:5px;padding-left:20px;font-size:12px;line-height:1.5;">
-            <li>Mantener rotación estricta de sitios de punción (abdomen, muslos, brazos).</li>
-            <li><b>Registro:</b> Glicemias capilares en ayunas y antes de la cena (antes de las once).</li>
-            ${acciones}
-          </ul>
-        </div>
-        ${tabla}
+        ${bloqueIndicaciones("Indicaciones de continuidad", [
+          "Mantener rotación de sitios de punción (abdomen, muslos, brazos).",
+          "<strong>Registro:</strong> glicemias capilares en ayunas y preonce/precena, anotando hora y valor de cada medición.",
+          ...acciones
+        ])}
+        ${tablaRegistro()}
         ${bloqueControlFirma()}`;
     } else {
       cuerpo = `
         ${dosis}
-        <div style="background:#fff4e6;padding:15px;border:1px solid #ffd8a8;border-radius:8px;margin:20px 0;font-size:13px;color:#856404;">
-          <b>⚠️ INDICACIÓN IMPORTANTE:</b><br>
-          Si el glucómetro es propiedad del CESFAM, favor devolverlo en la oficina de dirección (2do piso) con la encargada Susan al finalizar este ciclo.
-        </div>
-        <p style="font-size:13px;line-height:1.5;"><b>CONTROL DE PROGRAMA:</b> El paciente se encuentra compensado. Continuar controles regulares según cronograma en su Programa de Salud Cardiovascular (PSCV).</p>
-        <div style="text-align:center;width:220px;border-top:1.5px solid #000;margin:60px auto 0;padding-top:5px;"><b style="font-size:13px;">Firma y Timbre Médico</b></div>`;
+        <section class="pdf-alert-important">
+          <div class="pdf-section-title">Indicación importante</div>
+          <p>Si el glucómetro es propiedad del CESFAM, favor devolverlo en la oficina de dirección (2do piso) con la encargada Susan al finalizar este ciclo.</p>
+        </section>
+        <section class="pdf-program-note">
+          <div class="pdf-section-title">Control de programa</div>
+          <p>El paciente se encuentra compensado. Continuar controles regulares según cronograma en su Programa de Salud Cardiovascular (PSCV).</p>
+        </section>
+        ${bloqueControlFirma()}`;
     }
 
     const footer = `
-      <div style="margin-top:28px;border-top:1px solid #eee;padding-top:10px;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;">
-          <div style="font-size:11px;color:#555;line-height:1.35;">
-            <b>Vacunatorio:</b> COVID, Influenza, Neumococo (Verificar vigencia).<br>
-            Ajuste clínico basado en normas MINSAL, ADA 2026 y ALAD.<br>
-            <i>Documento generado por Insulog APS ®</i>
-          </div>
-          <div style="text-align:right;font-size:11px;color:#1a2b3c;min-width:190px;"><b>Autor de la aplicación:</b><br>Dr. Carlos Herrera Malaver<br>Médico Internista</div>
+      <footer class="pdf-doc-footer">
+        <div>
+          <strong>Vacunas:</strong> verificar COVID, influenza y neumococo según vigencia.<br>
+          Ajuste clínico basado en normas MINSAL, ADA 2026 y ALAD.
         </div>
-      </div>`;
+        <div class="pdf-author">
+          <strong>Dr. Carlos Herrera Malaver</strong><br>
+          Médico Internista<br>
+          Insulog APS
+        </div>
+      </footer>`;
 
     const pdf = byId("pdf");
     pdf.innerHTML = header + cuerpo + footer;
@@ -140,7 +204,7 @@
   }
 
   window.InsulogDocuments = Object.freeze({
-    version: "2026.09.10-phase6",
+    version: "2026.09.14-phase8c",
     generate: generarDocumento,
     useEnhancer
   });
