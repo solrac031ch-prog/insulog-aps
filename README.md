@@ -7,10 +7,15 @@ Insulog APS es una aplicación web estática de apoyo clínico para insulinizaci
 ## Qué protege el proyecto
 
 - inicio con NPH según criterios y riesgo definidos en el motor clínico;
-- seguimiento con 15 registros HGT y ajustes protegidos por regresión;
-- clasificación de hipoglicemia y bloqueo del ajuste automático en nivel 3;
-- advertencia de dosis alta/sobreinsulinización;
-- valores altos discordantes señalados sin excluirlos del promedio;
+- bloqueo del flujo ambulatorio ante sospecha de cetosis/cetoacidosis/crisis hiperglicémica;
+- sensibilidad a insulina orientada por edad, IMC, VFG y riesgo de hipoglicemia;
+- seguimiento con al menos 3 HGT y titulación mediante el menor valor de la serie correspondiente;
+- metas individualizadas de HbA1c <7%, <8% o <8,5%;
+- ajustes porcentuales de NPH (±10/20%) protegidos por regresión;
+- clasificación de hipoglicemia nivel 1/2/3 y bloqueo del ajuste automático en nivel 3;
+- derivación inmediata a urgencia ante hipoglicemia nivel 3 referida;
+- guardrail de insulina basal a 0,5 UI/kg/día y revisión de posible sobreinsulinización;
+- valores altos discordantes señalados sin excluirlos automáticamente;
 - PDF Letter aislado de la interfaz principal;
 - PWA con app shell inmutable por release;
 - privacidad: sin persistencia local de datos clínicos identificables;
@@ -26,7 +31,7 @@ El contrato técnico y clínico completo vive en [`docs/engineering-baseline.md`
 | Archivo | Responsabilidad |
 | --- | --- |
 | `clinical-engine.js` | Cálculos y decisiones clínicas puras, sin DOM |
-| `clinical-protocol.json` | Identidad y versión canónica del protocolo clínico |
+| `clinical-protocol.json` | Identidad, fuentes y versión canónica del protocolo clínico |
 | `clinical-copy.js` | Generación pura de notas clínicas, sin DOM |
 | `app-runtime.js` | Estado efímero, navegación y registro de acciones |
 | `app.js` | Adaptación de inputs al motor, delegación del texto y presentación del resultado |
@@ -34,9 +39,10 @@ El contrato técnico y clínico completo vive en [`docs/engineering-baseline.md`
 | `patient-document.js` | Estructura semántica del documento del paciente |
 | `pdf-enhancements.js` | Transformaciones del documento |
 | `document-flow.js` | Preparación, vista previa e impresión P6/P7 |
-| `app-shell.js` | Inicialización y registro del service worker |
+| `app-shell.js` | Inicialización, controles clínicos r2 y registro del service worker |
 | `sw.js` | App shell offline inmutable |
 | `scripts/check_clinical_protocol.py` | Gobernanza: exige nueva versión si cambia el motor clínico |
+| `scripts/check_invariants.py` | Contratos arquitectónicos y clínicos estáticos |
 | `scripts/app_shell_release.py` | Fingerprint canónico del release técnico |
 
 ## Requisitos para desarrollo
@@ -74,7 +80,7 @@ npm run test:devices            # WebKit iPhone-like + Chromium Android-like
 npm run verify                  # ejecuta toda la red anterior en secuencia
 ```
 
-Los workflows de GitHub Actions siguen siendo la autoridad antes de integrar un PR.
+Los workflows de GitHub Actions siguen siendo la autoridad antes de integrar un cambio.
 
 ## Cómo publicar un cambio del app shell
 
@@ -90,7 +96,7 @@ npm run verify
 
 El service worker no usa `skipWaiting()` ni `clients.claim()`: una atención ya abierta conserva un release coherente hasta que el worker anterior deja de controlar clientes.
 
-Release técnico vigente al cierre de Fase 11B: **`239bc6b77d3afe3d`**.
+Release técnico vigente para Clinical r2: **`37f338f5e4547993`**.
 
 ## Cambios visuales
 
@@ -98,20 +104,21 @@ Release técnico vigente al cierre de Fase 11B: **`239bc6b77d3afe3d`**.
 
 ## Cambios clínicos
 
-La versión clínica vigente es **`APS-NPH-2026.09.14-r1`** y vive en `clinical-protocol.json`.
+La versión clínica vigente es **`APS-NPH-2026.09.14-r2`** y vive en `clinical-protocol.json`.
+
+El baseline r2 alinea el motor con la Vía Clínica DM2 MINSAL 2026, el protocolo MINSAL de insulinización NPH y la capa de seguridad/hipoglicemia ADA 2026. Las adaptaciones locales deliberadas están declaradas en `clinical-protocol.json`.
 
 No modificar de forma incidental `clinical-engine.js`, umbrales o resultados esperados. Un cambio clínico debe:
 
-1. documentar la conducta propuesta;
+1. documentar la conducta propuesta y su fuente;
 2. definir primero los casos esperados/regresiones;
 3. actualizar `clinical-protocol.json` con una nueva versión;
 4. actualizar motor y UI por separado cuando corresponda;
-5. pasar toda la red de seguridad;
-6. quedar explícitamente identificado como cambio clínico en el PR.
+5. regenerar el release técnico si cambia el app shell;
+6. pasar toda la red de seguridad;
+7. quedar explícitamente identificado como cambio clínico.
 
 CI compara cada PR contra `main`. Si cambia `clinical-engine.js` sin cambiar el manifiesto o sin una nueva versión clínica, el check falla.
-
-Los issues clínicos abiertos se mantienen separados de las fases de arquitectura y mantenimiento.
 
 ## Validación en hardware real
 
@@ -127,5 +134,6 @@ La emulación cross-browser no reemplaza dispositivos físicos. El protocolo de 
 - Fase 10C: reproducibilidad de mantenimiento y documentación operativa.
 - Fase 11A: versionado explícito y gobernanza del protocolo clínico.
 - Fase 11B: generación de notas clínicas separada del DOM con regresión exacta.
+- Clinical r2: alineación MINSAL 2026/ADA 2026, titulación porcentual, metas individualizadas y guardrails de urgencia/dosis basal.
 
 Para el detalle y la deuda técnica vigente, revisar [`docs/engineering-baseline.md`](docs/engineering-baseline.md), [`docs/phase11a-clinical-protocol-versioning.md`](docs/phase11a-clinical-protocol-versioning.md) y [`docs/phase11b-clinical-copy.md`](docs/phase11b-clinical-copy.md).
