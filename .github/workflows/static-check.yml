@@ -43,3 +43,6 @@ jobs:
 
       - name: Validate application invariants
         run: python scripts/check_invariants.py
+
+      - name: Validate atomic shell contract
+        run: python scripts/check_atomic_shell.py
