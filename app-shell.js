@@ -63,11 +63,7 @@
     setupButtonFeedback();
     setupAriaPressed();
     registerServiceWorker();
-
-    // La portada ya está visible en el HTML. Sin foco programático al arrancar
-    // evitamos que Chromium dibuje un outline de bloque sobre el título.
-    // La navegación iniciada por el usuario conserva el foco de encabezado.
-    runtime.navigation.go(0, { focusHeading: false });
+    runtime.navigation.go(0);
   }
 
   window.InsulogShell = Object.freeze({ init });
