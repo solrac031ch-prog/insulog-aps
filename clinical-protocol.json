@@ -1,0 +1,13 @@
+{
+  "protocolId": "insulog-aps-nph",
+  "version": "APS-NPH-2026.09.14-r1",
+  "status": "baseline",
+  "scope": "Insulinización con NPH en APS chilena: inicio, seguimiento, hipoglicemia y seguridad de dosis alta.",
+  "engine": "clinical-engine.js",
+  "regressionMatrix": [
+    "tests/clinical-engine.test.js",
+    "tests/clinical-engine-regression.test.js",
+    "tests/clinical-engine-contract.test.js"
+  ],
+  "changePolicy": "Todo cambio intencional de dosis, umbral, criterio o conducta clínica en clinical-engine.js debe cambiar esta versión y mantener verde la matriz de regresión clínica."
+}
