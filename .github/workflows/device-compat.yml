@@ -1,0 +1,77 @@
+name: Insulog mobile device compatibility
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "**/*.html"
+      - "**/*.js"
+      - "**/*.css"
+      - "manifest.webmanifest"
+      - "sw.js"
+      - "package.json"
+      - "playwright.devices.config.js"
+      - "tests/e2e/device-compat.spec.js"
+      - ".github/workflows/device-compat.yml"
+  push:
+    branches: [main]
+    paths:
+      - "**/*.html"
+      - "**/*.js"
+      - "**/*.css"
+      - "manifest.webmanifest"
+      - "sw.js"
+      - "package.json"
+      - "playwright.devices.config.js"
+      - "tests/e2e/device-compat.spec.js"
+      - ".github/workflows/device-compat.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: insulog-device-compat-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mobile-cross-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install test dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium and WebKit
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Run mobile compatibility contract
+        run: npx playwright test -c playwright.devices.config.js
+
+      - name: Upload mobile captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: insulog-mobile-device-captures
+          path: test-results/**/*.png
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: insulog-mobile-device-diagnostics
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
