@@ -10,6 +10,7 @@ on:
       - "pdf-preview.html"
       - "document-flow.js"
       - "document-flow.css"
+      - "pdf-design-2026.css"
       - "sw.js"
       - ".github/workflows/document-flow-check.yml"
 
@@ -34,6 +35,7 @@ jobs:
           preview = Path("pdf-preview.html").read_text(encoding="utf-8")
           js = Path("document-flow.js").read_text(encoding="utf-8")
           css = Path("document-flow.css").read_text(encoding="utf-8")
+          design = Path("pdf-design-2026.css").read_text(encoding="utf-8")
           sw = Path("sw.js").read_text(encoding="utf-8")
 
           p6 = html.split('id="p6"', 1)[1].split('id="p7"', 1)[0]
@@ -55,7 +57,7 @@ jobs:
 
           for marker in [
               'data-action="print-document"', 'id="imprimir-documento-btn"',
-              './pdf-preview.html?v=20260910-1', 'pdf-render-staging'
+              'id="pdf-preview-frame"', 'pdf-render-staging'
           ]:
               if marker not in html:
                   raise SystemExit(f"Missing isolated document host marker: {marker}")
@@ -81,23 +83,27 @@ jobs:
 
           for marker in [
               '.pdf-preview-frame-shell', '.pdf-preview-frame', '.pdf-render-staging',
-              'body.pdf-isolated-document', '#pdf.pdf-carta-una-pagina',
-              'size: Letter portrait', 'margin: 0.35cm',
-              'height: 17.2px !important', 'height: 17.8px !important',
-              'height: 16.4px !important'
+              'body.pdf-isolated-document', '@media print'
           ]:
               if marker not in css:
-                  raise SystemExit(f"Missing isolated preview/Letter rule: {marker}")
+                  raise SystemExit(f"Missing isolated preview rule: {marker}")
 
-          for forbidden in ['zoom: 0.92', 'width: 108.7%']:
-              if forbidden in css:
-                  raise SystemExit(f"PDF must not use distortion workaround: {forbidden}")
+          for marker in [
+              'size: Letter portrait', 'margin: 0.38in 0.42in',
+              '.pdf-carta-una-pagina', '.pdf-firma-control', '.pdf-doc-footer'
+          ]:
+              if marker not in design:
+                  raise SystemExit(f"Missing Letter document design rule: {marker}")
+
+          for forbidden in ['zoom:', 'width: 108.7%', 'height: 16.4px', 'height: 17.2px']:
+              if forbidden in css or forbidden in design:
+                  raise SystemExit(f"PDF must not use distortion/compression workaround: {forbidden}")
 
           for asset in [
               './styles.css?v=20260910-2',
-              './pdf-enhancements.css?v=20260827-4',
-              './pdf-design-2026.css?v=20260827-1',
-              './document-flow.css?v=20260910-1'
+              './document-flow.css?v=20260914-1',
+              './pdf-enhancements.css?v=20260914-1',
+              './pdf-design-2026.css?v=20260914-1'
           ]:
               if f'href="{asset}"' not in preview:
                   raise SystemExit(f"Isolated preview asset missing: {asset}")
@@ -106,14 +112,14 @@ jobs:
               raise SystemExit("PDF presentation CSS must not load in the parent application")
 
           for asset in [
-              './pdf-preview.html?v=20260910-1',
-              './document-flow.css?v=20260910-1',
+              './pdf-preview.html?v=20260914-1',
+              './document-flow.css?v=20260914-1',
               './document-flow.js?v=20260910-2'
           ]:
               if asset not in sw:
                   raise SystemExit(f"Current isolated document asset missing from app shell: {asset}")
 
-          if 'const CACHE_NAME = "insulog-shell-20260910-atomic24"' not in sw:
-              raise SystemExit("Phase 7B screen polish must ship with a fresh PWA cache")
+          if 'const CACHE_NAME = "insulog-shell-20260914-atomic25"' not in sw:
+              raise SystemExit("Phase 8C PDF redesign must ship with a fresh PWA cache")
 
-          print("P6/P7 explicit-action preview and one-page Letter checks passed")
+          print("P6/P7 isolated document flow and readable Letter design checks passed")

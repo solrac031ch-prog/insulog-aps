@@ -123,7 +123,16 @@ direct_assets = [
 require(html, direct_assets + ["./styles.css?v=20260910-2"], "Direct application assets")
 require(html, ['id="pdf-preview-frame"', './pdf-preview.html?v=20260910-1', 'pdf-render-staging'], "Isolated PDF host")
 forbid(html, ['href="./pdf-enhancements.css', 'href="./pdf-design-2026.css'], "Parent application PDF styles")
-require(pdf_preview_html, ['./styles.css?v=20260910-2', './pdf-enhancements.css?v=20260827-4', './pdf-design-2026.css?v=20260827-1', './document-flow.css?v=20260910-1', 'id="pdf"'], "Isolated PDF document assets")
+require(
+    pdf_preview_html,
+    [
+        './styles.css?v=20260910-2', './document-flow.css?v=20260914-1',
+        './pdf-enhancements.css?v=20260914-1', './pdf-design-2026.css?v=20260914-1', 'id="pdf"'
+    ],
+    "Isolated PDF document assets",
+)
+if pdf_preview_html.index('./pdf-design-2026.css?v=20260914-1') < pdf_preview_html.index('./document-flow.css?v=20260914-1'):
+    raise SystemExit("PDF design must load after document-flow.css and remain the final visual authority")
 
 script_order = [html.index(asset) for asset in direct_assets[:9]]
 if script_order != sorted(script_order):
@@ -268,7 +277,8 @@ require(
     [
         "const runtime = window.InsulogRuntime", "const enhancers = []", "function useEnhancer",
         "function generarDocumento", "state.snapshot()", "enhancers.forEach", "window.InsulogDocuments",
-        "ADA 2026", "function bloqueControlFirma",
+        "ADA 2026", "function bloqueControlFirma", "pdf-doc-title", "pdf-patient-row",
+        "pdf-firma-control", "Registro de control - 15 días",
     ],
     "Patient document builder boundary",
 )
@@ -283,24 +293,40 @@ require(
     [
         "const documents = window.InsulogDocuments", 'documents.useEnhancer("patient-pdf-enhancements"',
         "PAUTAS_PACIENTE", "actualizarDosisInsulinaPaciente", "actualizarTratamientoPaciente",
-        "Dosis AM:", "antes del desayuno", "Dosis PM:", "antes de dormir",
+        'pdf-insulina-etiqueta\">AM', "antes del desayuno", 'pdf-insulina-etiqueta\">PM', "antes de dormir",
         "Medicamentos para la diabetes", "comprimido", "pdf-carta-una-pagina",
-        "marcarEstructuraCarta", "pdf-firma-control", "pdf-doc-footer",
+        "marcarEstructuraCarta", "pdf-firma-control", "pdf-doc-footer", "pdf-contenido-extenso",
     ],
     "Patient PDF enhancer",
 )
 forbid(pdf_js, ["globalData", "window.generarDocumento", "generarDocumentoBase"], "PDF global wrapper")
+
+# Phase 8C PDF: structure and visual authority are deliberately separated.
 require(
     pdf_css,
     [
-        "size: Letter portrait", "margin: 0.35cm", ".pdf-carta-una-pagina",
-        ".pdf-insulina-paciente", ".pdf-medicamentos-paciente", ".pdf-indicaciones",
-        ".pdf-firma-control", ".pdf-doc-footer", "page-break-inside: avoid !important",
-        "break-inside: avoid-page !important",
+        ".pdf-carta-una-pagina", ".pdf-insulina-pautas", ".pdf-clean-list",
+        ".tabla-registro-hgt", ".col-fecha", ".col-hora-medicion", ".col-hgt",
     ],
-    "Letter PDF styling",
+    "Patient PDF structural styling",
 )
-forbid(pdf_css, ["overflow: hidden"], "PDF clipping")
+forbid(pdf_css, ["@media print", "overflow: hidden"], "PDF structural layer must not compete with print design")
+require(
+    pdf_design,
+    [
+        "size: Letter portrait", "margin: 0.38in 0.42in", ".pdf-carta-una-pagina",
+        ".pdf-doc-header", ".pdf-doc-title", ".pdf-patient-row", ".pdf-insulina-paciente",
+        ".pdf-medicamentos-paciente", ".pdf-indicaciones", ".pdf-firma-control", ".pdf-doc-footer",
+        ".tabla-registro-hgt thead", "display: table-header-group", "height: 18.5px",
+        ".pdf-contenido-extenso", "break-inside: auto",
+    ],
+    "Readable Letter PDF styling",
+)
+forbid(
+    pdf_design,
+    ["overflow: hidden", "height: 16.4px", "height: 17.2px", "font-size: 9.4px", "zoom:", "width: 108.7%"],
+    "PDF clipping or compression",
+)
 
 # Document flow: explicit actions + document API, no window replacement.
 require(
@@ -319,8 +345,8 @@ forbid(
     ["globalData", "window.abrirDocumento", "window.mostrarDocumento", "window.volverPreparacionDocumento", "window.imprimirDocumentoAislado", "window.finalizar", "window.generarDocumento", "function nav("],
     "Document-flow legacy globals",
 )
-require(doc_css, ["@media print", "#p7", ".pdf-preview-frame", ".pdf-render-staging", "body.pdf-isolated-document"], "Document-flow print isolation")
-require(pdf_design, ["@page"], "PDF design page contract")
+require(doc_css, ["@media print", ".pdf-preview-frame", ".pdf-render-staging", "body.pdf-isolated-document"], "Document-flow print isolation")
+forbid(doc_css, [".pdf-insulina-paciente", ".tabla-registro-hgt", "height: 16.4px", "height: 17.2px"], "Document-flow visual leakage")
 
 # Shell: one delegated click listener dispatches declarative actions.
 require(
@@ -354,17 +380,17 @@ require(
 )
 require(pharmacy_css, [".farmacia-popular"], "Farmacia Popular styling")
 
-# PWA responsibility: cache/offline only, with a fresh shell for Phase 7B styles.
+# PWA responsibility: cache/offline only, with a fresh shell for Phase 8C PDF assets.
 forbid(sw, ["normalizarAsset", "respuestaTexto"], "Service-worker runtime transformations")
 require(
     sw,
     [
-        'const CACHE_NAME = "insulog-shell-20260910-atomic24"',
-        'const DEPLOYMENT_REVISION = "phase7b-screen-polish-20260910-r1"',
+        'const CACHE_NAME = "insulog-shell-20260914-atomic25"',
+        'const DEPLOYMENT_REVISION = "phase8c-pdf-redesign-20260914-r1"',
         'new Request(asset, { cache: "reload" })', 'addEventListener("fetch"', 'caches.delete',
         'event.waitUntil(refreshNavigation.catch(() => undefined))',
         'event.waitUntil(refreshAsset.catch(() => undefined))', "fetchFresh",
-        'const PDF_PREVIEW_PATH = "./pdf-preview.html?v=20260910-1"',
+        'const PDF_PREVIEW_PATH = "./pdf-preview.html?v=20260914-1"',
         'url.pathname.endsWith("/pdf-preview.html")', 'cache.match(navigationAsset)',
     ],
     "PWA invariants",
@@ -374,7 +400,8 @@ require(
     [
         "./index.html", "./styles.css?v=20260910-2", "./app-runtime.js?v=20260910-2",
         "./clinical-engine.js?v=20260910-3", "./app.js?v=20260910-4", "./patient-document.js?v=20260910-2",
-        "./pdf-preview.html?v=20260910-1", "./pdf-enhancements.js?v=20260910-5", "./aps-safety-2026.js?v=20260910-3",
+        "./pdf-preview.html?v=20260914-1", "./pdf-enhancements.css?v=20260914-1", "./pdf-design-2026.css?v=20260914-1",
+        "./pdf-enhancements.js?v=20260910-5", "./aps-safety-2026.js?v=20260910-3",
         "./farmacia-popular.js?v=20260827-4", "./document-flow.js?v=20260910-2", "./app-shell.js?v=20260910-2",
     ],
     "Critical cached app-shell assets",
@@ -387,4 +414,4 @@ if "followup-flow-2026.js" in html or "followup-flow-2026.js" in sw:
 runtime_sources = "\n".join([runtime_js, clinical_engine, app, patient_document_js, pdf_js, doc_js, aps_js, pharmacy_js, shell_js])
 forbid(runtime_sources, ["localStorage", "sessionStorage", "indexedDB"], "Patient data persistence")
 
-print("Insulog Phase 7B screen UX, mobile UI, clinical engine, pharmacy, PDF, privacy and PWA invariants passed")
+print("Insulog Phase 8C readable PDF, screen UX, clinical engine, pharmacy, privacy and PWA invariants passed")

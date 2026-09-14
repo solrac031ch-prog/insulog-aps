@@ -56,6 +56,9 @@
   };
 
   function obtenerCajaDosis(pdf) {
+    const cajaSemantica = pdf.querySelector(".pdf-insulina-paciente");
+    if (cajaSemantica) return cajaSemantica;
+
     const titulo = Array.from(pdf.querySelectorAll("b"))
       .find((element) => element.textContent.trim().toLowerCase() === "dosis actual indicada");
     return titulo?.parentElement || null;
@@ -72,27 +75,27 @@
     if (am > 0) {
       indicaciones.push(`
         <div class="pdf-insulina-line">
-          <span class="pdf-insulina-etiqueta">Dosis AM:</span>
-          <strong>${am} UI</strong>
+          <span class="pdf-insulina-etiqueta">AM</span>
           <span class="pdf-insulina-horario">antes del desayuno</span>
+          <strong>${am} UI</strong>
         </div>`);
     }
 
     if (pm > 0) {
       indicaciones.push(`
         <div class="pdf-insulina-line">
-          <span class="pdf-insulina-etiqueta">Dosis PM:</span>
-          <strong>${pm} UI</strong>
+          <span class="pdf-insulina-etiqueta">PM</span>
           <span class="pdf-insulina-horario">antes de dormir</span>
+          <strong>${pm} UI</strong>
         </div>`);
     }
 
     caja.removeAttribute("style");
     caja.className = "pdf-insulina-paciente";
     caja.innerHTML = `
-      <div class="pdf-insulina-title">Insulina NPH</div>
+      <div class="pdf-insulina-title">Insulina NPH indicada</div>
       <div class="pdf-insulina-pautas">
-        ${indicaciones.length ? indicaciones.join("") : "<div>Sin dosis de NPH indicada en este documento.</div>"}
+        ${indicaciones.length ? indicaciones.join("") : "<div class=\"pdf-empty-state\">Sin dosis de NPH indicada en este documento.</div>"}
       </div>`;
   }
 
@@ -125,11 +128,11 @@
     if (!instrucciones.length) return;
 
     const dosis = pdf.querySelector(".pdf-insulina-paciente") || obtenerCajaDosis(pdf);
-    const bloque = document.createElement("div");
+    const bloque = document.createElement("section");
     bloque.className = "tratamiento-pdf pdf-medicamentos-paciente";
     bloque.innerHTML = `
-      <div class="pdf-medicamentos-title">Medicamentos para la diabetes</div>
-      <ul>${instrucciones.map((texto) => `<li>${texto}</li>`).join("")}</ul>`;
+      <div class="pdf-section-title pdf-medicamentos-title">Medicamentos para la diabetes</div>
+      <ul class="pdf-clean-list">${instrucciones.map((texto) => `<li>${texto}</li>`).join("")}</ul>`;
 
     if (dosis) dosis.insertAdjacentElement("afterend", bloque);
     else pdf.insertAdjacentElement("afterbegin", bloque);
@@ -142,17 +145,17 @@
       const texto = child.textContent.replace(/\s+/g, " ").trim();
       if (!texto) return;
 
-      if (texto.includes("Plataforma de Apoyo Clínico Insulog APS")) {
+      if (texto.includes("Insulog APS - apoyo clínico") || texto.includes("Plataforma de Apoyo Clínico Insulog APS")) {
         child.classList.add("pdf-doc-header");
-      } else if (texto.startsWith("Paciente:")) {
+      } else if (texto.startsWith("Paciente")) {
         child.classList.add("pdf-patient-row");
-      } else if (texto.includes("Indicaciones del Facultativo:") || texto.includes("Indicaciones de Continuidad:")) {
+      } else if (texto.includes("Indicaciones del facultativo") || texto.includes("Indicaciones de continuidad")) {
         child.classList.add("pdf-indicaciones");
-      } else if (texto.includes("REGISTRO DE CONTROL (15 DÍAS)")) {
+      } else if (texto.includes("Registro de control - 15 días") || texto.includes("REGISTRO DE CONTROL (15 DÍAS)")) {
         child.classList.add("pdf-table-title");
-      } else if (texto.includes("Próximo Control:") && texto.includes("Firma y Timbre Médico")) {
+      } else if (texto.includes("Próximo control") && texto.includes("Firma y timbre médico")) {
         child.classList.add("pdf-firma-control");
-      } else if (texto.includes("Documento generado por Insulog APS")) {
+      } else if (texto.includes("Ajuste clínico basado en normas MINSAL")) {
         child.classList.add("pdf-doc-footer");
       }
     });
@@ -160,8 +163,8 @@
 
   function aplicarDensidadDocumento(pdf) {
     const medicamentos = pdf.querySelectorAll(".pdf-medicamentos-paciente li").length;
-    pdf.classList.remove("pdf-densidad-amplia", "pdf-densidad-compacta");
-    pdf.classList.add(medicamentos <= 4 ? "pdf-densidad-amplia" : "pdf-densidad-compacta");
+    pdf.classList.remove("pdf-densidad-amplia", "pdf-densidad-compacta", "pdf-contenido-extenso");
+    if (medicamentos > 4) pdf.classList.add("pdf-contenido-extenso");
   }
 
   function transformarTablaSeguimiento(pdf) {
@@ -198,7 +201,7 @@
     if (!pdf.querySelector(".registro-hgt-ayuda")) {
       const ayuda = document.createElement("div");
       ayuda.className = "registro-hgt-ayuda";
-      ayuda.innerHTML = "Registrar <strong>hora y valor del hemoglucotest</strong> en ambas mediciones: ayunas y preonce/precena.";
+      ayuda.innerHTML = "Anote <strong>hora y HGT</strong> en ambas mediciones. Use mg/dL.";
       tabla.insertAdjacentElement("beforebegin", ayuda);
     }
 
@@ -206,7 +209,7 @@
       .find((item) => item.textContent.toLowerCase().includes("registro:"));
 
     if (indicacionRegistro) {
-      indicacionRegistro.innerHTML = "<b>Registro:</b> Glicemias capilares en ayunas y preonce/precena, anotando hora y valor de cada medición.";
+      indicacionRegistro.innerHTML = "<strong>Registro:</strong> glicemias capilares en ayunas y preonce/precena, anotando hora y valor de cada medición.";
     }
   }
 
