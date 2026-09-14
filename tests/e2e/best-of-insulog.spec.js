@@ -33,7 +33,7 @@ test("Best of Insulog explica la recomendación sin recalcular ni modificar Clin
   expect({ am: before.am, pm: before.pm, minAy: before.minAy }).toEqual({ am: 0, pm: 22, minAy: 160 });
 
   await expect(page.locator("#best-decision-trace")).toBeAttached();
-  await page.locator("#best-decision-trace").click();
+  await page.locator("#best-decision-trace summary").click();
   await expect(page.locator("#best-decision-body")).toContainText("Ayunas: 3 registro(s)");
   await expect(page.locator("#best-decision-body")).toContainText("Menor ayunas: 160 mg/dL");
   await expect(page.locator("#best-decision-body")).toContainText("PM 22 UI");
@@ -45,32 +45,27 @@ test("Best of Insulog explica la recomendación sin recalcular ni modificar Clin
   expect({ am: after.am, pm: after.pm, minAy: after.minAy }).toEqual({ am: 0, pm: 22, minAy: 160 });
 });
 
-test("historial longitudinal local guarda revisión y persiste después de recargar", async ({ page }) => {
+test("historial temporal guarda revisión durante la sesión y desaparece al recargar", async ({ page }) => {
   await openFollowupResult(page);
   await page.locator("#best-review-accept").click();
   await page.locator("#best-history-alias").fill("PX-001");
   await page.locator("#best-history-save-card").getByRole("button", { name: "GUARDAR CASO", exact: true }).click();
   await expect(page.locator("#best-history-status")).toContainText("PX-001");
 
-  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("insulog.history.v1") || "[]"));
-  expect(stored).toHaveLength(1);
-  expect(stored[0].alias).toBe("PX-001");
-  expect(stored[0].review).toBe("aceptada");
-  expect(stored[0].recommendedDose.pm).toBe(22);
-  expect(stored[0].meanFasting).toBe(170);
-
   await page.locator("#best-history-save-card").getByRole("button", { name: "VER HISTORIAL", exact: true }).click();
   await expectActivePage(page, "p8");
   await expect(page.locator("#best-history-list")).toContainText("PX-001");
   await expect(page.locator("#best-history-list")).toContainText("170 mg/dL");
   await expect(page.locator("#best-history-list")).toContainText("22 UI");
+  await expect(page.locator("#best-history-list")).toContainText("Aceptada");
 
   await page.reload();
   await expectActivePage(page, "p0");
   await page.locator("#p0 details").getByText("Fuentes clínicas y versión", { exact: true }).click();
   await page.locator("#best-history-home-entry").click();
   await expectActivePage(page, "p8");
-  await expect(page.locator("#best-history-list")).toContainText("PX-001");
+  await expect(page.locator("#best-history-list")).toContainText("No hay registros guardados");
+  await expect(page.locator("#best-history-list")).not.toContainText("PX-001");
 });
 
 test("historial exige alias y revisión profesional antes de guardar", async ({ page }) => {
@@ -81,6 +76,8 @@ test("historial exige alias y revisión profesional antes de guardar", async ({ 
   await page.locator("#best-history-alias").fill("PX-002");
   await page.locator("#best-history-save-card").getByRole("button", { name: "GUARDAR CASO", exact: true }).click();
   await expect(page.locator("#best-history-status")).toContainText("revisión profesional");
-  const stored = await page.evaluate(() => localStorage.getItem("insulog.history.v1"));
-  expect(stored).toBeNull();
+
+  await page.locator("#best-history-save-card").getByRole("button", { name: "VER HISTORIAL", exact: true }).click();
+  await expectActivePage(page, "p8");
+  await expect(page.locator("#best-history-list")).toContainText("No hay registros guardados");
 });
