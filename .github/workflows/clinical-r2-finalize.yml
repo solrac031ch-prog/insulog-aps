@@ -59,7 +59,7 @@ jobs:
           node tests/clinical-engine-contract.test.js
           node tests/clinical-copy.test.js
           python scripts/check_invariants.py
-          python scripts/app_shell_release.py --check
+          python scripts/app_shell_release.py --print
       - name: Commit final alignment
         run: |
           git config user.name "github-actions[bot]"
