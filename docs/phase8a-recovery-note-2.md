@@ -1,1 +1,0 @@
-Diagnóstico temporal de Fase 8A. Se eliminará o consolidará antes del merge.
