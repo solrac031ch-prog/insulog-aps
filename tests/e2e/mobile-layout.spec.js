@@ -53,11 +53,13 @@ test("tratamiento concomitante es compacto y deja detalles secundarios plegados"
   await openFollowupMedication(page);
 
   const details = page.locator("#p35 .aps-med-details");
+  const firstMedication = page.locator('#p35 input[data-aps-med="seguimiento"]').first();
   await expect(details).toHaveCount(9);
   await expect(page.locator("#p35 .aps-med-secondary-details")).not.toHaveAttribute("open", "");
   await expect(page.locator("#p35 .aps-efficacy-details")).not.toHaveAttribute("open", "");
   await expect(page.locator("#p35 .aps-med-efficacy").first()).not.toBeVisible();
   await expect(page.locator("#p35 .aps-med-safety").first()).not.toBeVisible();
+  await expect(firstMedication).not.toBeChecked();
 
   const pageHeight = await page.locator("#p35").evaluate((section) => section.getBoundingClientRect().height);
   expect(pageHeight).toBeLessThan(1800);
@@ -65,6 +67,7 @@ test("tratamiento concomitante es compacto y deja detalles secundarios plegados"
   await details.first().locator("summary").click();
   await expect(page.locator("#p35 .aps-med-efficacy").first()).toBeVisible();
   await expect(page.locator("#p35 .aps-med-safety").first()).toBeVisible();
+  await expect(firstMedication).not.toBeChecked();
 });
 
 test("tabla HGT cabe en 390 px sin scroll horizontal interno", async ({ page }) => {
