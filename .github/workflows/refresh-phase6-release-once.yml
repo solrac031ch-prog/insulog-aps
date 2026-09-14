@@ -1,0 +1,34 @@
+name: Refresh Phase 6 release once
+
+on:
+  push:
+    paths:
+      - .github/workflows/refresh-phase6-release-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-release:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Refresh canonical PWA release fingerprint
+        run: python scripts/app_shell_release.py --write
+
+      - name: Remove one-shot workflow and commit release
+        run: |
+          rm .github/workflows/refresh-phase6-release-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html pdf-preview.html sw.js .github/workflows/refresh-phase6-release-once.yml
+          if git diff --cached --quiet; then
+            echo "No release update required"
+            exit 0
+          fi
+          git commit -m "Build: refresh PWA release for Phase 6A"
+          git push
