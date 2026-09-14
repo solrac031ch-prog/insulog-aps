@@ -1,0 +1,255 @@
+name: Patient name privacy simplification once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/patient-name-privacy-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  simplify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove temporary history UI and keep patient name PDF-only
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          # 1) App shell: remove the temporary session-history UI/storage/actions.
+          path = Path('app-shell.js')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('  const BEST_HISTORY_LIMIT = 100;\n', '')
+          text = text.replace('  let bestSessionHistory = [];\n', '')
+          text = text.replace('.best-review-status, .best-history-status', '.best-review-status')
+          for pattern in [
+              r'\n      \.best-history-entry .*?\n',
+              r'\n      \.best-history-entry p .*?\n',
+              r'\n      \.best-history-meta .*?\n',
+              r'\n      \.best-history-trend .*?\n',
+              r'\n      \.best-history-trend strong .*?\n',
+              r'\n      \.best-history-controls .*?\n',
+              r'\n      \.best-history-controls \.field .*?\n',
+              r'\n      \.best-history-group-title .*?\n',
+          ]:
+              text = re.sub(pattern, '\n', text)
+
+          text = re.sub(
+              r'\n  function readBestHistory\(\) \{.*?\n  \}\n\n  function writeBestHistory\(entries\) \{.*?\n  \}\n',
+              '\n', text, count=1, flags=re.S
+          )
+          text = re.sub(
+              r'\n    const evidence = document\.querySelector\("#p0 \.evidence-content"\);.*?\n    \}\n\n    const decisionCard',
+              '\n    const decisionCard', text, count=1, flags=re.S
+          )
+          text = re.sub(
+              r'\n        <div id="best-history-save-card".*?</div>`\);',
+              '\n        </div>`);', text, count=1, flags=re.S
+          )
+          text = re.sub(
+              r'\n    if \(!byId\("p8"\)\) \{.*?\n    \}\n\n    const noteNode',
+              '\n\n    const noteNode', text, count=1, flags=re.S
+          )
+          text = re.sub(
+              r'\n  function buildBestHistoryRecord\(alias\) \{.*?\n  function registerBestOfActions\(\)',
+              '\n\n  function registerBestOfActions()', text, count=1, flags=re.S
+          )
+          text = re.sub(
+              r'\n    actions\.register\("best-history-save".*?actions\.register\("best-history-home".*?;\n',
+              '\n', text, count=1, flags=re.S
+          )
+          forbidden = ['best-history-save-card', 'best-history-alias', 'best-history-home-entry', 'best-history-list', 'best-history-save', 'best-history-open', 'best-history-delete', 'best-history-clear', 'bestSessionHistory', 'BEST_HISTORY_LIMIT']
+          leftovers = [token for token in forbidden if token in text]
+          if leftovers:
+              raise SystemExit(f'History UI/storage leftovers in app-shell.js: {leftovers}')
+          path.write_text(text, encoding='utf-8')
+
+          # 2) Phase 6B sync: keep only professional-dose -> patient-document synchronization.
+          Path('phase6b-document-sync.js').write_text(r'''"use strict";
+
+(() => {
+  const runtime = window.InsulogRuntime;
+  const phase6b = window.InsulogPhase6B;
+
+  if (!runtime) throw new Error("InsulogRuntime debe cargarse antes de phase6b-document-sync.js");
+  if (!phase6b) throw new Error("InsulogPhase6B debe cargarse antes de phase6b-document-sync.js");
+
+  const actions = runtime.actions;
+  const state = runtime.state;
+
+  function safeNumber(value) {
+    if (value === null || value === undefined || String(value).trim() === "") return null;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  }
+
+  function numberOrZero(value) {
+    return safeNumber(value) || 0;
+  }
+
+  function registerDocumentSync() {
+    actions.decorate("show-document", (next) => (context) => {
+      const data = state.snapshot();
+      if (data.professionalDecision !== "aceptada" && data.professionalDecision !== "modificada") {
+        return next(context);
+      }
+
+      const original = { am: data.am, pm: data.pm, dosisKg: data.dosisKg };
+      const am = numberOrZero(data.professionalAm);
+      const pm = numberOrZero(data.professionalPm);
+      state.patch({ am, pm, dosisKg: data.professionalDosePerKg ?? data.dosisKg });
+
+      const result = next(context);
+      requestAnimationFrame(() => state.patch(original));
+      return result;
+    });
+  }
+
+  function init() {
+    registerDocumentSync();
+  }
+
+  window.InsulogPhase6BDocumentSync = Object.freeze({
+    version: "2026.09.14-phase6b-document-sync-private-name"
+  });
+
+  document.addEventListener("DOMContentLoaded", init, { once: true });
+})();
+''', encoding='utf-8')
+
+          # 3) Explicit privacy copy where patient name is requested for the final PDF.
+          path = Path('index.html')
+          html = path.read_text(encoding='utf-8')
+          old = '<p class="lead small-lead no-print">Ingrese el nombre y seleccione el tipo de documento que desea generar.</p>'
+          new = '<p class="lead small-lead no-print">Ingrese el nombre y seleccione el tipo de documento que desea generar. El nombre se usa sólo para este documento y no se almacena en Insulog.</p>'
+          if old not in html:
+              raise SystemExit('Expected patient-document helper copy not found')
+          html = html.replace(old, new, 1)
+          path.write_text(html, encoding='utf-8')
+
+          # 4) Phase 6B browser contract: remove obsolete quality/history tests and verify PDF-only name use.
+          Path('tests/e2e/phase6b-professional-decision.spec.js').write_text(r'''const { test, expect } = require("@playwright/test");
+
+async function expectActivePage(page, id) {
+  const section = page.locator(`#${id}`);
+  await expect(section).toHaveClass(/(^|\s)active(\s|$)/);
+  await expect(section).toHaveAttribute("aria-hidden", "false");
+}
+
+async function gotoFollowup(page) {
+  await page.goto("/");
+  await page.locator("#p0").getByRole("button", { name: "INICIAR ALGORITMO", exact: true }).click();
+  await page.locator("#p1").getByRole("button", { name: "NO", exact: true }).click();
+  await page.locator("#p2").getByRole("button", { name: "SEGUIMIENTO DE INSULINA", exact: true }).click();
+  await page.locator("#p35").getByRole("button", { name: "CONTINUAR AL REGISTRO DE GLICEMIAS", exact: true }).click();
+  await expectActivePage(page, "p4");
+}
+
+async function openFollowupResult(page) {
+  await gotoFollowup(page);
+  await page.locator("#peso-seguimiento").fill("70");
+  await page.locator("#tipo-esquema").selectOption("pm");
+  await page.locator("#pm-actual").fill("20");
+  const fasting = page.locator("#tabla-seguimiento .ay");
+  await fasting.nth(0).fill("160");
+  await fasting.nth(1).fill("170");
+  await fasting.nth(2).fill("180");
+  await page.locator("#ajustar-seguimiento-btn").click();
+  await expectActivePage(page, "p5");
+  await expect(page.locator("#nota-clinica")).toContainText("PM: 22 UI");
+}
+
+async function modifyTo21(page, reason = "Contexto clínico y patrón alimentario del paciente") {
+  await page.locator("#best-review-modify").click();
+  await expect(page.locator("#best-modify-panel")).toBeVisible();
+  await page.locator("#best-final-am").fill("0");
+  await page.locator("#best-final-pm").fill("21");
+  await page.locator("#best-modify-reason").fill(reason);
+  await page.getByRole("button", { name: "GUARDAR DECISIÓN", exact: true }).click();
+}
+
+test("6B separa recomendación Clinical r2 y pauta final modificada", async ({ page }) => {
+  await openFollowupResult(page);
+  await modifyTo21(page);
+  await expect(page.locator("#best-review-status")).toContainText("Plan modificado");
+  await expect(page.locator("#best-final-decision-summary")).toContainText("PM 21 UI");
+  await expect(page.locator("#nota-clinica")).toContainText("Recomendación Insulog Clinical r2: PM 22 UI");
+  await expect(page.locator("#nota-clinica")).toContainText("Modificada (PM 21 UI)");
+  const state = await page.evaluate(() => window.InsulogRuntime.state.snapshot());
+  expect({ enginePm: state.pm, finalPm: state.professionalPm, decision: state.professionalDecision }).toEqual({ enginePm: 22, finalPm: 21, decision: "modificada" });
+});
+
+test("6B sincroniza la pauta profesional con documento/PDF sin alterar el cálculo", async ({ page }) => {
+  await openFollowupResult(page);
+  await modifyTo21(page, "Ajuste clínico deliberado por contexto del paciente");
+  await page.locator("#p5").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
+  await expectActivePage(page, "p6");
+  await page.locator("#nombre-paciente").fill("Paciente prueba");
+  await page.locator("#p6").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
+  await expectActivePage(page, "p7");
+  const frame = page.frameLocator("#pdf-preview-frame");
+  await expect(frame.locator("#pdf")).toContainText("Paciente prueba");
+  await expect(frame.locator("#pdf")).toContainText("21 UI");
+  await expect(frame.locator("#pdf")).not.toContainText("22 UI");
+  const state = await page.evaluate(() => window.InsulogRuntime.state.snapshot());
+  expect(state.pm).toBe(22);
+  expect(state.professionalPm).toBe(21);
+  expect(JSON.stringify(state)).not.toContain("Paciente prueba");
+});
+
+test("6B no muestra ni mantiene historial temporal de pacientes", async ({ page }) => {
+  await openFollowupResult(page);
+  await expect(page.locator("#best-history-save-card")).toHaveCount(0);
+  await expect(page.locator("#best-history-home-entry")).toHaveCount(0);
+  await expect(page.locator("#p8")).toHaveCount(0);
+  const historyApi = await page.evaluate(() => Boolean(window.InsulogPhase6BDocumentSync?.history));
+  expect(historyApi).toBe(false);
+});
+
+test("6B bloquea documento cuando la decisión es reevaluar", async ({ page }) => {
+  await openFollowupResult(page);
+  await page.locator("#best-review-reassess").click();
+  await expect(page.locator("#nota-clinica")).toContainText("Reevaluar antes de emitir una pauta definitiva");
+  let message = "";
+  page.once("dialog", async (dialog) => { message = dialog.message(); await dialog.accept(); });
+  await page.locator("#p5").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
+  await expectActivePage(page, "p5");
+  expect(message).toContain("ACEPTAR o MODIFICAR PLAN");
+});
+''', encoding='utf-8')
+          PY
+
+      - name: Refresh canonical PWA release fingerprint
+        run: python scripts/app_shell_release.py --write
+
+      - name: Validate static and clinical invariants
+        shell: bash
+        run: |
+          node --check app-shell.js
+          node --check phase6b-document-sync.js
+          node --check phase6b-professional-decision.js
+          node --check document-flow.js
+          npm run check:clinical-protocol
+          npm run test:clinical-copy
+          npm run test:note-presenter
+          npm run check:invariants
+          npm run check:release
+
+      - name: Commit privacy simplification and remove one-off workflow
+        shell: bash
+        run: |
+          rm .github/workflows/patient-name-privacy-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app-shell.js phase6b-document-sync.js index.html tests/e2e/phase6b-professional-decision.spec.js pdf-preview.html sw.js .github/workflows/patient-name-privacy-once.yml
+          git commit -m "Use patient name only for final PDF and disable temporary history"
+          git push origin HEAD:main
