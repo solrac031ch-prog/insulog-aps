@@ -261,13 +261,9 @@
     }
 
     const decisionCard = document.querySelector("#p5 .decision-card");
-    if (decisionCard && !byId("best-decision-trace")) {
+    if (decisionCard && !byId("best-professional-review")) {
       decisionCard.insertAdjacentHTML("afterend", `
-        <details id="best-decision-trace" class="card compact-card best-card text-left">
-          <summary>Por qué Insulog recomienda esto</summary>
-          <div id="best-decision-body"></div>
-        </details>
-        <div id="best-professional-review" class="card compact-card best-card text-left">
+<div id="best-professional-review" class="card compact-card best-card text-left">
           <p class="card-title text-center">Revisión profesional</p>
           <p class="helper-text">Insulog propone una recomendación; la decisión final corresponde al profesional. Registrar esta revisión no modifica el cálculo Clinical r2 ni la nota generada.</p>
           <div class="best-review-actions">
