@@ -4,10 +4,12 @@
   const runtime = window.InsulogRuntime;
   const clinicalEngine = window.InsulogClinicalEngine;
   const clinicalCopy = window.InsulogClinicalCopy;
+  const notePresenter = window.InsulogNotePresenter;
 
   if (!runtime) throw new Error("InsulogRuntime debe cargarse antes de app.js");
   if (!clinicalEngine) throw new Error("InsulogClinicalEngine debe cargarse antes de app.js");
   if (!clinicalCopy) throw new Error("InsulogClinicalCopy debe cargarse antes de app.js");
+  if (!notePresenter) throw new Error("InsulogNotePresenter debe cargarse antes de app.js");
 
   const { byId, all, show } = runtime.dom;
   const { go } = runtime.navigation;
@@ -65,7 +67,7 @@
 
     const caja = byId("sugerencia-esquema-inicio");
     if (caja) {
-      caja.innerHTML = `<strong>Esquema sugerido:</strong> ${escaparHTML(decision.schemeText)}<br><br><strong>Motivo:</strong> ${escaparHTML(decision.reason)}`;
+      caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(decision.schemeText)}<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(decision.reason)}`;
       show(caja, true);
     }
 
@@ -79,7 +81,7 @@
     const caja = byId("resumen-esquema-inicio");
     if (!caja || !data.textoEsquemaInicio) return;
 
-    caja.innerHTML = `<strong>Esquema sugerido:</strong> ${escaparHTML(data.textoEsquemaInicio)}<br><br><strong>Motivo:</strong> ${escaparHTML(data.motivoEsquemaInicio)}`;
+    caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(data.textoEsquemaInicio)}<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(data.motivoEsquemaInicio)}`;
     show(caja, true);
   }
 
@@ -113,7 +115,7 @@
 
     const preview = byId("preview-dosis");
     preview.innerHTML = `
-      <strong>Esquema sugerido:</strong> ${escaparHTML(data.textoEsquemaInicio || "NPH monodosis nocturna")}<br><br>
+      <strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(data.textoEsquemaInicio || "NPH monodosis nocturna")}<br><br>
       Dosis total: ${resultado.total} UI/día<br><br>
       • Mañana: ${resultado.am} UI<br>
       • Noche: ${resultado.pm} UI
@@ -278,47 +280,10 @@
     return nota;
   }
 
-  function escaparHTML(texto = "") {
-    return String(texto)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
-  function claseNota(linea) {
-    const lower = linea.toLowerCase();
-
-    if (lower.includes("alerta") || lower.includes("hipoglicemia") || lower.includes("<54") || lower.includes("<70") || lower.includes("suspensión")) {
-      return "nota-roja";
-    }
-
-    if (lower.includes("hba1c estimada")) {
-      const valor = parseFloat(linea.replace(",", ".").match(/[\d.]+/)?.[0]);
-      if (!Number.isNaN(valor)) {
-        if (valor <= 7) return "nota-verde";
-        if (valor < 9) return "nota-amarilla";
-        return "nota-roja";
-      }
-    }
-
-    if (lower.includes("nuevo esquema") || lower.includes("dosis sugerida")) return "nota-azul";
-    if (lower.includes("esquema actual") || lower.includes("promedios usados") || lower.includes("promedio global")) return "nota-gris";
-    return "";
-  }
-
   function renderNotaClinica(texto) {
     const nota = byId("nota-clinica");
     nota.dataset.rawText = texto;
-    nota.innerHTML = texto
-      .split("\n")
-      .map((linea) => {
-        const clase = claseNota(linea);
-        const contenido = escaparHTML(linea) || "&nbsp;";
-        return `<span class="nota-linea${clase ? ` ${clase}` : ""}">${contenido}</span>`;
-      })
-      .join("");
+    nota.innerHTML = notePresenter.toHTML(texto);
   }
 
   async function copiarNota() {
@@ -431,6 +396,6 @@
     version: "2026.09.10-phase6",
     notes: Object.freeze({ render: renderNotaClinica }),
     inputs: Object.freeze({ handle: handleInput }),
-    text: Object.freeze({ escapeHTML: escaparHTML })
+    text: Object.freeze({ escapeHTML: notePresenter.escapeHTML })
   });
 })();
