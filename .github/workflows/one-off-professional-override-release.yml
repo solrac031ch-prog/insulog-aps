@@ -1,0 +1,72 @@
+name: One-off professional override release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Make professional override native and update docs
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('phase6b-professional-decision.js')
+          text = path.read_text(encoding='utf-8')
+          old = '''    const weight = currentWeight();\n    if (weight && (am + pm) / weight > 0.5) throw new Error("La pauta final supera 0,5 UI/kg/día de insulina basal. Reevalue antes de emitirla.");\n'''
+          new = '''    // El umbral de 0,5 UI/kg/día limita la recomendación automática de Clinical r2.\n    // Una pauta manual modificada por el profesional puede superarlo si queda justificada;\n    // se conserva como advertencia visible y no como bloqueo de la decisión clínica.\n'''
+          if old in text:
+              text = text.replace(old, new, 1)
+              path.write_text(text, encoding='utf-8')
+          elif 'Una pauta manual modificada por el profesional puede superarlo' not in text:
+              raise SystemExit('No se encontró el bloqueo esperado en phase6b-professional-decision.js')
+
+          doc = Path('docs/phase6b-professional-decision.md')
+          dtext = doc.read_text(encoding='utf-8')
+          old_doc = 'Una pauta manual >0,5 UI/kg/día se bloquea antes de poder registrarse como decisión final.\n'
+          new_doc = ('El umbral de 0,5 UI/kg/día sigue siendo un guardrail para la recomendación automática. '
+                     'Una pauta manual >0,5 UI/kg/día puede registrarse y emitirse cuando el profesional la modifica '
+                     'de forma explícita y deja una justificación clínica; Insulog mantiene una advertencia visible y '
+                     'documenta que se trata de una excepción por criterio profesional. Las rutas de urgencia siguen bloqueadas.\n')
+          if old_doc in dtext:
+              dtext = dtext.replace(old_doc, new_doc, 1)
+              doc.write_text(dtext, encoding='utf-8')
+          elif 'puede registrarse y emitirse cuando el profesional la modifica' not in dtext:
+              raise SystemExit('No se encontró la redacción de seguridad esperada en la documentación')
+          PY
+      - name: Regenerate immutable app shell
+        run: python scripts/app_shell_release.py --write
+      - name: Validate syntax and safety contracts
+        shell: bash
+        run: |
+          node --check phase6b-professional-decision.js
+          node --check phase6b-document-sync.js
+          node tests/clinical-engine.test.js
+          node tests/clinical-engine-regression.test.js
+          node tests/clinical-engine-contract.test.js
+          node tests/clinical-engine-hardening.test.js
+          npm run check:clinical-protocol
+          npm run check:invariants
+          npm run check:release
+      - name: Commit and publish
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo 'No changes to publish.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add phase6b-professional-decision.js docs/phase6b-professional-decision.md index.html pdf-preview.html sw.js
+          git commit -m 'Allow documented professional basal-dose override'
+          git push origin HEAD:main
