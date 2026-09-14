@@ -21,9 +21,6 @@ jobs:
       - name: Apply fail-safe hardening
         run: python scripts/safety_hardening_once.py
 
-      - name: Install dependencies
-        run: npm ci
-
       - name: Refresh canonical PWA release
         run: npm run release:write
 
