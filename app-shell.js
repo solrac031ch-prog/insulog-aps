@@ -28,10 +28,16 @@
   function compactMedicationOption(option) {
     if (!option || option.dataset.compactMedication === "true") return;
 
+    const parent = option.parentNode;
     const copy = option.querySelector(".aps-med-copy");
     const efficacy = copy?.querySelector(".aps-med-efficacy");
     const safety = copy?.querySelector(".aps-med-safety");
-    if (!copy || (!efficacy && !safety)) return;
+    if (!parent || !copy || (!efficacy && !safety)) return;
+
+    const card = document.createElement("div");
+    card.className = "aps-med-card";
+    parent.insertBefore(card, option);
+    card.appendChild(option);
 
     const details = document.createElement("details");
     details.className = "aps-med-details";
@@ -45,8 +51,8 @@
     if (efficacy) body.appendChild(efficacy);
     if (safety) body.appendChild(safety);
     details.appendChild(body);
+    card.appendChild(details);
 
-    copy.appendChild(details);
     option.dataset.compactMedication = "true";
   }
 
