@@ -16,6 +16,7 @@ const APP_SHELL = [
   "./app-runtime.js?v=239bc6b77d3afe3d",
   "./clinical-engine.js?v=239bc6b77d3afe3d",
   "./clinical-copy.js?v=239bc6b77d3afe3d",
+  "./note-presenter.js?v=239bc6b77d3afe3d",
   "./app.js?v=239bc6b77d3afe3d",
   "./patient-document.js?v=239bc6b77d3afe3d",
   "./pdf-enhancements.js?v=239bc6b77d3afe3d",
