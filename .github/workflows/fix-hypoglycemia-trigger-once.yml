@@ -90,7 +90,7 @@ jobs:
           )
           write(path, s)
 
-          # 5) Governance: the permanent level-3 checkbox is retired.
+          # 5) Governance: the permanent level-3 checkbox and shell shortcut are retired.
           path = 'scripts/check_invariants.py'
           s = read(path)
           s = s.replace('"ayunasRaw.length < 3", "3 glicemias pre-almuerzo", "meta-hba1c-seguimiento", "nivel3-referido",',
@@ -99,6 +99,11 @@ jobs:
           if marker not in s:
               raise SystemExit('check_invariants.py: app forbidden marker not found')
           s = s.replace(marker, '"resultado.dosisKg >= 0.7", "resultado.dosisKg >= 1", "hba1cEstimada", "nivel3-referido",', 1)
+          old_shell = '"document.addEventListener(\\"input\\", app.inputs.handle)", "function registerServiceWorker",\n        \'updateViaCache: "none"\', "registration.update()", "injectClinicalR2Controls", "protectLevel3Hypoglycemia",\n        "meta-hba1c-seguimiento", "nivel3-referido", "edad-inicio", "imc-inicio", "vfg-inicio",'
+          new_shell = '"document.addEventListener(\\"input\\", app.inputs.handle)", "function registerServiceWorker",\n        \'updateViaCache: "none"\', "registration.update()", "injectClinicalR2Controls",\n        "meta-hba1c-seguimiento", "edad-inicio", "imc-inicio", "vfg-inicio",'
+          if old_shell not in s:
+              raise SystemExit('check_invariants.py: shell level-3 invariant block not found')
+          s = s.replace(old_shell, new_shell, 1)
           write(path, s)
 
           # Sanity checks.
