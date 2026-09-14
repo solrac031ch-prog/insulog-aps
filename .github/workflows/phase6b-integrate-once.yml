@@ -1,0 +1,84 @@
+name: Phase 6B integrate once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/phase6b-integrate-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Integrate Phase 6B into shell
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+
+          index = root / 'index.html'
+          text = index.read_text(encoding='utf-8')
+          if 'phase6b-professional-decision.js' not in text:
+              match = re.search(r'<script src="\./app-shell\.js\?v=([A-Za-z0-9._-]+)"></script>', text)
+              if not match:
+                  raise SystemExit('No se encontró app-shell.js en index.html')
+              token = match.group(1)
+              old = match.group(0)
+              new = old + f'\n  <script src="./phase6b-professional-decision.js?v={token}"></script>\n  <script src="./phase6b-document-sync.js?v={token}"></script>'
+              text = text.replace(old, new, 1)
+              index.write_text(text, encoding='utf-8')
+
+          sw = root / 'sw.js'
+          text = sw.read_text(encoding='utf-8')
+          if 'phase6b-professional-decision.js' not in text:
+              match = re.search(r'  "\./app-shell\.js\?v=([A-Za-z0-9._-]+)",', text)
+              if not match:
+                  raise SystemExit('No se encontró app-shell.js en sw.js')
+              token = match.group(1)
+              old = match.group(0)
+              new = old + f'\n  "./phase6b-professional-decision.js?v={token}",\n  "./phase6b-document-sync.js?v={token}",'
+              text = text.replace(old, new, 1)
+              sw.write_text(text, encoding='utf-8')
+
+          release = root / 'scripts/app_shell_release.py'
+          text = release.read_text(encoding='utf-8')
+          if 'phase6b-professional-decision.js' not in text:
+              old = '    "app-shell.js",\n'
+              new = old + '    "phase6b-professional-decision.js",\n    "phase6b-document-sync.js",\n'
+              if old not in text:
+                  raise SystemExit('No se encontró app-shell.js en SHELL_FILES')
+              text = text.replace(old, new, 1)
+              release.write_text(text, encoding='utf-8')
+          PY
+      - name: Validate JavaScript syntax
+        run: |
+          node --check phase6b-professional-decision.js
+          node --check phase6b-document-sync.js
+          node --check tests/e2e/phase6b-professional-decision.spec.js
+      - name: Regenerate canonical PWA release
+        run: python scripts/app_shell_release.py --write
+      - name: Validate release
+        run: python scripts/app_shell_release.py
+      - name: Remove one-shot workflow and commit integrated shell
+        run: |
+          rm .github/workflows/phase6b-integrate-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html sw.js scripts/app_shell_release.py phase6b-professional-decision.js phase6b-document-sync.js .github/workflows/phase6b-integrate-once.yml
+          if git diff --cached --quiet; then
+            echo "No integration changes to commit"
+          else
+            git commit -m "Phase 6B: integrate professional decision into PWA"
+            git push origin HEAD:main
+          fi
