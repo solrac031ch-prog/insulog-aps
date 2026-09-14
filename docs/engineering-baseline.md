@@ -1,18 +1,19 @@
 # Insulog APS — baseline de ingeniería
 
-Este documento fija el estado técnico que debe protegerse antes de cualquier cambio relevante. Su objetivo es separar responsabilidades y evitar que cambios de interfaz, PWA, PDF, infraestructura o compatibilidad alteren inadvertidamente la lógica clínica.
+Este documento fija el estado técnico que debe protegerse antes de cualquier cambio relevante. Su objetivo es separar responsabilidades y evitar que cambios de interfaz, PWA, PDF, infraestructura, accesibilidad o compatibilidad alteren inadvertidamente la lógica clínica.
 
 ## Principios de trabajo
 
 1. La red de seguridad automatizada debe quedar verde antes de integrar cambios.
 2. Un refactor no debe cambiar resultados clínicos salvo que el cambio sea explícito, revisado y documentado como cambio clínico.
-3. UI, impresión, PWA, Farmacia Popular, compatibilidad de dispositivos y lógica clínica evolucionan como responsabilidades separadas.
+3. UI, impresión, PWA, Farmacia Popular, accesibilidad, compatibilidad de dispositivos y lógica clínica evolucionan como responsabilidades separadas.
 4. No se persisten datos clínicos identificables del paciente en `localStorage`, `sessionStorage` ni `IndexedDB`.
 5. Los umbrales y cálculos clínicos no se duplican en la interfaz: la UI recopila datos, invoca el motor y presenta el resultado.
 6. Las capas se comunican mediante APIs namespaced y acciones explícitas, no mediante globals sueltos o monkey patches.
 7. Un cambio visual protegido exige inspección y, solo si corresponde, actualización explícita del baseline visual.
 8. El app shell se publica como una unidad inmutable; no se permiten revisiones manuales independientes por asset ni actualización parcial dentro de una atención abierta.
 9. La emulación cross-browser no se confunde con aceptación en hardware real: WebKit/iPhone-like y Chromium/Android-like son guardrails de CI, no certificación de Safari/iOS o de un dispositivo físico.
+10. El repositorio debe poder validarse con comandos reproducibles documentados; la CI sigue siendo la autoridad antes del merge.
 
 ## Contrato clínico protegido
 
@@ -36,7 +37,7 @@ Reglas que siguen siendo contrato:
 - hiperglicemia marcada puede sugerir esquema AM + PM;
 - seguimiento guiado por promedios de ayunas/pre-noche con ajustes ±2/±4 UI;
 - valores altos discordantes se señalan, pero **se mantienen en el promedio**;
-- ejemplo de regresión: `[100,100,100,300]` produce promedio 150 mg/dL y PM 20 → 22 UI, además de advertencia;
+- regresión protegida: `[100,100,100,300]` produce promedio 150 mg/dL y PM 20 → 22 UI, además de advertencia;
 - hipoglicemia: 54–69 mg/dL nivel 1, <54 mg/dL nivel 2 y cualquier episodio con asistencia nivel 3;
 - 54 mg/dL exactos permanecen en nivel 1 bajo el contrato actual (`<54` para nivel 2);
 - nivel 3 bloquea el ajuste automático de NPH y exige reevaluación prioritaria;
@@ -82,14 +83,14 @@ Exports permitidos en `window`: `InsulogRuntime`, `InsulogApp`, `InsulogDocument
 - la UI conserva `prefers-reduced-motion`;
 - el PDF permanece aislado del layout principal.
 
-### 7C — contrato visual
+### 7C — contrato visual base
 
-`tests/e2e/visual-contract.spec.js` protege P0, P2 y P4 en:
+`tests/e2e/visual-contract.spec.js` nació protegiendo P0, P2 y P4 en:
 
 - móvil 390×844;
 - escritorio 1440×1000.
 
-Se usa dHash perceptual de 64 bits con distancia Hamming máxima de 6 bits y PNG de diagnóstico retenidos 14 días. `VISUAL_RECORD=1` es solo un mecanismo manual de re-baseline.
+Se usa dHash perceptual de 64 bits con distancia Hamming máxima de 6 bits y PNG de diagnóstico retenidos 14 días. `VISUAL_RECORD=1` es solo un mecanismo manual de re-baseline y no puede quedar como modo automático de aceptación.
 
 Baselines originales de 7C:
 
@@ -99,6 +100,8 @@ Baselines originales de 7C:
 - `desktop-p0`: `3233332323033300`;
 - `desktop-p2`: `3333336133033300`;
 - `desktop-p4`: `714b4b4b4b433333`.
+
+La ampliación dinámica de este contrato se documenta en Fase 10A.
 
 ## Fase 8 — PDF estable y despliegue atómico
 
@@ -144,14 +147,13 @@ Contratos:
 Procedimiento obligatorio al modificar `SHELL_FILES`:
 
 1. realizar el cambio;
-2. ejecutar `python scripts/app_shell_release.py --write`;
-3. ejecutar `python scripts/app_shell_release.py`;
-4. ejecutar `python scripts/check_atomic_shell.py`;
-5. ejecutar la red de seguridad correspondiente;
-6. inspeccionar cualquier cambio visual relevante;
-7. integrar solo con CI verde.
+2. ejecutar `npm run release:write`;
+3. ejecutar `npm run check:release`;
+4. ejecutar la red de seguridad correspondiente;
+5. inspeccionar cualquier cambio visual relevante;
+6. integrar solo con CI verde.
 
-No se vuelven a mantener manualmente contadores `atomicXX`, fechas dentro de `?v=` ni revisiones divergentes por archivo.
+No se mantienen manualmente contadores `atomicXX`, fechas dentro de `?v=` ni revisiones divergentes por archivo.
 
 ## Fase 9 — compatibilidad móvil
 
@@ -185,17 +187,11 @@ Contratos añadidos:
 
 El primer run de 9A detectó un defecto real: los HGT medían 40 px en ambos motores. Se corrigió `styles.css` a 44 px; la exigencia del test no se redujo.
 
-El cambio activó correctamente el versionado de Fase 8. El **release vigente después de 9A** es:
+El **release vigente desde 9A** permanece:
 
 `4804df17c9c0ab6b`
 
-La corrida final de 9A quedó con:
-
-- 30/30 E2E Chromium históricos verdes;
-- 7 tests móviles verdes y 1 skip esperado por matriz de proyecto;
-- 6 workflows del PR verdes;
-- visual regression histórica verde sin re-baseline;
-- P0/P4 inspeccionados manualmente en las cuatro capturas CI.
+Los cambios 10A–10C no modifican `SHELL_FILES`, por lo que no requieren un fingerprint nuevo.
 
 ### 9B — aceptación en hardware real
 
@@ -209,6 +205,52 @@ Debe validarse al menos en:
 Debe cubrir safe areas, orientación, teclado móvil, foco/scroll, P4, PDF/impresión o compartir, instalación, offline tras cierre/reapertura y al menos una transición entre releases.
 
 CI WebKit/Chromium es evidencia previa útil, pero no reemplaza esta aceptación física.
+
+## Fase 10 — estados clínicos críticos y reproducibilidad
+
+### 10A — regresión visual de estados dinámicos
+
+El contrato visual se amplió de 6 a **12 estados protegidos**. A P0/P2/P4 en móvil y escritorio se agregaron, también en ambos tamaños:
+
+- alerta de hipoglicemia;
+- revisión por dosis alta/sobreinsulinización;
+- nota clínica.
+
+Los nuevos estados se grabaron en dos pasos: generación deliberada de PNG/hash, inspección visual y luego ejecución estricta. Durante el proceso se rechazó una primera captura de hipoglicemia porque no mostraba realmente la alerta; el baseline no se aceptó hasta corregir el viewport.
+
+La suite quedó en **36 E2E Chromium** al cierre de 10A, sin modificar motor clínico, PDF ni thresholds.
+
+### 10B — accesibilidad de alertas clínicas críticas
+
+`tests/e2e/critical-alert-accessibility.spec.js` protege específicamente que:
+
+- la alerta de hipoglicemia pase de `aria-hidden=true` a visible al solicitar el ajuste;
+- conserve `role="alert"` y `aria-live="polite"`;
+- el nivel clínico y las dos decisiones sobre asistencia permanezcan visibles;
+- la alerta termine dentro del viewport;
+- P41 reciba foco real en su encabezado clínico mediante `tabindex="-1"`;
+- después de finalizar el scroll suave, el encabezado enfocado termine visible dentro del viewport.
+
+La primera versión del test de P41 detectó una posición transitoria de ~-60 px porque medía durante la animación `scrollTo(..., behavior="smooth")`. Se corrigió el test para esperar el estado final, en vez de modificar producción por una medición prematura.
+
+Al cierre de 10B:
+
+- **38/38 E2E Chromium** verdes;
+- los 6 workflows del PR verdes;
+- WebKit/Android, PDF, documento, Farmacia Popular, visual regression y checks estáticos verdes;
+- ningún cambio a `clinical-engine.js`, dosis, umbrales, CSS, PDF o app shell.
+
+### 10C — mantenimiento reproducible
+
+El repositorio deja de depender de conocimiento implícito del mantenedor:
+
+- `README.md` pasa de un encabezado mínimo a una guía operativa del proyecto;
+- `package.json` expone comandos para invariantes, release, E2E, dispositivos y verificación completa;
+- `npm run verify` ejecuta secuencialmente invariantes, release, Chromium E2E y compatibilidad móvil;
+- `npm run release:write` es la vía documentada para regenerar el fingerprint;
+- la documentación distingue cambios clínicos de refactors no clínicos y enlaza el protocolo físico 9B.
+
+10C no toca archivos de producción ni `SHELL_FILES`.
 
 ## Mapa de responsabilidades
 
@@ -227,9 +269,11 @@ CI WebKit/Chromium es evidencia previa útil, pero no reemplaza esta aceptación
 | Service worker | `sw.js` | Shell offline inmutable | Bajo-medio |
 | Release | `scripts/app_shell_release.py` | Fingerprint canónico | Bajo |
 | Guardrail SW | `scripts/check_atomic_shell.py` | Atomicidad y unicidad | Bajo |
-| Visual regression | `visual-contract.spec.js` | P0/P2/P4 perceptual | Bajo |
+| Visual regression | `visual-contract.spec.js` | 12 estados perceptuales críticos | Bajo |
+| Alertas accesibles | `critical-alert-accessibility.spec.js` | Semántica, foco y visibilidad crítica | Bajo |
 | Compatibilidad móvil | `device-compat.spec.js` | WebKit/Android touch/mobile | Bajo; complementa hardware real |
 | Protocolo real | `docs/mobile-device-validation.md` | Aceptación iPhone/Android físicos | Manual hasta automatización externa |
+| Operación local | `README.md` + `package.json` | Comandos reproducibles y procedimiento de mantenimiento | Bajo |
 
 ## Flujos que se consideran contrato
 
@@ -253,7 +297,8 @@ CI WebKit/Chromium es evidencia previa útil, pero no reemplaza esta aceptación
 - discordantes altos permanecen en el promedio;
 - alerta de hipoglicemia aparece al solicitar ajuste;
 - nivel 3 requiere confirmación de asistencia y no ajusta automáticamente;
-- tabla P4 utilizable sin overflow y con HGT ≥44 px táctiles en perfiles móviles protegidos.
+- tabla P4 utilizable sin overflow y con HGT ≥44 px táctiles en perfiles móviles protegidos;
+- hipoglicemia visible/anunciable y P41 enfocado permanecen protegidos por E2E.
 
 ### Documento
 
@@ -272,16 +317,37 @@ CI WebKit/Chromium es evidencia previa útil, pero no reemplaza esta aceptación
 
 ## Red de seguridad actual
 
-La seguridad técnica tiene **seis niveles complementarios**:
+La seguridad técnica tiene **siete capas automatizadas complementarias**:
 
 1. **Contrato unitario del motor** — retornos, límites y reglas puras.
 2. **Matriz de regresión clínica** — inicio, ajustes, hipoglicemia, discordantes y dosis alta.
-3. **E2E Chromium** — 30 casos funcionales de interfaz, privacidad, Farmacia, documento y PWA.
-4. **Regresión visual perceptual** — P0/P2/P4 móvil y escritorio con dHash + PNG.
+3. **E2E Chromium** — **38 casos** de interfaz, clínica integrada, privacidad, Farmacia, documento, PWA y accesibilidad crítica.
+4. **Regresión visual perceptual** — **12 estados** móvil/escritorio con dHash + PNG.
 5. **Contrato release/PWA** — fingerprint único, shell atómico y navegación offline.
 6. **Compatibilidad móvil cross-browser** — WebKit iPhone-like + Chromium Android-like, touch, P4, PDF y offline Android.
+7. **Contrato de accesibilidad crítica** — semántica, foco y visibilidad de hipoglicemia y dosis alta.
 
-La aceptación física de 9B es una séptima capa manual pendiente, no una condición ya satisfecha.
+La aceptación física de 9B es una capa manual adicional pendiente, no una condición ya satisfecha.
+
+## Comandos reproducibles
+
+```bash
+npm run check:invariants
+npm run check:release
+npm run test:e2e
+npm run test:devices
+npm run verify
+```
+
+Si cambia un `SHELL_FILE`:
+
+```bash
+npm run release:write
+npm run check:release
+npm run verify
+```
+
+La CI de GitHub Actions sigue siendo la autoridad final antes de integrar.
 
 ## Invariantes
 
@@ -293,6 +359,7 @@ Los checks deben impedir, entre otras regresiones:
 - monkey patches clínicos/documentales;
 - persistencia de datos de pacientes;
 - reclasificación de hipoglicemia fuera del motor;
+- pérdida de semántica/visibilidad de alertas críticas;
 - `skipWaiting()`/`clients.claim()` en el shell clínico actual;
 - actualización parcial del shell;
 - dos versiones de un mismo asset dentro de un release;
@@ -300,19 +367,24 @@ Los checks deben impedir, entre otras regresiones:
 - inclusión accidental del JSON dinámico de Farmacia en el shell;
 - pérdida de targets táctiles protegidos, mobile-first o reduced motion;
 - hacks de zoom/overflow;
-- cambios visuales significativos no revisados.
+- cambios visuales significativos no revisados;
+- uso automático de `VISUAL_RECORD=1` como aceptación de regresiones.
 
 ## Deuda técnica priorizada
 
 1. **Completar Fase 9B** con evidencia en un iPhone físico y un Android físico.
 2. Probar específicamente impresión/compartir PDF desde Safari/iOS y Chrome/Android reales.
-3. Ampliar regresión visual a estados dinámicos de alto valor: hipoglicemia, dosis alta y nota clínica.
-4. Reducir acoplamiento directo al DOM de `app.js` y `aps-safety-2026.js` cuando aporte valor concreto.
-5. Versionar explícitamente el protocolo clínico y asociar futuras modificaciones a una matriz revisada de casos esperados.
-6. Separar progresivamente generación de texto clínico de manipulación DOM si simplifica mantenimiento.
-7. Evaluar módulos ES nativos solo ante una ventaja concreta.
+3. Reducir acoplamiento directo al DOM de `app.js` y `aps-safety-2026.js` cuando aporte valor concreto y pueda demostrarse sin cambiar resultados clínicos.
+4. Versionar explícitamente el protocolo clínico y asociar futuras modificaciones a una matriz revisada de casos esperados.
+5. Separar progresivamente generación de texto clínico de manipulación DOM si simplifica mantenimiento.
+6. Evaluar módulos ES nativos solo ante una ventaja concreta.
 
-El versionado manual del app shell ya no es deuda: quedó resuelto en Fase 8.
+Ya no son deuda:
+
+- versionado manual del app shell — resuelto en Fase 8;
+- regresión visual de hipoglicemia/dosis alta/nota clínica — resuelta en Fase 10A;
+- visibilidad/foco accesible de alertas críticas — protegida en Fase 10B;
+- ausencia de guía operativa/comandos unificados — resuelta en Fase 10C.
 
 ## Regla de aceptación para cambios futuros
 
@@ -325,6 +397,7 @@ Un PR no clínico debe:
 - conservar motor puro, action registry y namespaces;
 - mantener `index.html` sin handlers inline;
 - conservar mobile-first y targets táctiles protegidos;
+- conservar semántica/foco de alertas críticas;
 - actualizar el baseline visual solo ante cambio intencional inspeccionado;
 - si toca `SHELL_FILES`, regenerar y versionar el fingerprint canónico;
 - conservar atomicidad/offline;
@@ -338,3 +411,6 @@ Un cambio intencional de dosis, umbral, criterio o conducta clínica debe actual
 - **Fase 8:** cerrada; PDF y despliegue atómico protegidos.
 - **Fase 9A:** cerrada; compatibilidad móvil automatizada incorporada y defecto HGT 40→44 px corregido.
 - **Fase 9B:** abierta; protocolo de aceptación física definido, pendiente de ejecución en hardware real.
+- **Fase 10A:** cerrada; contrato visual ampliado a 12 estados críticos.
+- **Fase 10B:** cerrada; accesibilidad/visibilidad crítica protegida y Chromium en 38 E2E.
+- **Fase 10C:** cerrada al integrar README operativo y comandos reproducibles de mantenimiento.
