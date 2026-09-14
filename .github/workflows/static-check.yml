@@ -41,11 +41,8 @@ jobs:
       - name: Validate manifest JSON
         run: python -m json.tool manifest.webmanifest > /dev/null
 
-      - name: Validate canonical release fingerprint
-        run: python scripts/app_shell_release.py
+      - name: Validate application invariants through maintenance command
+        run: npm run check:invariants
 
-      - name: Validate application invariants
-        run: python scripts/check_invariants.py
-
-      - name: Validate immutable app shell
-        run: python scripts/check_atomic_shell.py
+      - name: Validate canonical release and immutable shell through maintenance command
+        run: npm run check:release
