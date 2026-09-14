@@ -7,19 +7,25 @@ assert.equal(presenter.escapeHTML(`<script>"x" & 'y'</script>`), "&lt;script&gt;
 assert.equal(presenter.classifyLine("ALERTA DOSIS ALTA (>0.7 UI/kg):"), "nota-roja");
 assert.equal(presenter.classifyLine("Hipoglicemia nivel 1"), "nota-roja");
 
-// Fase 11C es una extracción sin cambios visuales: conserva exactamente la
-// clasificación efectiva previa de app.js. Una corrección semántica de HbA1c
-// se trata por separado para no esconder un cambio visual dentro del refactor.
-assert.equal(presenter.classifyLine("HbA1c estimada a 90 días: 7.0%"), "nota-verde");
-assert.equal(presenter.classifyLine("HbA1c estimada a 90 días: 8.5%"), "nota-verde");
-assert.equal(presenter.classifyLine("HbA1c estimada a 90 días: 9.0%"), "nota-verde");
+const hba1cCases = [
+  ["HbA1c estimada a 90 días: 6.9%", "nota-verde"],
+  ["HbA1c estimada a 90 días: 7.0%", "nota-verde"],
+  ["HbA1c estimada a 90 días: 7.1%", "nota-amarilla"],
+  ["HbA1c estimada a 90 días: 8.5%", "nota-amarilla"],
+  ["HbA1c estimada a 90 días: 8,5%", "nota-amarilla"],
+  ["HbA1c estimada a 90 días: 9.0%", "nota-roja"],
+  ["HbA1c estimada a 90 días si mantiene este patrón: 12.4%", "nota-roja"]
+];
+for (const [line, expected] of hba1cCases) {
+  assert.equal(presenter.classifyLine(line), expected, line);
+}
 
 assert.equal(presenter.classifyLine("Nuevo Esquema sugerido: AM 10 UI | PM 4 UI"), "nota-azul");
 assert.equal(presenter.classifyLine("Esquema actual: AM 8 UI | PM 4 UI"), "nota-gris");
 assert.equal(presenter.classifyLine("Texto neutro"), "");
 
 const text = `Promedios usados: Ayunas 150 | Pre-once N/A
-HbA1c estimada a 90 días si mantiene este patrón: 6.9%
+HbA1c estimada a 90 días si mantiene este patrón: 8.5%
 Nuevo Esquema sugerido: AM 0 UI | PM 22 UI
 
 ALERTA DOSIS ALTA (>0.7 UI/kg):`;
@@ -27,7 +33,7 @@ ALERTA DOSIS ALTA (>0.7 UI/kg):`;
 assert.equal(
   presenter.toHTML(text),
   `<span class="nota-linea nota-gris">Promedios usados: Ayunas 150 | Pre-once N/A</span>` +
-    `<span class="nota-linea nota-verde">HbA1c estimada a 90 días si mantiene este patrón: 6.9%</span>` +
+    `<span class="nota-linea nota-amarilla">HbA1c estimada a 90 días si mantiene este patrón: 8.5%</span>` +
     `<span class="nota-linea nota-azul">Nuevo Esquema sugerido: AM 0 UI | PM 22 UI</span>` +
     `<span class="nota-linea">&nbsp;</span>` +
     `<span class="nota-linea nota-roja">ALERTA DOSIS ALTA (&gt;0.7 UI/kg):</span>`
@@ -35,4 +41,4 @@ assert.equal(
 
 assert.equal(Object.isFrozen(presenter), true, "El presenter debe exponer una API inmutable");
 
-console.log("Note presenter exact legacy-equivalence regression checks passed");
+console.log("Note presenter semantic HbA1c color regression checks passed");
