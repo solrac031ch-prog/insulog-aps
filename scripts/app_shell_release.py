@@ -20,6 +20,7 @@ SHELL_FILES = [
     "farmacia-popular.css",
     "app-runtime.js",
     "clinical-engine.js",
+    "clinical-copy.js",
     "app.js",
     "patient-document.js",
     "pdf-enhancements.js",
