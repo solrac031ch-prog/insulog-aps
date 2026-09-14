@@ -1,13 +1,51 @@
 {
   "protocolId": "insulog-aps-nph",
-  "version": "APS-NPH-2026.09.14-r1",
+  "version": "APS-NPH-2026.09.14-r2",
   "status": "baseline",
-  "scope": "Insulinización con NPH en APS chilena: inicio, seguimiento, hipoglicemia y seguridad de dosis alta.",
+  "scope": "Insulinización con NPH en APS chilena: indicación, inicio basal, seguimiento, hipoglicemia y seguridad.",
   "engine": "clinical-engine.js",
+  "normativeSources": [
+    {
+      "name": "MINSAL Vía Clínica de Diabetes Mellitus tipo 2 para APS",
+      "year": 2026,
+      "role": "primary",
+      "rules": [
+        "Insulina basal en DM2 sintomática con baja de peso y/o HbA1c >10%",
+        "Dosis máxima de insulina basal 0,5 UI/kg/día",
+        "Hipoglicemia nivel 3 y sospecha de cetoacidosis/síndrome hiperosmolar: derivación inmediata a urgencia"
+      ]
+    },
+    {
+      "name": "MINSAL Protocolo de Insulinización para personas con DM2, Resolución Exenta N°201",
+      "year": 2022,
+      "role": "technical-detail",
+      "rules": [
+        "Sensibilidad según IMC, VFGe y edad",
+        "Dosis inicial NPH 0,1-0,2 UI/kg en monodosis",
+        "Titulación con menor de 3 glicemias en días diferentes",
+        "Ajustes de dosis -20%, -10%, 0%, +10% y +20% según meta individualizada"
+      ]
+    },
+    {
+      "name": "ADA Standards of Care",
+      "year": 2026,
+      "role": "complementary-safety",
+      "rules": [
+        "Clasificación de hipoglicemia nivel 1, 2 y 3"
+      ]
+    }
+  ],
+  "deliberateLocalAdaptations": [
+    "Seguimiento operativo puede organizarse cada 15 días según capacidad local APS; la decisión de dosis usa al menos 3 mediciones en días diferentes.",
+    "Se muestran promedios capilares sólo como información descriptiva; nunca sustituyen el menor de 3 para titulación.",
+    "No se agrega automáticamente una segunda dosis de NPH desde monodosis en r2; el motor genera advertencia para reevaluar intensificación/derivación.",
+    "Pacientes que ya usan NPH AM+PM pueden ser revisados, pero r2 bloquea nuevas escaladas automáticas al alcanzar 0,5 UI/kg/día."
+  ],
   "regressionMatrix": [
     "tests/clinical-engine.test.js",
     "tests/clinical-engine-regression.test.js",
-    "tests/clinical-engine-contract.test.js"
+    "tests/clinical-engine-contract.test.js",
+    "tests/clinical-copy.test.js"
   ],
   "changePolicy": "Todo cambio intencional de dosis, umbral, criterio o conducta clínica en clinical-engine.js debe cambiar esta versión y mantener verde la matriz de regresión clínica."
 }
