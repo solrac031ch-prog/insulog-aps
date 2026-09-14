@@ -16,9 +16,7 @@
   const state = runtime.state;
   const actions = runtime.actions;
 
-  function exclusion() {
-    show(byId("alerta"), true);
-  }
+  function exclusion() { show(byId("alerta"), true); }
 
   function mostrarInicio() {
     show(byId("criterios"), true);
@@ -32,42 +30,49 @@
   }
 
   function definirEsquemaInicio() {
-    const hba1c = parseFloat(byId("hba1c-inicio").value);
-    const ayunas = parseFloat(byId("glicemia-ayunas-inicio").value);
-    const casual = parseFloat(byId("glicemia-casual-inicio").value);
+    const hba1c = parseFloat(byId("hba1c-inicio")?.value);
+    const ayunas = parseFloat(byId("glicemia-ayunas-inicio")?.value);
+    const casual = parseFloat(byId("glicemia-casual-inicio")?.value);
+    const age = parseFloat(byId("edad-inicio")?.value);
+    const bmi = parseFloat(byId("imc-inicio")?.value);
+    const egfr = parseFloat(byId("vfg-inicio")?.value);
 
     const inicio = all(".inicio-btn.seleccionada").map((control) => control.dataset.value);
     const catabolicos = all(".catabolico-btn.seleccionada").map((control) => control.dataset.value);
     const riesgoHipo = all(".riesgo-hipo-btn.seleccionada").map((control) => control.dataset.value);
 
     const decision = clinicalEngine.suggestInitialScheme({
-      hba1c,
-      fasting: ayunas,
-      casual,
-      initiationCriteria: inicio,
-      catabolic: catabolicos,
-      hypoRisk: riesgoHipo
+      hba1c, fasting: ayunas, casual, initiationCriteria: inicio, catabolic: catabolicos,
+      hypoRisk: riesgoHipo, age, bmi, egfr
     });
 
+    if (decision.emergency) {
+      renderNotaClinica(`INICIO\nALERTA: POSIBLE CRISIS HIPERGLICÉMICA / CETOSIS.\n${decision.emergencyReason}\nNo utilizar este algoritmo para titulación ambulatoria.`);
+      go(5);
+      return decision;
+    }
+
     if (decision.criteria.length === 0) {
-      alert("Ingrese al menos un dato o criterio de inicio.");
+      alert("Con los datos ingresados no se identifica una indicación protocolizada de inicio de NPH en este flujo. Revise el control metabólico, adherencia, tratamiento y contexto clínico.");
       return undefined;
     }
 
-    byId("factor-dosis").value = String(decision.factor);
+    const factorInput = byId("factor-dosis");
+    if (factorInput) factorInput.value = String(decision.factor);
 
     state.patch({
       criteria: decision.criteriaText,
       esquemaInicio: decision.scheme,
       textoEsquemaInicio: decision.schemeText,
       motivoEsquemaInicio: decision.reason,
+      sensibilidadInsulina: decision.sensitivity?.label || "",
       catabolicos: decision.catabolicText,
       riesgoHipo: decision.hypoRiskText
     });
 
     const caja = byId("sugerencia-esquema-inicio");
     if (caja) {
-      caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(decision.schemeText)}<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(decision.reason)}`;
+      caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(decision.schemeText)}<br><br><strong>Sensibilidad:</strong> ${notePresenter.escapeHTML(decision.sensitivity?.label || "No determinada")}<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(decision.reason)}`;
       show(caja, true);
     }
 
@@ -80,57 +85,40 @@
     const data = state.snapshot();
     const caja = byId("resumen-esquema-inicio");
     if (!caja || !data.textoEsquemaInicio) return;
-
-    caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(data.textoEsquemaInicio)}<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(data.motivoEsquemaInicio)}`;
+    caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(data.textoEsquemaInicio)}<br><br><strong>Sensibilidad:</strong> ${notePresenter.escapeHTML(data.sensibilidadInsulina || "No determinada")}<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(data.motivoEsquemaInicio)}`;
     show(caja, true);
   }
 
   function calcularInicioMejorado() {
-    const peso = parseFloat(byId("peso-paciente").value);
-    const factor = parseFloat(byId("factor-dosis").value);
+    const peso = parseFloat(byId("peso-paciente")?.value);
+    const factor = parseFloat(byId("factor-dosis")?.value);
     const data = state.snapshot();
 
     if (!Number.isFinite(peso) || peso <= 0 || peso > 300) {
       alert("Ingrese un peso válido entre 1 y 300 kg.");
       return undefined;
     }
-
     if (!data.criteria) {
-      alert("Complete primero los datos disponibles para orientar el esquema inicial.");
+      alert("Complete primero los datos clínicos para confirmar la indicación y orientar el esquema inicial.");
       go(2);
       return undefined;
     }
 
-    const resultado = clinicalEngine.calculateInitialDose({
-      weightKg: peso,
-      factor,
-      scheme: data.esquemaInicio
-    });
-
-    state.patch({
-      am: resultado.am,
-      pm: resultado.pm,
-      dosisKg: resultado.dosePerKg
-    });
+    const resultado = clinicalEngine.calculateInitialDose({ weightKg: peso, factor, scheme: data.esquemaInicio });
+    state.patch({ am: resultado.am, pm: resultado.pm, dosisKg: resultado.dosePerKg });
 
     const preview = byId("preview-dosis");
-    preview.innerHTML = `
-      <strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(data.textoEsquemaInicio || "NPH monodosis nocturna")}<br><br>
-      Dosis total: ${resultado.total} UI/día<br><br>
-      • Mañana: ${resultado.am} UI<br>
-      • Noche: ${resultado.pm} UI
-    `;
+    preview.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(data.textoEsquemaInicio || "NPH monodosis nocturna")}<br><br>Dosis total: ${resultado.total} UI/día (${resultado.dosePerKg.toFixed(2)} UI/kg/día)<br><br>• Mañana: ${resultado.am} UI<br>• Noche: ${resultado.pm} UI`;
     show(preview, true);
 
-    const nota = clinicalCopy.buildInitialNote({
+    renderNotaClinica(clinicalCopy.buildInitialNote({
       criteria: data.criteria,
       schemeText: data.textoEsquemaInicio || "NPH monodosis nocturna",
-      reason: data.motivoEsquemaInicio || "Inicio conservador con NPH nocturna.",
+      reason: data.motivoEsquemaInicio || "Inicio con NPH basal.",
+      sensitivity: data.sensibilidadInsulina,
       am: resultado.am,
       pm: resultado.pm
-    });
-
-    renderNotaClinica(nota);
+    }));
     go(5);
     return resultado;
   }
@@ -138,143 +126,84 @@
   function prepSeg() {
     const tbody = byId("tabla-seguimiento");
     tbody.innerHTML = "";
-
     for (let i = 1; i <= 15; i += 1) {
       const row = document.createElement("tr");
-      row.innerHTML = `
-        <td><strong>${i}</strong></td>
-        <td><input class="ay glicemia" type="text" inputmode="numeric" maxlength="3" aria-label="Día ${i}, glicemia en ayunas" autocomplete="off"></td>
-        <td><input class="pre glicemia" type="text" inputmode="numeric" maxlength="3" aria-label="Día ${i}, glicemia antes de las once" autocomplete="off"></td>
-      `;
+      row.innerHTML = `<td><strong>${i}</strong></td><td><input class="ay glicemia" type="text" inputmode="numeric" maxlength="3" aria-label="Día ${i}, glicemia en ayunas" autocomplete="off"></td><td><input class="pre glicemia" type="text" inputmode="numeric" maxlength="3" aria-label="Día ${i}, glicemia pre-almuerzo" autocomplete="off"></td>`;
       tbody.appendChild(row);
     }
-
     go(4);
   }
 
   function calcularSeguimientoPro() {
-    const peso = parseFloat(byId("peso-seguimiento").value);
-    const tipo = byId("tipo-esquema").value;
+    if (byId("nivel3-referido")?.checked) {
+      renderNotaClinica(clinicalCopy.buildLevel3HypoglycemiaNote());
+      go(5);
+      return { urgent: true, level: 3 };
+    }
+
+    const peso = parseFloat(byId("peso-seguimiento")?.value);
+    const tipo = byId("tipo-esquema")?.value;
+    const targetA1c = parseFloat(byId("meta-hba1c-seguimiento")?.value || "7");
 
     if (!Number.isFinite(peso) || peso <= 0 || peso > 300) {
       alert("Ingrese un peso válido entre 1 y 300 kg.");
       return undefined;
     }
 
-    let am = parseInt(byId("am-actual").value, 10) || 0;
-    let pm = parseInt(byId("pm-actual").value, 10) || 0;
-
+    let am = parseInt(byId("am-actual")?.value, 10) || 0;
+    let pm = parseInt(byId("pm-actual")?.value, 10) || 0;
     if (tipo === "am") pm = 0;
     if (tipo === "pm") am = 0;
 
-    if (tipo === "am" && am <= 0) {
-      alert("Ingrese la dosis AM actual.");
-      return undefined;
-    }
+    if (tipo === "am" && am <= 0) { alert("Ingrese la dosis AM actual."); return undefined; }
+    if (tipo === "pm" && pm <= 0) { alert("Ingrese la dosis PM actual."); return undefined; }
+    if (tipo === "2" && am <= 0 && pm <= 0) { alert("Ingrese al menos una dosis actual de insulina."); return undefined; }
 
-    if (tipo === "pm" && pm <= 0) {
-      alert("Ingrese la dosis PM actual.");
-      return undefined;
-    }
+    const ayunasRaw = all(".ay").map((input) => parseInt(input.value, 10)).filter(Number.isFinite);
+    const preLunchRaw = all(".pre").map((input) => parseInt(input.value, 10)).filter(Number.isFinite);
 
-    if (tipo === "2" && am <= 0 && pm <= 0) {
-      alert("Ingrese al menos una dosis actual de insulina.");
-      return undefined;
-    }
-
-    const ayunasRaw = all(".ay")
-      .map((input) => parseInt(input.value, 10))
-      .filter((value) => Number.isFinite(value));
-
-    const preonceRaw = all(".pre")
-      .map((input) => parseInt(input.value, 10))
-      .filter((value) => Number.isFinite(value));
-
-    if (ayunasRaw.length < 3) {
-      alert("Se requieren al menos 3 glicemias en ayunas.");
-      return undefined;
-    }
+    if (ayunasRaw.length < 3) { alert("Se requieren al menos 3 glicemias en ayunas de días distintos."); return undefined; }
+    if ((tipo === "am" || tipo === "2") && preLunchRaw.length < 3) { alert("Para ajustar NPH AM se requieren al menos 3 glicemias pre-almuerzo de días distintos."); return undefined; }
 
     const resultado = clinicalEngine.calculateFollowup({
-      weightKg: peso,
-      regimenType: tipo,
-      amDose: am,
-      pmDose: pm,
-      fastingValues: ayunasRaw,
-      preElevenValues: preonceRaw
+      weightKg: peso, regimenType: tipo, amDose: am, pmDose: pm,
+      fastingValues: ayunasRaw, preLunchValues: preLunchRaw, targetA1c
     });
 
     state.patch({
-      amActual: resultado.amActual,
-      pmActual: resultado.pmActual,
-      am: resultado.am,
-      pm: resultado.pm,
-      promAy: resultado.promAy,
-      promPre: resultado.promPre,
-      promedioGlobal: resultado.promedioGlobal,
-      hba1cEstimada: resultado.hba1cEstimada,
-      dosisKg: resultado.dosisKg,
-      acciones: "",
-      explicacion: resultado.explicacion
+      amActual: resultado.amActual, pmActual: resultado.pmActual, am: resultado.am, pm: resultado.pm,
+      promAy: resultado.promAy, promPre: resultado.promPre, minAy: resultado.minAy, minPre: resultado.minPre,
+      promedioGlobal: resultado.promedioGlobal, dosisKg: resultado.dosisKg, targetA1c: resultado.targetA1c,
+      acciones: "", explicacion: resultado.explicacion
     });
 
     const data = state.snapshot();
     const resumen = byId("resumen-promedios");
-    resumen.innerHTML = `
-      <strong>Promedios usados:</strong><br>
-      Ayunas: ${data.promAy} mg/dL<br>
-      Pre-once: ${data.promPre} mg/dL<br>
-      Dosis total: ${resultado.am + resultado.pm} UI/día (${resultado.dosisKg.toFixed(2)} UI/kg/día)<br>
-      Esquema final: ${resultado.schemeLabel}
-    `;
+    resumen.innerHTML = `<strong>Datos para titulación:</strong><br>Menor ayunas: ${data.minAy} mg/dL<br>Menor pre-almuerzo: ${data.minPre} mg/dL<br>Promedio ayunas (descriptivo): ${data.promAy} mg/dL<br>Promedio pre-almuerzo (descriptivo): ${data.promPre} mg/dL<br>Meta HbA1c: &lt;${data.targetA1c}%<br>Dosis total: ${resultado.am + resultado.pm} UI/día (${resultado.dosisKg.toFixed(2)} UI/kg/día)<br>Esquema final: ${resultado.schemeLabel}`;
     show(resumen, true);
 
-    if (resultado.requiresHighDoseReview) {
-      go(41);
-      return resultado;
-    }
+    if (resultado.requiresHighDoseReview) { go(41); return resultado; }
 
-    const nota = clinicalCopy.buildFollowupNote({
-      promAy: data.promAy,
-      promPre: data.promPre,
-      promedioGlobal: data.promedioGlobal,
-      hba1cEstimada: data.hba1cEstimada,
-      amActual: data.amActual,
-      pmActual: data.pmActual,
-      am: resultado.am,
-      pm: resultado.pm,
-      dosisKg: resultado.dosisKg,
-      explicacion: data.explicacion
-    });
-
-    renderNotaClinica(nota);
+    renderNotaClinica(clinicalCopy.buildFollowupNote({
+      promAy: data.promAy, promPre: data.promPre, minAy: data.minAy, minPre: data.minPre,
+      targetA1c: data.targetA1c, amActual: data.amActual, pmActual: data.pmActual,
+      am: resultado.am, pm: resultado.pm, dosisKg: resultado.dosisKg, explicacion: data.explicacion
+    }));
     go(5);
     return resultado;
   }
 
   function generarNotaDosisAlta() {
     const accionesSeleccionadas = all("#p41 .action-btn.seleccionada").map((action) => action.dataset.value);
-
-    if (accionesSeleccionadas.length > 0) {
-      accionesSeleccionadas.unshift("Evaluación y seguimiento por Medicina Interna APS");
-    }
-
+    if (accionesSeleccionadas.length > 0) accionesSeleccionadas.unshift("Evaluación y seguimiento por Medicina Interna APS");
     state.patch({ acciones: accionesSeleccionadas.join("\n") });
     const data = state.snapshot();
 
     const nota = clinicalCopy.buildHighDoseNote({
-      promAy: data.promAy,
-      promPre: data.promPre,
-      promedioGlobal: data.promedioGlobal,
-      hba1cEstimada: data.hba1cEstimada,
-      amActual: data.amActual,
-      pmActual: data.pmActual,
-      am: data.am,
-      pm: data.pm,
-      explicacion: data.explicacion,
-      acciones: data.acciones
+      promAy: data.promAy, promPre: data.promPre, minAy: data.minAy, minPre: data.minPre,
+      targetA1c: data.targetA1c, amActual: data.amActual, pmActual: data.pmActual,
+      am: data.am, pm: data.pm, dosisKg: data.dosisKg, explicacion: data.explicacion, acciones: data.acciones
     });
-
     renderNotaClinica(nota);
     go(5);
     return nota;
@@ -289,73 +218,42 @@
   async function copiarNota() {
     const nota = byId("nota-clinica");
     const text = nota.dataset.rawText || nota.innerText;
-
-    if (!text.trim()) {
-      mostrarEstadoCopia("No hay una nota para copiar.", false);
-      return;
-    }
-
+    if (!text.trim()) { mostrarEstadoCopia("No hay una nota para copiar.", false); return; }
     try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(text);
-      } else {
-        copiarNotaFallback(text);
-      }
+      if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+      else copiarNotaFallback(text);
       mostrarEstadoCopia("✓ Nota copiada al portapapeles", true);
     } catch {
-      try {
-        copiarNotaFallback(text);
-        mostrarEstadoCopia("✓ Nota copiada al portapapeles", true);
-      } catch {
-        mostrarEstadoCopia("No se pudo copiar automáticamente. Seleccione y copie la nota manualmente.", false);
-      }
+      try { copiarNotaFallback(text); mostrarEstadoCopia("✓ Nota copiada al portapapeles", true); }
+      catch { mostrarEstadoCopia("No se pudo copiar automáticamente. Seleccione y copie la nota manualmente.", false); }
     }
   }
 
   function copiarNotaFallback(text) {
     const area = document.createElement("textarea");
-    area.value = text;
-    area.setAttribute("readonly", "");
-    area.style.position = "fixed";
-    area.style.left = "-9999px";
-    document.body.appendChild(area);
-    area.select();
-    const copied = document.execCommand("copy");
-    document.body.removeChild(area);
+    area.value = text; area.setAttribute("readonly", ""); area.style.position = "fixed"; area.style.left = "-9999px";
+    document.body.appendChild(area); area.select(); const copied = document.execCommand("copy"); document.body.removeChild(area);
     if (!copied) throw new Error("copy failed");
   }
 
   function mostrarEstadoCopia(mensaje, ok) {
     const status = byId("copy-status");
-    status.textContent = mensaje;
-    status.style.color = ok ? "var(--success)" : "var(--danger)";
-    window.setTimeout(() => {
-      if (status.textContent === mensaje) status.textContent = "";
-    }, 3200);
+    status.textContent = mensaje; status.style.color = ok ? "var(--success)" : "var(--danger)";
+    window.setTimeout(() => { if (status.textContent === mensaje) status.textContent = ""; }, 3200);
   }
 
   function finalizar() {
     if (!confirm("¿Desea finalizar el caso actual? Se borrarán los datos para un nuevo paciente.")) return false;
-
     state.reset();
-
-    all("input").forEach((input) => { input.value = ""; });
+    all("input").forEach((input) => { if (input.type === "checkbox") input.checked = false; else input.value = ""; });
     all("select").forEach((select) => { select.selectedIndex = 0; });
-    byId("factor-dosis").value = "0.2";
-    byId("tipo-esquema").value = "2";
-    all(".seleccionada").forEach((button) => {
-      button.classList.remove("seleccionada");
-      button.setAttribute("aria-pressed", "false");
-    });
-
+    if (byId("factor-dosis")) byId("factor-dosis").value = "0.2";
+    if (byId("tipo-esquema")) byId("tipo-esquema").value = "2";
+    if (byId("meta-hba1c-seguimiento")) byId("meta-hba1c-seguimiento").value = "7";
+    all(".seleccionada").forEach((button) => { button.classList.remove("seleccionada"); button.setAttribute("aria-pressed", "false"); });
     ["alerta", "criterios", "sugerencia-esquema-inicio", "resumen-esquema-inicio", "preview-dosis", "resumen-promedios"].forEach((id) => show(byId(id), false));
-    byId("tabla-seguimiento").innerHTML = "";
-    byId("nota-clinica").innerHTML = "";
-    byId("nota-clinica").dataset.rawText = "";
-    byId("pdf").innerHTML = "";
-    byId("copy-status").textContent = "";
-    go(0);
-    return true;
+    byId("tabla-seguimiento").innerHTML = ""; byId("nota-clinica").innerHTML = ""; byId("nota-clinica").dataset.rawText = "";
+    byId("pdf").innerHTML = ""; byId("copy-status").textContent = ""; go(0); return true;
   }
 
   function sanitizeNumericInput(input, maxLength = 3, maxValue = 999) {
@@ -365,18 +263,9 @@
 
   function handleInput(event) {
     const target = event.target;
-
-    if (target.matches(".glicemia")) {
-      sanitizeNumericInput(target, 3, 999);
-    }
-
-    if (target.id === "am-actual" || target.id === "pm-actual") {
-      sanitizeNumericInput(target, 2, 99);
-    }
-
-    if (target.id === "peso-paciente" || target.id === "peso-seguimiento") {
-      if (Number(target.value) > 300) target.value = "300";
-    }
+    if (target.matches(".glicemia")) sanitizeNumericInput(target, 3, 999);
+    if (target.id === "am-actual" || target.id === "pm-actual") sanitizeNumericInput(target, 2, 99);
+    if (target.id === "peso-paciente" || target.id === "peso-seguimiento") { if (Number(target.value) > 300) target.value = "300"; }
   }
 
   actions.register("navigate", ({ element }) => go(Number(element?.dataset.page)));
@@ -393,7 +282,7 @@
   actions.register("finish", finalizar);
 
   window.InsulogApp = Object.freeze({
-    version: "2026.09.10-phase6",
+    version: "2026.09.14-clinical-r2",
     notes: Object.freeze({ render: renderNotaClinica }),
     inputs: Object.freeze({ handle: handleInput }),
     text: Object.freeze({ escapeHTML: notePresenter.escapeHTML })
