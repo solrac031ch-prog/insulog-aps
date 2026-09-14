@@ -1,7 +1,10 @@
 from pathlib import Path
 import re
 
+from app_shell_release import compute_release
+
 ROOT = Path(__file__).resolve().parents[1]
+RELEASE = compute_release()
 
 
 def text(path: str) -> str:
@@ -106,35 +109,36 @@ require(
     "Phase 7B screen polish styles",
 )
 
+def asset(path: str) -> str:
+    return f"./{path}?v={RELEASE}"
+
+
 direct_assets = [
-    "./app-runtime.js?v=20260910-2",
-    "./clinical-engine.js?v=20260910-3",
-    "./app.js?v=20260910-4",
-    "./patient-document.js?v=20260910-2",
-    "./pdf-enhancements.js?v=20260910-5",
-    "./aps-safety-2026.js?v=20260910-3",
-    "./farmacia-popular.js?v=20260827-4",
-    "./document-flow.js?v=20260910-2",
-    "./app-shell.js?v=20260910-2",
-    "./document-flow.css?v=20260910-1",
-    "./aps-safety-2026.css?v=20260827-2",
-    "./farmacia-popular.css?v=20260827-2",
+    asset("app-runtime.js"),
+    asset("clinical-engine.js"),
+    asset("app.js"),
+    asset("patient-document.js"),
+    asset("pdf-enhancements.js"),
+    asset("aps-safety-2026.js"),
+    asset("farmacia-popular.js"),
+    asset("document-flow.js"),
+    asset("app-shell.js"),
+    asset("document-flow.css"),
+    asset("aps-safety-2026.css"),
+    asset("farmacia-popular.css"),
 ]
-require(html, direct_assets + ["./styles.css?v=20260910-2"], "Direct application assets")
-require(html, ['id="pdf-preview-frame"', './pdf-preview.html?v=20260910-1', 'pdf-render-staging'], "Isolated PDF host")
+require(html, direct_assets + [asset("styles.css")], "Direct application assets")
+require(html, ['id="pdf-preview-frame"', asset("pdf-preview.html"), 'pdf-render-staging'], "Isolated PDF host")
 forbid(html, ['href="./pdf-enhancements.css', 'href="./pdf-design-2026.css'], "Parent application PDF styles")
 require(
     pdf_preview_html,
-    [
-        './styles.css?v=20260910-2', './document-flow.css?v=20260914-1',
-        './pdf-enhancements.css?v=20260914-1', './pdf-design-2026.css?v=20260914-1', 'id="pdf"'
-    ],
+    [asset("styles.css"), asset("document-flow.css"), asset("pdf-enhancements.css"), asset("pdf-design-2026.css"), 'id="pdf"'],
     "Isolated PDF document assets",
 )
-if pdf_preview_html.index('./pdf-design-2026.css?v=20260914-1') < pdf_preview_html.index('./document-flow.css?v=20260914-1'):
+if pdf_preview_html.index(asset("pdf-design-2026.css")) < pdf_preview_html.index(asset("document-flow.css")):
     raise SystemExit("PDF design must load after document-flow.css and remain the final visual authority")
 
-script_order = [html.index(asset) for asset in direct_assets[:9]]
+script_order = [html.index(item) for item in direct_assets[:9]]
 if script_order != sorted(script_order):
     raise SystemExit("JavaScript load order must remain runtime -> clinical engine -> app -> patient document -> PDF -> APS safety -> pharmacy -> document flow -> shell")
 
@@ -381,7 +385,7 @@ require(
 )
 require(pharmacy_css, [".farmacia-popular"], "Farmacia Popular styling")
 
-# Phase 8D PWA: shell is immutable for the lifetime of one service-worker release.
+# Phase 8D/8E PWA: shell is immutable and all versioning comes from one fingerprint.
 forbid(
     sw,
     [
@@ -393,11 +397,11 @@ forbid(
 require(
     sw,
     [
-        'const CACHE_NAME = "insulog-shell-20260914-atomic26"',
-        'const DEPLOYMENT_REVISION = "phase8d-immutable-shell-20260914-r1"',
+        f'const CACHE_NAME = "insulog-shell-{RELEASE}"',
+        f'const DEPLOYMENT_REVISION = "release-{RELEASE}"',
         'new Request(asset, { cache: "reload" })', "precacheFreshShell",
         'event.waitUntil(precacheFreshShell())', 'addEventListener("fetch"', 'caches.delete',
-        'const PDF_PREVIEW_PATH = "./pdf-preview.html?v=20260914-1"',
+        f'const PDF_PREVIEW_PATH = "./pdf-preview.html?v={RELEASE}"',
         'url.pathname.endsWith("/pdf-preview.html")', 'cache.match(navigationAsset)',
         "SHELL_ASSET_BY_PATH", "cache.match(shellAsset)",
     ],
@@ -406,17 +410,19 @@ require(
 require(
     sw,
     [
-        "./index.html", "./styles.css?v=20260910-2", "./app-runtime.js?v=20260910-2",
-        "./clinical-engine.js?v=20260910-3", "./app.js?v=20260910-4", "./patient-document.js?v=20260910-2",
-        "./pdf-preview.html?v=20260914-1", "./document-flow.css?v=20260914-1",
-        "./pdf-enhancements.css?v=20260914-1", "./pdf-design-2026.css?v=20260914-1",
-        "./pdf-enhancements.js?v=20260910-5", "./aps-safety-2026.js?v=20260910-3",
-        "./farmacia-popular.js?v=20260827-4", "./document-flow.js?v=20260910-2", "./app-shell.js?v=20260910-2",
+        "./index.html", asset("styles.css"), asset("app-runtime.js"), asset("clinical-engine.js"),
+        asset("app.js"), asset("patient-document.js"), asset("pdf-preview.html"), asset("document-flow.css"),
+        asset("pdf-enhancements.css"), asset("pdf-design-2026.css"), asset("pdf-enhancements.js"),
+        asset("aps-safety-2026.js"), asset("farmacia-popular.js"), asset("document-flow.js"), asset("app-shell.js"),
     ],
     "Critical cached app-shell assets",
 )
-if "./document-flow.css?v=20260910-1" in sw:
-    raise SystemExit("Stale document-flow.css version must not coexist in APP_SHELL")
+
+version_tokens = set()
+for source in (html, pdf_preview_html, sw):
+    version_tokens.update(re.findall(r"\?v=([A-Za-z0-9._-]+)", source))
+if version_tokens != {RELEASE}:
+    raise SystemExit(f"Mixed app-shell release tokens: expected {RELEASE}, found {sorted(version_tokens)}")
 
 if "followup-flow-2026.js" in html or "followup-flow-2026.js" in sw:
     raise SystemExit("Broken dynamic follow-up flow must not return")
@@ -425,4 +431,4 @@ if "followup-flow-2026.js" in html or "followup-flow-2026.js" in sw:
 runtime_sources = "\n".join([runtime_js, clinical_engine, app, patient_document_js, pdf_js, doc_js, aps_js, pharmacy_js, shell_js])
 forbid(runtime_sources, ["localStorage", "sessionStorage", "indexedDB"], "Patient data persistence")
 
-print("Insulog Phase 8D immutable shell, readable PDF, clinical engine, pharmacy and privacy invariants passed")
+print(f"Insulog release {RELEASE}: immutable shell, readable PDF, clinical engine, pharmacy and privacy invariants passed")
