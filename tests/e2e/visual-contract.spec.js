@@ -142,7 +142,7 @@ async function gotoHypoglycemiaAlert(page) {
   await page.locator("#ajustar-seguimiento-btn").click();
   await expect(page.locator("#p4")).toHaveClass(/active/);
   await expect(page.locator("#alerta-hipoglicemia-ada")).toBeVisible();
-  await expect(page.locator("#hipo-ada-titulo")).toContainText("nivel 1");
+  await expect(page.locator("#hipo-ada-titulo")).toContainText("Hipoglicemia detectada");
 }
 
 async function gotoHighDoseReview(page) {
