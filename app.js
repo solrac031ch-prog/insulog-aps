@@ -105,6 +105,7 @@
     }
 
     const resultado = clinicalEngine.calculateInitialDose({ weightKg: peso, factor, scheme: data.esquemaInicio });
+    if (resultado.valid === false) { alert("No fue posible calcular una dosis inicial segura con los datos ingresados. Revise peso, esquema y factor antes de continuar."); return undefined; }
     state.patch({ am: resultado.am, pm: resultado.pm, dosisKg: resultado.dosePerKg });
 
     const preview = byId("preview-dosis");
@@ -152,7 +153,7 @@
 
     if (tipo === "am" && am <= 0) { alert("Ingrese la dosis AM actual."); return undefined; }
     if (tipo === "pm" && pm <= 0) { alert("Ingrese la dosis PM actual."); return undefined; }
-    if (tipo === "2" && am <= 0 && pm <= 0) { alert("Ingrese al menos una dosis actual de insulina."); return undefined; }
+    if (tipo === "2" && (am <= 0 || pm <= 0)) { alert("Para un esquema AM + PM ingrese ambas dosis actuales."); return undefined; }
 
     const ayunasRaw = all(".ay").map((input) => parseInt(input.value, 10)).filter(Number.isFinite);
     const preLunchRaw = all(".pre").map((input) => parseInt(input.value, 10)).filter(Number.isFinite);
@@ -164,6 +165,7 @@
       weightKg: peso, regimenType: tipo, amDose: am, pmDose: pm,
       fastingValues: ayunasRaw, preLunchValues: preLunchRaw, targetA1c
     });
+    if (resultado.inputValid === false || resultado.dataSufficient === false) { alert((resultado.validationErrors || []).join("\n") || "Insulog bloqueó la titulación por datos insuficientes o inválidos."); return undefined; }
 
     state.patch({
       amActual: resultado.amActual, pmActual: resultado.pmActual, am: resultado.am, pm: resultado.pm,
@@ -259,7 +261,7 @@
   function handleInput(event) {
     const target = event.target;
     if (target.matches(".glicemia")) sanitizeNumericInput(target, 3, 999);
-    if (target.id === "am-actual" || target.id === "pm-actual") sanitizeNumericInput(target, 2, 99);
+    if (target.id === "am-actual" || target.id === "pm-actual") sanitizeNumericInput(target, 3, 150);
     if (target.id === "peso-paciente" || target.id === "peso-seguimiento") { if (Number(target.value) > 300) target.value = "300"; }
   }
 
@@ -278,6 +280,7 @@
 
   window.InsulogApp = Object.freeze({
     version: "2026.09.14-clinical-r2",
+    clinicalVersion: "APS-NPH-2026.09.14-r2",
     notes: Object.freeze({ render: renderNotaClinica }),
     inputs: Object.freeze({ handle: handleInput }),
     text: Object.freeze({ escapeHTML: notePresenter.escapeHTML })

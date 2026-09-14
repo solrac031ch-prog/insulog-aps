@@ -17,7 +17,16 @@
   "regressionMatrix": [
     "tests/clinical-engine.test.js",
     "tests/clinical-engine-regression.test.js",
-    "tests/clinical-engine-contract.test.js"
+    "tests/clinical-engine-contract.test.js",
+    "tests/clinical-engine-hardening.test.js"
   ],
-  "changePolicy": "Todo cambio intencional de dosis, umbral, criterio o conducta clínica en clinical-engine.js debe cambiar esta versión y mantener verde la matriz de regresión clínica."
+  "changePolicy": "Todo cambio intencional de dosis, umbral, criterio o conducta clínica en clinical-engine.js debe cambiar esta versión y mantener verde la matriz de regresión clínica.",
+  "hardeningRevision": "2026.09.14-safety1",
+  "safetyGuards": [
+    "El motor no titula con menos de 3 glicemias válidas del perfil requerido.",
+    "Valores de glicemia inválidos bloquean la titulación automática en vez de ser ignorados silenciosamente.",
+    "Cualquier hipoglicemia registrada bloquea todos los aumentos automáticos de NPH durante esa evaluación.",
+    "Peso, esquema o dosis actuales inconsistentes fallan cerrados y mantienen la dosis sin cambios.",
+    "Un autotest de versión e invariantes clínicos bloquea acciones críticas si detecta una carga incoherente."
+  ]
 }

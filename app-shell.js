@@ -37,9 +37,13 @@
       if (!action) return;
       try {
         const result = actions.invoke(action, { element, event });
-        if (result && typeof result.catch === "function") result.catch((error) => console.error(`Error ejecutando acción ${action}:`, error));
+        if (result && typeof result.catch === "function") result.catch((error) => {
+          console.error(`Error ejecutando acción ${action}:`, error);
+          window.InsulogSafetyGuard?.reportActionError(action, error);
+        });
       } catch (error) {
         console.error(`Error ejecutando acción ${action}:`, error);
+        window.InsulogSafetyGuard?.reportActionError(action, error);
       }
     });
   }

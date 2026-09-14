@@ -5,16 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b63ce">
   <meta name="description" content="Herramienta de apoyo clínico para inicio, seguimiento y ajuste de insulina NPH en Atención Primaria de Salud.">
+  <meta name="referrer" content="no-referrer">
+  <meta name="insulog-clinical-version" content="APS-NPH-2026.09.14-r2">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Insulog APS">
-  <link rel="manifest" href="./manifest.webmanifest?v=e82b4e687a3b8267">
-  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/icon-32.png?v=e82b4e687a3b8267">
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/icon-180.png?v=e82b4e687a3b8267">
-  <link rel="stylesheet" href="./styles.css?v=e82b4e687a3b8267">
-  <link rel="stylesheet" href="./document-flow.css?v=e82b4e687a3b8267">
-  <link rel="stylesheet" href="./aps-safety-2026.css?v=e82b4e687a3b8267">
-  <link rel="stylesheet" href="./farmacia-popular.css?v=e82b4e687a3b8267">
+  <link rel="manifest" href="./manifest.webmanifest?v=78b8b148b41a1817">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/icon-32.png?v=78b8b148b41a1817">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/icon-180.png?v=78b8b148b41a1817">
+  <link rel="stylesheet" href="./styles.css?v=78b8b148b41a1817">
+  <link rel="stylesheet" href="./document-flow.css?v=78b8b148b41a1817">
+  <link rel="stylesheet" href="./aps-safety-2026.css?v=78b8b148b41a1817">
+  <link rel="stylesheet" href="./farmacia-popular.css?v=78b8b148b41a1817">
   <title>Insulog APS | Insulinización en APS</title>
 </head>
 <body>
@@ -149,7 +151,7 @@
     <section id="p3" class="page page-center" aria-hidden="true">
       <div class="page-label">Inicio · dosis NPH</div>
       <h2>Dosis inicial de insulina NPH</h2>
-      <p class="lead">Ingrese el peso. El factor mostrado se propone según la evaluación previa y puede revisarse antes de calcular.</p>
+      <p class="lead">Ingrese el peso. El factor de inicio se determina automáticamente según la evaluación clínica previa.</p>
 
       <div id="resumen-esquema-inicio" class="alert alert-info text-left is-hidden"></div>
 
@@ -163,7 +165,7 @@
           <select id="factor-dosis">
             <option value="0.1">Alto riesgo → adulto mayor, ERC o fragilidad</option>
             <option value="0.2" selected>Riesgo estándar</option>
-            <option value="0.3">Bajo riesgo → hiperglicemia marcada</option>
+            
           </select>
         </div>
       </div>
@@ -174,7 +176,7 @@
           <ul class="compact-list">
             <li><strong>0.1 UI/kg:</strong> alto riesgo de hipoglicemia (adulto mayor, ERC, fragilidad)</li>
             <li><strong>0.2 UI/kg:</strong> paciente estándar</li>
-            <li><strong>0.3 UI/kg:</strong> hiperglicemia marcada o descompensación</li>
+            <li><strong>0,3 UI/kg:</strong> no se propone automáticamente en el flujo basal 2026 de Insulog.</li>
           </ul>
         </div>
       </details>
@@ -248,14 +250,14 @@
           </div>
           <div class="field">
             <label for="am-actual">Dosis AM actual</label>
-            <input type="text" inputmode="numeric" id="am-actual" maxlength="2" placeholder="00" autocomplete="off">
+            <input type="text" inputmode="numeric" id="am-actual" maxlength="3" placeholder="0" autocomplete="off">
           </div>
           <div class="field">
             <label for="pm-actual">Dosis PM actual</label>
-            <input type="text" inputmode="numeric" id="pm-actual" maxlength="2" placeholder="00" autocomplete="off">
+            <input type="text" inputmode="numeric" id="pm-actual" maxlength="3" placeholder="0" autocomplete="off">
           </div>
         </div>
-        <p class="helper-text followup-dose-help">Rango permitido por campo de dosis: 04–99 UI.</p>
+        <p class="helper-text followup-dose-help">Rango permitido por dosis activa: 1–150 UI.</p>
       </div>
 
       <div class="table-guide text-left">
@@ -270,7 +272,7 @@
             <tr>
               <th scope="col">Día</th>
               <th scope="col">Ayunas <span class="th-unit">mg/dL</span></th>
-              <th scope="col">Antes de la once <span class="th-unit">mg/dL</span></th>
+              <th scope="col">Pre-almuerzo <span class="th-unit">mg/dL</span></th>
             </tr>
           </thead>
           <tbody id="tabla-seguimiento"></tbody>
@@ -300,7 +302,7 @@
       <p class="lead">Seleccione las acciones que correspondan para dejar una conducta explícita en la nota clínica.</p>
 
       <div class="alert alert-danger text-left">
-        <p><strong>⚠️ Paciente en dosis alta de insulina (≥0.7 UI/kg/día)</strong></p>
+        <p><strong>⚠️ Dosis basal en umbral de seguridad (≥0,5 UI/kg/día)</strong></p>
         <p>Mantener controles y seguimiento por medicina interna APS.</p>
         <p><strong>Acciones sugeridas:</strong></p>
         <div class="stack-actions">
@@ -368,7 +370,7 @@
       </div>
 
       <div class="pdf-preview-frame-shell no-print">
-        <iframe id="pdf-preview-frame" class="pdf-preview-frame" src="./pdf-preview.html?v=e82b4e687a3b8267" title="Vista previa del documento del paciente" aria-busy="true"></iframe>
+        <iframe id="pdf-preview-frame" class="pdf-preview-frame" src="./pdf-preview.html?v=78b8b148b41a1817" title="Vista previa del documento del paciente" aria-busy="true"></iframe>
       </div>
     </section>
   </main>
@@ -380,18 +382,19 @@
 
   <div id="pdf" class="imprimible-container pdf-render-staging" aria-hidden="true"></div>
 
-  <script src="./app-runtime.js?v=e82b4e687a3b8267"></script>
-  <script src="./clinical-engine.js?v=e82b4e687a3b8267"></script>
-  <script src="./clinical-copy.js?v=e82b4e687a3b8267"></script>
-  <script src="./note-presenter.js?v=e82b4e687a3b8267"></script>
-  <script src="./app.js?v=e82b4e687a3b8267"></script>
-  <script src="./patient-document.js?v=e82b4e687a3b8267"></script>
-  <script src="./pdf-enhancements.js?v=e82b4e687a3b8267"></script>
-  <script src="./aps-safety-2026.js?v=e82b4e687a3b8267"></script>
-  <script src="./farmacia-popular.js?v=e82b4e687a3b8267"></script>
-  <script src="./document-flow.js?v=e82b4e687a3b8267"></script>
-  <script src="./app-shell.js?v=e82b4e687a3b8267"></script>
-  <script src="./phase6b-professional-decision.js?v=e82b4e687a3b8267"></script>
-  <script src="./phase6b-document-sync.js?v=e82b4e687a3b8267"></script>
+  <script src="./app-runtime.js?v=78b8b148b41a1817"></script>
+  <script src="./clinical-engine.js?v=78b8b148b41a1817"></script>
+  <script src="./clinical-copy.js?v=78b8b148b41a1817"></script>
+  <script src="./note-presenter.js?v=78b8b148b41a1817"></script>
+  <script src="./app.js?v=78b8b148b41a1817"></script>
+  <script src="./safety-guard.js?v=78b8b148b41a1817"></script>
+  <script src="./patient-document.js?v=78b8b148b41a1817"></script>
+  <script src="./pdf-enhancements.js?v=78b8b148b41a1817"></script>
+  <script src="./aps-safety-2026.js?v=78b8b148b41a1817"></script>
+  <script src="./farmacia-popular.js?v=78b8b148b41a1817"></script>
+  <script src="./document-flow.js?v=78b8b148b41a1817"></script>
+  <script src="./app-shell.js?v=78b8b148b41a1817"></script>
+  <script src="./phase6b-professional-decision.js?v=78b8b148b41a1817"></script>
+  <script src="./phase6b-document-sync.js?v=78b8b148b41a1817"></script>
 </body>
 </html>

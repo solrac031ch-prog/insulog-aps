@@ -4,7 +4,7 @@ const assert = require("node:assert/strict");
 const engine = require("../clinical-engine.js");
 
 const safetyCases = [
-  { value: Number.NaN, expected: { level: "unknown", review: false, block: false } },
+  { value: Number.NaN, expected: { level: "unknown", review: true, block: true } },
   { value: 0.39, expected: { level: "standard", review: false, block: false } },
   { value: 0.4, expected: { level: "review", review: true, block: false } },
   { value: 0.499, expected: { level: "review", review: true, block: false } },

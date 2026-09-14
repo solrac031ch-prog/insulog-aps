@@ -76,6 +76,7 @@ required_paths = {
     "./clinical-copy.js",
     "./note-presenter.js",
     "./app.js",
+    "./safety-guard.js",
     "./patient-document.js",
     "./pdf-enhancements.js",
     "./aps-safety-2026.js",
