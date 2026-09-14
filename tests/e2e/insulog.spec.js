@@ -47,7 +47,7 @@ test("arranca sin errores JavaScript y monta las APIs explícitas", async ({ pag
   await expect(page.locator("#p0 .brand-title")).toHaveText("Insulog APS");
   await expect(page.locator("#p25")).toBeAttached();
   await expect(page.locator("#meta-hba1c-seguimiento")).toBeAttached();
-  await expect(page.locator("#nivel3-referido")).toBeAttached();
+  await expect(page.locator("#nivel3-referido")).toHaveCount(0);
   await expect(page.locator("#edad-inicio")).toBeAttached();
   await expect(page.locator("#imc-inicio")).toBeAttached();
   await expect(page.locator("#vfg-inicio")).toBeAttached();
@@ -177,16 +177,24 @@ test("hipoglicemia <54 se clasifica nivel 2 antes de ajustar", async ({ page }) 
   await fillFasting(page, [53, 105, 110]);
   await page.locator("#ajustar-seguimiento-btn").click();
   await expectActivePage(page, "p4");
-  await expect(page.locator("#hipo-ada-titulo")).toContainText("nivel 2");
+  await expect(page.locator("#hipo-ada-titulo")).toContainText("Hipoglicemia detectada");
+  await expect(page.locator("#hipo-ada-descripcion")).toContainText("<54 mg/dL");
+  await expect(page.locator(".aps-hypo-question")).toContainText("nivel 3");
 });
 
-test("hipoglicemia nivel 3 se detecta aunque no exista HGT bajo registrado", async ({ page }) => {
+test("nivel 3 se pregunta solo después de detectar un HGT <70", async ({ page }) => {
   await openFollowupTable(page);
-  await page.locator("#nivel3-referido").check();
+  await page.locator("#peso-seguimiento").fill("70");
+  await page.locator("#tipo-esquema").selectOption("pm");
+  await page.locator("#pm-actual").fill("20");
+  await fillFasting(page, [60, 105, 110]);
+  await expect(page.locator("#alerta-hipoglicemia-ada")).toBeHidden();
   await page.locator("#ajustar-seguimiento-btn").click();
+  await expect(page.locator("#alerta-hipoglicemia-ada")).toBeVisible();
+  await expect(page.locator(".aps-hypo-question")).toContainText("nivel 3");
+  await page.locator("#hipo-con-ayuda").click();
   await expectActivePage(page, "p5");
-  await expect(page.locator("#nota-clinica")).toContainText("HIPOGLICEMIA NIVEL 3 REFERIDA");
-  await expect(page.locator("#nota-clinica")).toContainText("derivación inmediata a Unidad de Emergencia Hospitalaria");
+  await expect(page.locator("#nota-clinica")).toContainText("HIPOGLICEMIA NIVEL 3");
   await expect(page.locator("#nota-clinica")).toContainText("No se realiza ajuste automático de NPH");
 });
 
@@ -200,7 +208,7 @@ test("confirmar asistencia en alerta de hipoglicemia también activa ruta nivel 
   await expect(page.locator("#alerta-hipoglicemia-ada")).toBeVisible();
   await page.locator("#hipo-con-ayuda").click();
   await expectActivePage(page, "p5");
-  await expect(page.locator("#nota-clinica")).toContainText("derivación inmediata a Unidad de Emergencia Hospitalaria");
+  await expect(page.locator("#nota-clinica")).toContainText("HIPOGLICEMIA NIVEL 3");
 });
 
 test("no escala automáticamente cuando la titulación proyectada supera 0,5 UI/kg/día", async ({ page }) => {
