@@ -69,7 +69,7 @@ require(
     "Declarative UI actions",
 )
 
-# Phase 7 visual contract: one responsive app stylesheet, touch-sized controls, no mobile page chrome.
+# Phase 7 visual contract.
 require(
     styles,
     [
@@ -82,7 +82,7 @@ require(
 )
 forbid(styles, ["overflow-x: scroll !important", "zoom:"], "Mobile UI distortion workarounds")
 
-# Phase 7B clinical UX: human labels, progressive disclosure, navigation and a native-width HGT table.
+# Phase 7B clinical UX.
 require(
     html,
     [
@@ -355,6 +355,7 @@ require(
         "const runtime = window.InsulogRuntime", "const app = window.InsulogApp", "const actions = runtime.actions",
         "function setupActionDelegation", 'closest("[data-action]")', "actions.invoke(action, { element, event })",
         "document.addEventListener(\"input\", app.inputs.handle)", "function registerServiceWorker",
+        'updateViaCache: "none"', "registration.update()",
         "runtime.navigation.go(0)", "window.InsulogShell", "DOMContentLoaded",
     ],
     "Application shell boundary",
@@ -380,32 +381,42 @@ require(
 )
 require(pharmacy_css, [".farmacia-popular"], "Farmacia Popular styling")
 
-# PWA responsibility: cache/offline only, with a fresh shell for Phase 8C PDF assets.
-forbid(sw, ["normalizarAsset", "respuestaTexto"], "Service-worker runtime transformations")
+# Phase 8D PWA: shell is immutable for the lifetime of one service-worker release.
+forbid(
+    sw,
+    [
+        "normalizarAsset", "respuestaTexto", "skipWaiting()", "clients.claim()",
+        "refreshNavigation", "refreshAsset", "event.waitUntil(refresh",
+    ],
+    "Service-worker runtime mutations",
+)
 require(
     sw,
     [
-        'const CACHE_NAME = "insulog-shell-20260914-atomic25"',
-        'const DEPLOYMENT_REVISION = "phase8c-pdf-redesign-20260914-r1"',
-        'new Request(asset, { cache: "reload" })', 'addEventListener("fetch"', 'caches.delete',
-        'event.waitUntil(refreshNavigation.catch(() => undefined))',
-        'event.waitUntil(refreshAsset.catch(() => undefined))', "fetchFresh",
+        'const CACHE_NAME = "insulog-shell-20260914-atomic26"',
+        'const DEPLOYMENT_REVISION = "phase8d-immutable-shell-20260914-r1"',
+        'new Request(asset, { cache: "reload" })', "precacheFreshShell",
+        'event.waitUntil(precacheFreshShell())', 'addEventListener("fetch"', 'caches.delete',
         'const PDF_PREVIEW_PATH = "./pdf-preview.html?v=20260914-1"',
         'url.pathname.endsWith("/pdf-preview.html")', 'cache.match(navigationAsset)',
+        "SHELL_ASSET_BY_PATH", "cache.match(shellAsset)",
     ],
-    "PWA invariants",
+    "Immutable PWA invariants",
 )
 require(
     sw,
     [
         "./index.html", "./styles.css?v=20260910-2", "./app-runtime.js?v=20260910-2",
         "./clinical-engine.js?v=20260910-3", "./app.js?v=20260910-4", "./patient-document.js?v=20260910-2",
-        "./pdf-preview.html?v=20260914-1", "./pdf-enhancements.css?v=20260914-1", "./pdf-design-2026.css?v=20260914-1",
+        "./pdf-preview.html?v=20260914-1", "./document-flow.css?v=20260914-1",
+        "./pdf-enhancements.css?v=20260914-1", "./pdf-design-2026.css?v=20260914-1",
         "./pdf-enhancements.js?v=20260910-5", "./aps-safety-2026.js?v=20260910-3",
         "./farmacia-popular.js?v=20260827-4", "./document-flow.js?v=20260910-2", "./app-shell.js?v=20260910-2",
     ],
     "Critical cached app-shell assets",
 )
+if "./document-flow.css?v=20260910-1" in sw:
+    raise SystemExit("Stale document-flow.css version must not coexist in APP_SHELL")
 
 if "followup-flow-2026.js" in html or "followup-flow-2026.js" in sw:
     raise SystemExit("Broken dynamic follow-up flow must not return")
@@ -414,4 +425,4 @@ if "followup-flow-2026.js" in html or "followup-flow-2026.js" in sw:
 runtime_sources = "\n".join([runtime_js, clinical_engine, app, patient_document_js, pdf_js, doc_js, aps_js, pharmacy_js, shell_js])
 forbid(runtime_sources, ["localStorage", "sessionStorage", "indexedDB"], "Patient data persistence")
 
-print("Insulog Phase 8C readable PDF, screen UX, clinical engine, pharmacy, privacy and PWA invariants passed")
+print("Insulog Phase 8D immutable shell, readable PDF, clinical engine, pharmacy and privacy invariants passed")
