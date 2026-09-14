@@ -15,6 +15,7 @@ const APP_SHELL = [
   "./farmacia-popular.css?v=4804df17c9c0ab6b",
   "./app-runtime.js?v=4804df17c9c0ab6b",
   "./clinical-engine.js?v=4804df17c9c0ab6b",
+  "./clinical-copy.js?v=4804df17c9c0ab6b",
   "./app.js?v=4804df17c9c0ab6b",
   "./patient-document.js?v=4804df17c9c0ab6b",
   "./pdf-enhancements.js?v=4804df17c9c0ab6b",
