@@ -98,7 +98,7 @@ Release técnico vigente al cierre de Fase 11B: **`239bc6b77d3afe3d`**.
 
 ## Cambios clínicos
 
-La versión clínica vigente es **`APS-NPH-2026.09.14-r1`** y vive en `clinical-protocol.json`.
+La versión clínica vigente es **`APS-NPH-2026.09.14-r2`** y vive en `clinical-protocol.json`.
 
 No modificar de forma incidental `clinical-engine.js`, umbrales o resultados esperados. Un cambio clínico debe:
 
@@ -116,6 +116,13 @@ Los issues clínicos abiertos se mantienen separados de las fases de arquitectur
 ## Validación en hardware real
 
 La emulación cross-browser no reemplaza dispositivos físicos. El protocolo de aceptación iPhone/Android está en [`docs/mobile-device-validation.md`](docs/mobile-device-validation.md). Fase 9B permanece abierta hasta completar esa evidencia.
+
+## Clinical Alignment r2
+
+- Motor clínico alineado con Vía Clínica MINSAL DM2 APS 2026 y detalle técnico del Protocolo de Insulinización MINSAL 2022.
+- Urgencias metabólicas e hipoglicemia nivel 3 bloquean titulación y derivan de inmediato.
+- Titulación NPH basada en el menor de 3 glicemias, metas individualizadas y ajustes porcentuales.
+- Techo automático de insulina basal: 0,5 UI/kg/día; sin intensificación automática de monodosis a BID en r2.
 
 ## Estado de ingeniería
 
