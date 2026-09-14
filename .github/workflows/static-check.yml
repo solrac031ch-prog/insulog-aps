@@ -25,6 +25,7 @@ jobs:
           node --check clinical-copy.js
           node --check note-presenter.js
           node --check app.js
+          node --check safety-guard.js
           node --check patient-document.js
           node --check app-shell.js
           node --check phase6b-professional-decision.js
@@ -37,14 +38,16 @@ jobs:
           node --check tests/clinical-engine.test.js
           node --check tests/clinical-engine-regression.test.js
           node --check tests/clinical-engine-contract.test.js
+          node --check tests/clinical-engine-hardening.test.js
           node --check tests/clinical-copy.test.js
           node --check tests/note-presenter.test.js
 
-      - name: Run clinical engine equivalence tests
+      - name: Run clinical engine equivalence and hardening tests
         run: |
           node tests/clinical-engine.test.js
           node tests/clinical-engine-regression.test.js
           node tests/clinical-engine-contract.test.js
+          node tests/clinical-engine-hardening.test.js
 
       - name: Run exact clinical-copy regression
         run: npm run test:clinical-copy
