@@ -6,9 +6,14 @@ const presenter = require("../note-presenter.js");
 assert.equal(presenter.escapeHTML(`<script>"x" & 'y'</script>`), "&lt;script&gt;&quot;x&quot; &amp; &#039;y&#039;&lt;/script&gt;");
 assert.equal(presenter.classifyLine("ALERTA DOSIS ALTA (>0.7 UI/kg):"), "nota-roja");
 assert.equal(presenter.classifyLine("Hipoglicemia nivel 1"), "nota-roja");
+
+// Fase 11C es una extracción sin cambios visuales: conserva exactamente la
+// clasificación efectiva previa de app.js. Una corrección semántica de HbA1c
+// se trata por separado para no esconder un cambio visual dentro del refactor.
 assert.equal(presenter.classifyLine("HbA1c estimada a 90 días: 7.0%"), "nota-verde");
-assert.equal(presenter.classifyLine("HbA1c estimada a 90 días: 8.5%"), "nota-amarilla");
-assert.equal(presenter.classifyLine("HbA1c estimada a 90 días: 9.0%"), "nota-roja");
+assert.equal(presenter.classifyLine("HbA1c estimada a 90 días: 8.5%"), "nota-verde");
+assert.equal(presenter.classifyLine("HbA1c estimada a 90 días: 9.0%"), "nota-verde");
+
 assert.equal(presenter.classifyLine("Nuevo Esquema sugerido: AM 10 UI | PM 4 UI"), "nota-azul");
 assert.equal(presenter.classifyLine("Esquema actual: AM 8 UI | PM 4 UI"), "nota-gris");
 assert.equal(presenter.classifyLine("Texto neutro"), "");
@@ -30,4 +35,4 @@ assert.equal(
 
 assert.equal(Object.isFrozen(presenter), true, "El presenter debe exponer una API inmutable");
 
-console.log("Note presenter exact regression checks passed");
+console.log("Note presenter exact legacy-equivalence regression checks passed");
