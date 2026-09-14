@@ -1,0 +1,71 @@
+name: Professional review UI polish once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/review-order-textarea-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reorder professional review and polish modification reason field
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          shell = Path('app-shell.js')
+          text = shell.read_text(encoding='utf-8')
+          old = 'decisionCard.insertAdjacentHTML("afterend", `\n<div id="best-professional-review"'
+          new = 'decisionCard.insertAdjacentHTML("beforebegin", `\n<div id="best-professional-review"'
+          if old not in text:
+              raise SystemExit('Expected professional-review insertion point not found in app-shell.js')
+          shell.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          phase = Path('phase6b-professional-decision.js')
+          text = phase.read_text(encoding='utf-8')
+
+          old_css = '''      .best-modify-panel { margin-top: 14px; padding: 16px; border: 1px solid #bdd8f8; border-radius: var(--radius); background: #f7fbff; }\n      .best-modify-panel textarea { min-height: 88px; resize: vertical; }'''
+          new_css = '''      .best-modify-panel { margin-top: 14px; padding: 18px; border: 1px solid #bdd8f8; border-radius: 18px; background: linear-gradient(180deg, #f8fbff 0%, #f3f8ff 100%); }\n      .best-modify-reason-field { width: 100%; max-width: none; margin: 16px 0 0; }\n      .best-modify-reason-field label { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }\n      .phase6b-field-hint { flex: 0 0 auto; padding: 3px 8px; border-radius: 999px; background: #e9f3ff; color: var(--primary-strong); font-size: .72rem; font-weight: 800; letter-spacing: .02em; }\n      .best-modify-panel textarea { width: 100%; min-height: 132px; box-sizing: border-box; padding: 14px 16px; resize: vertical; border: 1.5px solid var(--border-color); border-radius: 16px; background: #fff; color: var(--text-strong); font: inherit; font-size: 1rem; line-height: 1.5; box-shadow: 0 4px 14px rgba(15, 39, 71, .05); transition: border-color .15s ease, box-shadow .15s ease, background .15s ease; }\n      .best-modify-panel textarea::placeholder { color: #8b98aa; opacity: 1; }\n      .best-modify-panel textarea:focus { outline: none; border-color: #2f80ed; background: #fff; box-shadow: 0 0 0 4px rgba(47, 128, 237, .14), 0 6px 18px rgba(15, 39, 71, .07); }\n      .phase6b-reason-helper { margin: 8px 2px 0; font-size: .82rem; line-height: 1.4; }'''
+          if old_css not in text:
+              raise SystemExit('Expected modify-panel CSS not found in phase6b-professional-decision.js')
+          text = text.replace(old_css, new_css, 1)
+
+          old_field = '''        <div class="field"><label for="best-modify-reason">Motivo de la modificación</label><textarea id="best-modify-reason" maxlength="500" placeholder="Ej: patrón alimentario, técnica, comorbilidad, preferencia clínica o contexto del paciente"></textarea></div>'''
+          new_field = '''        <div class="field best-modify-reason-field">\n          <label for="best-modify-reason">Motivo de la modificación <span class="phase6b-field-hint">Obligatorio</span></label>\n          <textarea id="best-modify-reason" maxlength="500" rows="4" aria-describedby="best-modify-reason-help" placeholder="Describa brevemente el criterio clínico que justifica el cambio…"></textarea>\n          <p id="best-modify-reason-help" class="helper-text phase6b-reason-helper">Ej.: patrón alimentario, riesgo de hipoglicemia, técnica de administración, comorbilidades o contexto del paciente.</p>\n        </div>'''
+          if old_field not in text:
+              raise SystemExit('Expected modification-reason field not found in phase6b-professional-decision.js')
+          text = text.replace(old_field, new_field, 1)
+          phase.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Refresh canonical PWA release fingerprint
+        run: python scripts/app_shell_release.py --write
+
+      - name: Validate syntax and invariants
+        shell: bash
+        run: |
+          node --check app-shell.js
+          node --check phase6b-professional-decision.js
+          npm run check:invariants
+          npm run check:release
+
+      - name: Commit UI polish and remove one-off workflow
+        shell: bash
+        run: |
+          rm .github/workflows/review-order-textarea-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app-shell.js phase6b-professional-decision.js index.html pdf-preview.html sw.js .github/workflows/review-order-textarea-once.yml
+          git commit -m "Polish professional review order and modification reason field"
+          git push origin HEAD:main
