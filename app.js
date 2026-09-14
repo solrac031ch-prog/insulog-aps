@@ -182,7 +182,7 @@
     resumen.innerHTML = `<strong>Datos para titulación:</strong><br>Menor ayunas: ${data.minAy} mg/dL<br>Menor pre-almuerzo: ${data.minPre} mg/dL<br>Promedio ayunas (descriptivo): ${data.promAy} mg/dL<br>Promedio pre-almuerzo (descriptivo): ${data.promPre} mg/dL<br>Meta HbA1c: &lt;${data.targetA1c}%<br>Dosis total: ${resultado.am + resultado.pm} UI/día (${resultado.dosisKg.toFixed(2)} UI/kg/día)<br>Esquema final: ${resultado.schemeLabel}`;
     show(resumen, true);
 
-    if (resultado.requiresHighDoseReview) { go(41); return resultado; }
+    if (resultado.blocksAutomaticEscalation || resultado.doseSafety?.level === "stop") { go(41); return resultado; }
 
     renderNotaClinica(clinicalCopy.buildFollowupNote({
       promAy: data.promAy, promPre: data.promPre, minAy: data.minAy, minPre: data.minPre,

@@ -215,7 +215,7 @@ require(
         "const state = runtime.state", "const actions = runtime.actions",
         "clinicalEngine.suggestInitialScheme", "clinicalEngine.calculateInitialDose", "clinicalEngine.calculateFollowup",
         "ayunasRaw.length < 3", "3 glicemias pre-almuerzo", "meta-hba1c-seguimiento", "nivel3-referido",
-        "resultado.requiresHighDoseReview", "minAy", "minPre",
+        "resultado.blocksAutomaticEscalation", "minAy", "minPre",
         'actions.register("define-initial-scheme"', 'actions.register("calculate-initial"',
         'actions.register("prepare-followup"', 'actions.register("calculate-followup"',
         'actions.register("generate-high-dose-note"', 'actions.register("finish"',
