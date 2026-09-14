@@ -21,14 +21,16 @@
   }
 
   function classifyLine(line = "") {
-    const lower = String(line).toLowerCase();
+    const text = String(line);
+    const lower = text.toLowerCase();
 
     if (lower.includes("alerta") || lower.includes("hipoglicemia") || lower.includes("<54") || lower.includes("<70") || lower.includes("suspensión")) {
       return "nota-roja";
     }
 
     if (lower.includes("hba1c estimada")) {
-      const value = parseFloat(String(line).replace(",", ".").match(/[\d.]+/)?.[0]);
+      const match = text.match(/hba1c estimada[^:]*:\s*(\d+(?:[.,]\d+)?)/i);
+      const value = match ? parseFloat(match[1].replace(",", ".")) : Number.NaN;
       if (!Number.isNaN(value)) {
         if (value <= 7) return "nota-verde";
         if (value < 9) return "nota-amarilla";
