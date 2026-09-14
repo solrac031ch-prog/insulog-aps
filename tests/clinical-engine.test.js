@@ -75,7 +75,7 @@ followup = engine.calculateFollowup({
 assert.equal(followup.pm, 20, "un valor alto discordante no fuerza aumento si el menor está en meta");
 
 followup = engine.calculateFollowup({
-  weightKg: 70, regimenType: "2", amDose: 16, pmDose: 16,
+  weightKg: 100, regimenType: "2", amDose: 16, pmDose: 16,
   fastingValues: [160, 160, 160], preLunchValues: [181, 181, 181], targetA1c: 7
 });
 assert.deepEqual({ am: followup.am, pm: followup.pm }, { am: 19, pm: 18 });
