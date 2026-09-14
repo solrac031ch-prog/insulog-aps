@@ -62,8 +62,8 @@ test("la revisión de dosis alta lleva el foco al encabezado clínico de P41", a
   await expect(heading).toHaveAttribute("tabindex", "-1");
   await expect.poll(async () => page.evaluate(() => document.activeElement?.closest("#p41 h2") !== null)).toBe(true);
 
-  const rect = await heading.boundingBox();
-  expect(rect).not.toBeNull();
-  expect(rect.y).toBeGreaterThanOrEqual(0);
-  expect(rect.y).toBeLessThan(844);
+  await expect.poll(async () => heading.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return rect.top >= 0 && rect.top < window.innerHeight && rect.bottom > 0;
+  })).toBe(true);
 });
