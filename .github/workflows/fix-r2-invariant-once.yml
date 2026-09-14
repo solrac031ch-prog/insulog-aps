@@ -19,10 +19,10 @@ jobs:
           from pathlib import Path
           p = Path('scripts/check_invariants.py')
           s = p.read_text(encoding='utf-8')
-          old = '"function calculateAdjustment", "analysis.min", "percent = -20", "percent = -10", "percent = 10", "percent = 20",'
-          new = '"function calculateAdjustment", "analysis.min", "analysis.hipo ? -20 : -10", "percent = 10", "percent = 20",'
+          old = '"percent = -20", "percent = -10"'
+          new = '"analysis.hipo ? -20 : -10"'
           if old not in s:
-              raise SystemExit('Expected invariant sequence not found')
+              raise SystemExit('Expected percentage invariant tokens not found')
           p.write_text(s.replace(old, new, 1), encoding='utf-8')
           PY
       - name: Verify invariants locally
@@ -35,4 +35,4 @@ jobs:
           git rm .github/workflows/fix-r2-invariant-once.yml
           git commit -m "Chore: align clinical r2 invariant with percentage rule"
           git push
-# trigger
+# trigger 2
