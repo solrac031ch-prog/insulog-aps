@@ -14,6 +14,7 @@ Este documento fija el estado técnico que debe protegerse antes de cualquier ca
 8. El app shell se publica como una unidad inmutable; no se permiten revisiones manuales independientes por asset ni actualización parcial dentro de una atención abierta.
 9. La emulación cross-browser no se confunde con aceptación en hardware real: WebKit/iPhone-like y Chromium/Android-like son guardrails de CI, no certificación de Safari/iOS o de un dispositivo físico.
 10. El repositorio debe poder validarse con comandos reproducibles documentados; la CI sigue siendo la autoridad antes del merge.
+11. La versión clínica y el release técnico son identidades distintas: un refactor puede cambiar el shell sin cambiar protocolo, y un cambio clínico debe versionarse explícitamente.
 
 ## Contrato clínico protegido
 
@@ -44,7 +45,11 @@ Reglas que siguen siendo contrato:
 - revisión de dosis alta desde ≥0,7 UI/kg/día;
 - no existe escalamiento automático por el solo hecho de alcanzar ≥1 UI/kg/día.
 
-Cualquier modificación de estas reglas debe tratarse como cambio clínico, no como refactor.
+La identidad canónica de estas reglas vive en `clinical-protocol.json`. La versión vigente es:
+
+`APS-NPH-2026.09.14-r1`
+
+Cualquier modificación intencional de dosis, umbral, criterio o conducta en `clinical-engine.js` debe tratarse como cambio clínico, actualizar esa versión y conservar verde la matriz declarada de regresión.
 
 ## Arquitectura vigente
 
@@ -59,14 +64,16 @@ La aplicación ya no depende de `globalData`, `nav`, `calcularSeguimientoPro`, `
 Composición actual:
 
 - `InsulogRuntime`: estado efímero, navegación, utilidades DOM y action registry;
-- `InsulogApp`: adaptación inputs → motor → resultado UI;
+- `InsulogClinicalEngine`: cálculos y decisiones clínicas puras;
+- `InsulogClinicalCopy`: generación pura de texto para las notas clínicas;
+- `InsulogApp`: adaptación inputs → motor/copy → resultado UI;
 - `InsulogDocuments`: documento base y pipeline de enhancers;
 - `aps-safety-2026.js`: seguridad/formulario APS mediante decoradores;
 - `pdf-enhancements.js`: enhancer explícito del documento;
 - `document-flow.js`: P6/P7, validación, vista previa e impresión;
 - `app-shell.js`: inicialización, delegación de `data-action` y registro del service worker.
 
-Exports permitidos en `window`: `InsulogRuntime`, `InsulogApp`, `InsulogDocuments`, `InsulogShell` y el namespace independiente `InsulogClinicalEngine`.
+Exports de aplicación permitidos en `window`: `InsulogRuntime`, `InsulogClinicalEngine`, `InsulogClinicalCopy`, `InsulogApp`, `InsulogDocuments` e `InsulogShell`.
 
 `index.html` no contiene handlers inline.
 
@@ -187,11 +194,11 @@ Contratos añadidos:
 
 El primer run de 9A detectó un defecto real: los HGT medían 40 px en ambos motores. Se corrigió `styles.css` a 44 px; la exigencia del test no se redujo.
 
-El **release vigente desde 9A** permanece:
+El release creado por 9A fue `4804df17c9c0ab6b`. El release técnico vigente tras Fase 11B es:
 
-`4804df17c9c0ab6b`
+`239bc6b77d3afe3d`
 
-Los cambios 10A–10C no modifican `SHELL_FILES`, por lo que no requieren un fingerprint nuevo.
+La versión clínica es independiente y permanece `APS-NPH-2026.09.14-r1`.
 
 ### 9B — aceptación en hardware real
 
@@ -245,20 +252,57 @@ Al cierre de 10B:
 El repositorio deja de depender de conocimiento implícito del mantenedor:
 
 - `README.md` pasa de un encabezado mínimo a una guía operativa del proyecto;
-- `package.json` expone comandos para invariantes, release, E2E, dispositivos y verificación completa;
-- `npm run verify` ejecuta secuencialmente invariantes, release, Chromium E2E y compatibilidad móvil;
+- `package.json` expone comandos para guardrails, release, E2E, dispositivos y verificación completa;
+- `npm run verify` ejecuta secuencialmente la red local automatizada;
 - `npm run release:write` es la vía documentada para regenerar el fingerprint;
 - la documentación distingue cambios clínicos de refactors no clínicos y enlaza el protocolo físico 9B.
 
-10C no toca archivos de producción ni `SHELL_FILES`.
+10C no tocó archivos de producción ni `SHELL_FILES`.
+
+## Fase 11 — gobernanza clínica y desacoplamiento de texto
+
+### 11A — versionado explícito del protocolo clínico
+
+`clinical-protocol.json` introduce una identidad clínica independiente del release técnico. `scripts/check_clinical_protocol.py` valida el manifiesto, la existencia de la matriz declarada y, en pull requests contra `main`, compara la rama base con el cambio propuesto.
+
+Si `clinical-engine.js` cambia:
+
+- `clinical-protocol.json` también debe cambiar;
+- si ya existía manifiesto en la base, la versión debe ser distinta;
+- la matriz clínica sigue ejecutándose en CI.
+
+Versión clínica inicial y vigente:
+
+`APS-NPH-2026.09.14-r1`
+
+11A no cambió `clinical-engine.js` ni el app shell.
+
+### 11B — texto clínico fuera del DOM
+
+`clinical-copy.js` concentra de forma pura la construcción de las notas de:
+
+- inicio de NPH;
+- seguimiento/ajuste;
+- revisión de dosis alta.
+
+`app.js` conserva lectura de inputs, llamadas al motor, estado y renderizado, pero ya no contiene esos template strings clínicos.
+
+`tests/clinical-copy.test.js` compara salidas exactas, byte-a-byte. Esta capa complementa los E2E y la regresión visual: una modificación accidental de palabras, cifras, saltos de línea o etiquetas falla aunque el layout continúe parecido.
+
+`clinical-copy.js` es parte del app shell offline; por ello 11B generó el release técnico `239bc6b77d3afe3d`. La versión clínica no cambió porque el motor y la conducta clínica permanecieron intactos.
+
+La integración de 11B quedó con 6/6 workflows verdes y no necesitó rebaseline visual.
 
 ## Mapa de responsabilidades
 
 | Área | Archivo principal | Responsabilidad | Riesgo |
 | --- | --- | --- | --- |
 | Motor clínico | `clinical-engine.js` | Cálculos y decisiones clínicas puras | Bajo mientras permanezca sin DOM |
+| Versión clínica | `clinical-protocol.json` | Identidad canónica del protocolo | Bajo; cambio obligatorio si cambia el motor |
+| Guardrail clínico | `scripts/check_clinical_protocol.py` | Impedir cambios de motor sin nueva versión | Bajo |
+| Texto clínico | `clinical-copy.js` | Generación pura de notas clínicas | Bajo con regresión exacta |
 | Runtime | `app-runtime.js` | Estado, navegación y acciones | Bajo |
-| Adaptador UI | `app.js` | Inputs → motor → presentación | Bajo-medio |
+| Adaptador UI | `app.js` | Inputs → motor/copy → presentación | Bajo-medio |
 | Sistema visual | `styles.css` | Layout, controles y tabla HGT | Bajo con E2E/visual/mobile |
 | Seguridad APS | `aps-safety-2026.js` | Medicación y flujos de seguridad | Bajo-medio |
 | Documento | `patient-document.js` | Semántica del documento | Bajo-medio |
@@ -285,7 +329,8 @@ El repositorio deja de depender de conocimiento implícito del mantenedor:
 - hiperglicemia marcada sin alto riesgo puede llevar a AM + PM;
 - alto riesgo conserva inicio conservador;
 - tratamiento concomitante no modifica automáticamente NPH;
-- cálculo proviene del motor puro.
+- cálculo proviene del motor puro;
+- nota base de inicio se genera mediante `clinical-copy.js` y está protegida por regresión exacta.
 
 ### Seguimiento
 
@@ -298,7 +343,8 @@ El repositorio deja de depender de conocimiento implícito del mantenedor:
 - alerta de hipoglicemia aparece al solicitar ajuste;
 - nivel 3 requiere confirmación de asistencia y no ajusta automáticamente;
 - tabla P4 utilizable sin overflow y con HGT ≥44 px táctiles en perfiles móviles protegidos;
-- hipoglicemia visible/anunciable y P41 enfocado permanecen protegidos por E2E.
+- hipoglicemia visible/anunciable y P41 enfocado permanecen protegidos por E2E;
+- notas base de seguimiento/dosis alta se generan mediante `clinical-copy.js` con regresión exacta.
 
 ### Documento
 
@@ -317,21 +363,25 @@ El repositorio deja de depender de conocimiento implícito del mantenedor:
 
 ## Red de seguridad actual
 
-La seguridad técnica tiene **siete capas automatizadas complementarias**:
+La seguridad técnica tiene **nueve capas automatizadas complementarias**:
 
 1. **Contrato unitario del motor** — retornos, límites y reglas puras.
-2. **Matriz de regresión clínica** — inicio, ajustes, hipoglicemia, discordantes y dosis alta.
-3. **E2E Chromium** — **38 casos** de interfaz, clínica integrada, privacidad, Farmacia, documento, PWA y accesibilidad crítica.
-4. **Regresión visual perceptual** — **12 estados** móvil/escritorio con dHash + PNG.
-5. **Contrato release/PWA** — fingerprint único, shell atómico y navegación offline.
-6. **Compatibilidad móvil cross-browser** — WebKit iPhone-like + Chromium Android-like, touch, P4, PDF y offline Android.
-7. **Contrato de accesibilidad crítica** — semántica, foco y visibilidad de hipoglicemia y dosis alta.
+2. **Matriz de regresión clínica** — 56 casos agrupados de inicio, ajustes, hipoglicemia, discordantes y dosis alta.
+3. **Gobernanza de versión clínica** — cambios del motor requieren manifiesto/versionado explícito.
+4. **Regresión exacta de texto clínico** — notas base comparadas byte-a-byte.
+5. **E2E Chromium** — **38 casos** de interfaz, clínica integrada, privacidad, Farmacia, documento, PWA y accesibilidad crítica.
+6. **Regresión visual perceptual** — **12 estados** móvil/escritorio con dHash + PNG.
+7. **Contrato release/PWA** — fingerprint único, shell atómico y navegación offline.
+8. **Compatibilidad móvil cross-browser** — WebKit iPhone-like + Chromium Android-like, touch, P4, PDF y offline Android.
+9. **Contrato de accesibilidad crítica** — semántica, foco y visibilidad de hipoglicemia y dosis alta.
 
 La aceptación física de 9B es una capa manual adicional pendiente, no una condición ya satisfecha.
 
 ## Comandos reproducibles
 
 ```bash
+npm run check:clinical-protocol
+npm run test:clinical-copy
 npm run check:invariants
 npm run check:release
 npm run test:e2e
@@ -354,6 +404,8 @@ La CI de GitHub Actions sigue siendo la autoridad final antes de integrar.
 Los checks deben impedir, entre otras regresiones:
 
 - DOM/almacenamiento dentro del motor clínico;
+- cambios de `clinical-engine.js` sin versionado clínico explícito;
+- cambios accidentales en las notas base protegidas;
 - duplicación de umbrales clínicos en UI;
 - globals legacy o handlers inline;
 - monkey patches clínicos/documentales;
@@ -374,17 +426,18 @@ Los checks deben impedir, entre otras regresiones:
 
 1. **Completar Fase 9B** con evidencia en un iPhone físico y un Android físico.
 2. Probar específicamente impresión/compartir PDF desde Safari/iOS y Chrome/Android reales.
-3. Reducir acoplamiento directo al DOM de `app.js` y `aps-safety-2026.js` cuando aporte valor concreto y pueda demostrarse sin cambiar resultados clínicos.
-4. Versionar explícitamente el protocolo clínico y asociar futuras modificaciones a una matriz revisada de casos esperados.
-5. Separar progresivamente generación de texto clínico de manipulación DOM si simplifica mantenimiento.
-6. Evaluar módulos ES nativos solo ante una ventaja concreta.
+3. Proteger `main` mediante branch protection/ruleset para impedir push o merge que salte CI (Issue #73; requiere configuración de plataforma).
+4. Continuar reduciendo acoplamiento DOM de `app.js`/`aps-safety-2026.js` solo en extracciones pequeñas con salida protegida.
+5. Evaluar módulos ES nativos solo ante una ventaja concreta.
 
 Ya no son deuda:
 
 - versionado manual del app shell — resuelto en Fase 8;
 - regresión visual de hipoglicemia/dosis alta/nota clínica — resuelta en Fase 10A;
 - visibilidad/foco accesible de alertas críticas — protegida en Fase 10B;
-- ausencia de guía operativa/comandos unificados — resuelta en Fase 10C.
+- ausencia de guía operativa/comandos unificados — resuelta en Fase 10C;
+- versionado explícito del protocolo clínico — resuelto en Fase 11A;
+- generación base de texto clínico mezclada con DOM — resuelta en Fase 11B.
 
 ## Regla de aceptación para cambios futuros
 
@@ -404,7 +457,9 @@ Un PR no clínico debe:
 - si toca superficies móviles, pasar el workflow cross-browser;
 - explicar qué responsabilidad cambia y por qué.
 
-Un cambio intencional de dosis, umbral, criterio o conducta clínica debe actualizar primero casos esperados y documentación clínica correspondiente.
+Un cambio intencional de dosis, umbral, criterio o conducta clínica debe actualizar primero casos esperados, `clinical-protocol.json` con una nueva versión y la documentación clínica correspondiente.
+
+Un cambio intencional de redacción de las notas base debe actualizar deliberadamente la regresión exacta de `clinical-copy`; un refactor de UI no debe hacerlo.
 
 ## Estado de cierre
 
@@ -413,4 +468,6 @@ Un cambio intencional de dosis, umbral, criterio o conducta clínica debe actual
 - **Fase 9B:** abierta; protocolo de aceptación física definido, pendiente de ejecución en hardware real.
 - **Fase 10A:** cerrada; contrato visual ampliado a 12 estados críticos.
 - **Fase 10B:** cerrada; accesibilidad/visibilidad crítica protegida y Chromium en 38 E2E.
-- **Fase 10C:** cerrada al integrar README operativo y comandos reproducibles de mantenimiento.
+- **Fase 10C:** cerrada; README operativo y comandos reproducibles de mantenimiento integrados.
+- **Fase 11A:** cerrada; protocolo clínico versionado y cambios del motor gobernados por CI.
+- **Fase 11B:** cerrada; notas base generadas fuera del DOM con regresión exacta y release técnico `239bc6b77d3afe3d`.
