@@ -56,7 +56,20 @@ async function perceptualHash(page, screenshotBuffer) {
   }, src);
 }
 
+async function settleVisual(page) {
+  await page.evaluate(async () => {
+    document.documentElement.style.scrollBehavior = "auto";
+    document.body.style.scrollBehavior = "auto";
+    if (document.fonts?.ready) await document.fonts.ready;
+    window.scrollTo(0, 0);
+  });
+  await page.waitForFunction(() => window.scrollY === 0);
+  await page.waitForTimeout(80);
+}
+
 async function captureVisual(page, testInfo, key) {
+  await settleVisual(page);
+
   const path = testInfo.outputPath(`${key}.png`);
   const screenshot = await page.screenshot({
     path,
@@ -64,6 +77,7 @@ async function captureVisual(page, testInfo, key) {
     caret: "hide",
     fullPage: false
   });
+  await testInfo.attach(`${key}.png`, { path, contentType: "image/png" });
 
   const hash = await perceptualHash(page, screenshot);
   const expected = baseline.profiles[key];
