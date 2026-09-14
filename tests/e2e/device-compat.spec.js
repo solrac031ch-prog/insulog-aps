@@ -1,4 +1,4 @@
-// Clinical r2 final validation trigger: production code unchanged.
+// Clinical r2 + Phase 6B final mobile validation.
 const { test, expect } = require("@playwright/test");
 
 async function expectActivePage(page, id) {
@@ -75,7 +75,16 @@ test("flujo de seguimiento y tabla HGT siguen utilizables con touch", async ({ p
 test("vista previa del documento se renderiza dentro del iframe móvil", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => {
-    window.InsulogRuntime.state.patch({ am: 12, pm: 8, acciones: "- Control médico en 15 días." });
+    window.InsulogRuntime.state.patch({
+      am: 12,
+      pm: 8,
+      acciones: "- Control médico en 15 días.",
+      professionalDecision: "aceptada",
+      professionalAm: 12,
+      professionalPm: 8,
+      professionalReason: "",
+      professionalDosePerKg: null
+    });
     window.InsulogRuntime.navigation.go(6);
   });
   await expectActivePage(page, "p6");
