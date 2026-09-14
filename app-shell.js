@@ -10,8 +10,8 @@
 
   const { all, byId } = runtime.dom;
   const actions = runtime.actions;
-  const BEST_HISTORY_KEY = "insulog.history.v1";
   const BEST_HISTORY_LIMIT = 100;
+  let bestSessionHistory = [];
   let bestReviewStatus = "";
   let bestReviewSignature = "";
 
@@ -133,25 +133,13 @@
     document.head.appendChild(style);
   }
 
-  function browserStorage() {
-    try { return window.localStorage; } catch { return null; }
-  }
-
   function readBestHistory() {
-    const storage = browserStorage();
-    if (!storage) return [];
-    try {
-      const parsed = JSON.parse(storage.getItem(BEST_HISTORY_KEY) || "[]");
-      return Array.isArray(parsed) ? parsed.filter((item) => item && typeof item === "object") : [];
-    } catch {
-      return [];
-    }
+    return bestSessionHistory.slice();
   }
 
   function writeBestHistory(entries) {
-    const storage = browserStorage();
-    if (!storage) throw new Error("Almacenamiento local no disponible en este navegador.");
-    storage.setItem(BEST_HISTORY_KEY, JSON.stringify(entries.slice(0, BEST_HISTORY_LIMIT)));
+    bestSessionHistory = entries.slice(0, BEST_HISTORY_LIMIT);
+    return readBestHistory();
   }
 
   function numericValues(selector) {
@@ -159,14 +147,17 @@
   }
 
   function safeNumber(value) {
+    if (value === null || value === undefined || String(value).trim() === "") return null;
     const number = Number(value);
     return Number.isFinite(number) ? number : null;
   }
 
   function doseText(am, pm) {
     const parts = [];
-    if (Number.isFinite(Number(am))) parts.push(`AM ${Math.round(Number(am))} UI`);
-    if (Number.isFinite(Number(pm))) parts.push(`PM ${Math.round(Number(pm))} UI`);
+    const amValue = safeNumber(am);
+    const pmValue = safeNumber(pm);
+    if (amValue !== null) parts.push(`AM ${Math.round(amValue)} UI`);
+    if (pmValue !== null) parts.push(`PM ${Math.round(pmValue)} UI`);
     return parts.length ? parts.join(" · ") : "No registrada";
   }
 
@@ -266,7 +257,7 @@
 
     const evidence = document.querySelector("#p0 .evidence-content");
     if (evidence && !byId("best-history-home-entry")) {
-      evidence.insertAdjacentHTML("beforeend", '<button id="best-history-home-entry" type="button" class="btn btn-narrow section-action" data-action="best-history-open">VER HISTORIAL LOCAL</button>');
+      evidence.insertAdjacentHTML("beforeend", '<button id="best-history-home-entry" type="button" class="btn btn-narrow section-action" data-action="best-history-open">VER HISTORIAL DE LA SESIÓN</button>');
     }
 
     const decisionCard = document.querySelector("#p5 .decision-card");
@@ -286,12 +277,12 @@
           <div id="best-review-status" class="best-review-status" role="status" aria-live="polite"></div>
         </div>
         <div id="best-history-save-card" class="card compact-card best-card text-left">
-          <p class="card-title text-center">Historial longitudinal local</p>
+          <p class="card-title text-center">Historial temporal de la sesión</p>
           <div class="field">
             <label for="best-history-alias">Alias / código local del paciente</label>
             <input id="best-history-alias" type="text" maxlength="60" autocomplete="off" placeholder="Ej: PX-014">
           </div>
-          <p class="helper-text">Se guarda sólo en este navegador y no se sincroniza con un servidor. Use un alias o código local; no ingrese RUT ni nombre completo.</p>
+          <p class="helper-text">Se conserva sólo durante esta sesión y se borra al recargar o cerrar la app. No se sincroniza con un servidor. Use un alias o código local; no ingrese RUT ni nombre completo.</p>
           <div class="best-review-actions">
             <button type="button" class="btn btn-main" data-action="best-history-save">GUARDAR CASO</button>
             <button type="button" class="btn" data-action="best-history-open">VER HISTORIAL</button>
@@ -306,14 +297,14 @@
       page.className = "page page-center";
       page.setAttribute("aria-hidden", "true");
       page.innerHTML = `
-        <div class="page-label">Historial · almacenamiento local</div>
-        <h2>Historial longitudinal local</h2>
-        <p class="lead small-lead">Casos guardados manualmente en este navegador. No se sincronizan con la ficha clínica ni con un servidor.</p>
+        <div class="page-label">Historial · sesión actual</div>
+        <h2>Historial temporal de la sesión</h2>
+        <p class="lead small-lead">Casos guardados temporalmente durante esta sesión. Se borran al recargar o cerrar la app y no se sincronizan con la ficha clínica ni con un servidor.</p>
         <div class="best-history-controls">
           <div class="field"><label for="best-history-filter">Filtrar por alias / código local</label><input id="best-history-filter" type="text" maxlength="60" autocomplete="off" placeholder="Ej: PX-014"></div>
         </div>
         <div id="best-history-list"></div>
-        <button type="button" class="btn btn-danger btn-narrow section-action" data-action="best-history-clear">BORRAR TODO EL HISTORIAL LOCAL</button>
+        <button type="button" class="btn btn-danger btn-narrow section-action" data-action="best-history-clear">BORRAR HISTORIAL DE LA SESIÓN</button>
         <button type="button" class="btn btn-narrow secondary-nav" data-action="best-history-home">VOLVER AL INICIO</button>`;
       byId("app")?.appendChild(page);
       byId("best-history-filter")?.addEventListener("input", renderBestHistory);
@@ -386,12 +377,8 @@
     const allEntries = readBestHistory().sort((a, b) => String(a.savedAt).localeCompare(String(b.savedAt)));
     const entries = filter ? allEntries.filter((entry) => String(entry.alias || "").toLocaleLowerCase("es-CL").includes(filter)) : allEntries;
 
-    if (!browserStorage()) {
-      host.innerHTML = '<div class="alert alert-warning">El almacenamiento local no está disponible en este navegador.</div>';
-      return;
-    }
     if (!entries.length) {
-      host.innerHTML = '<div class="card compact-card text-left"><strong>No hay registros guardados.</strong><p class="helper-text">Los casos aparecen aquí sólo después de guardarlos manualmente desde el resultado clínico.</p></div>';
+      host.innerHTML = '<div class="card compact-card text-left"><strong>No hay registros guardados.</strong><p class="helper-text">Los casos aparecen aquí sólo después de guardarlos manualmente durante la sesión actual.</p></div>';
       return;
     }
 
@@ -446,7 +433,7 @@
         const record = buildBestHistoryRecord(byId("best-history-alias")?.value);
         const entries = [record, ...readBestHistory().filter((entry) => entry.id !== record.id)].slice(0, BEST_HISTORY_LIMIT);
         writeBestHistory(entries);
-        setBestStatus("best-history-status", `✓ Caso guardado localmente: ${record.alias}`, true);
+        setBestStatus("best-history-status", `✓ Caso guardado en esta sesión: ${record.alias}`, true);
         return record;
       } catch (error) {
         setBestStatus("best-history-status", error?.message || "No se pudo guardar el caso.", false);
@@ -468,9 +455,8 @@
     });
 
     actions.register("best-history-clear", () => {
-      if (!browserStorage()) return;
-      if (!window.confirm("¿Borrar todos los casos guardados en el historial local de este navegador?")) return;
-      browserStorage().removeItem(BEST_HISTORY_KEY);
+      if (!window.confirm("¿Borrar todos los casos guardados durante esta sesión?")) return;
+      writeBestHistory([]);
       renderBestHistory();
     });
 
