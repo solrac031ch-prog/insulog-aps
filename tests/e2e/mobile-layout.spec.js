@@ -6,13 +6,17 @@ async function expectActivePage(page, id) {
   await expect(section).toHaveAttribute("aria-hidden", "false");
 }
 
-async function openFollowupTable(page) {
+async function openFollowupMedication(page) {
   await page.goto("/");
   await page.locator("#p0").getByRole("button", { name: "INICIAR ALGORITMO", exact: true }).click();
   await page.locator("#p1").getByRole("button", { name: "NO", exact: true }).click();
   await page.locator("#p2").getByRole("button", { name: "SEGUIMIENTO DE INSULINA", exact: true }).click();
   await expectActivePage(page, "p35");
   await expect(page.locator('#p35 input[data-aps-med="seguimiento"][data-med-key="metformina850"]')).toBeAttached();
+}
+
+async function openFollowupTable(page) {
+  await openFollowupMedication(page);
   await page.locator("#p35").getByRole("button", { name: "CONTINUAR AL REGISTRO DE GLICEMIAS", exact: true }).click();
   await expectActivePage(page, "p4");
 }
@@ -26,6 +30,41 @@ test("portada 7B prioriza la acción clínica y oculta códigos internos", async
   await expect(page.locator("#p0 .hero-note")).toBeVisible();
   await expect(page.locator("#p0 .evidence-card")).not.toHaveAttribute("open", "");
   await expect(page.locator("#p0").getByRole("button", { name: "INICIAR ALGORITMO", exact: true })).toBeVisible();
+});
+
+test("cada navegación abre la nueva pantalla desde arriba", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.locator("#p0").getByRole("button", { name: "INICIAR ALGORITMO", exact: true }).click();
+  await page.locator("#p1").getByRole("button", { name: "NO", exact: true }).click();
+  await page.locator("#p2").getByRole("button", { name: "SEGUIMIENTO DE INSULINA", exact: true }).click();
+  await expectActivePage(page, "p35");
+
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+
+  await page.locator("#p35").getByRole("button", { name: "CONTINUAR AL REGISTRO DE GLICEMIAS", exact: true }).click();
+  await expectActivePage(page, "p4");
+  await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(0);
+});
+
+test("tratamiento concomitante es compacto y deja detalles secundarios plegados", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openFollowupMedication(page);
+
+  const details = page.locator("#p35 .aps-med-details");
+  await expect(details).toHaveCount(9);
+  await expect(page.locator("#p35 .aps-med-secondary-details")).not.toHaveAttribute("open", "");
+  await expect(page.locator("#p35 .aps-efficacy-details")).not.toHaveAttribute("open", "");
+  await expect(page.locator("#p35 .aps-med-efficacy").first()).not.toBeVisible();
+  await expect(page.locator("#p35 .aps-med-safety").first()).not.toBeVisible();
+
+  const pageHeight = await page.locator("#p35").evaluate((section) => section.getBoundingClientRect().height);
+  expect(pageHeight).toBeLessThan(1800);
+
+  await details.first().locator("summary").click();
+  await expect(page.locator("#p35 .aps-med-efficacy").first()).toBeVisible();
+  await expect(page.locator("#p35 .aps-med-safety").first()).toBeVisible();
 });
 
 test("tabla HGT cabe en 390 px sin scroll horizontal interno", async ({ page }) => {
