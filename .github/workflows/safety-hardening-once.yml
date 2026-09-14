@@ -41,11 +41,13 @@ jobs:
           npm run check:invariants
           npm run check:release
 
-      - name: Commit hardened release and remove one-off files
+      - name: Commit hardened application only
         run: |
-          rm .github/workflows/safety-hardening-once.yml scripts/safety_hardening_once.py
+          git checkout -- .github/workflows/static-check.yml
+          rm -f scripts/safety_hardening_once.py
+          rm -rf scripts/__pycache__
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add -A -- ':!.github/workflows'
           git commit -m "Harden clinical fail-safe validation and runtime safety"
           git push
