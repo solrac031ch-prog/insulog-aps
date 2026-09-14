@@ -1,32 +1,32 @@
 "use strict";
 
-const CACHE_NAME = "insulog-shell-6541e98e8168e945";
-const DEPLOYMENT_REVISION = "release-6541e98e8168e945";
-const PDF_PREVIEW_PATH = "./pdf-preview.html?v=6541e98e8168e945";
+const CACHE_NAME = "insulog-shell-4804df17c9c0ab6b";
+const DEPLOYMENT_REVISION = "release-4804df17c9c0ab6b";
+const PDF_PREVIEW_PATH = "./pdf-preview.html?v=4804df17c9c0ab6b";
 
 const APP_SHELL = [
   "./index.html",
   PDF_PREVIEW_PATH,
-  "./styles.css?v=6541e98e8168e945",
-  "./document-flow.css?v=6541e98e8168e945",
-  "./pdf-enhancements.css?v=6541e98e8168e945",
-  "./pdf-design-2026.css?v=6541e98e8168e945",
-  "./aps-safety-2026.css?v=6541e98e8168e945",
-  "./farmacia-popular.css?v=6541e98e8168e945",
-  "./app-runtime.js?v=6541e98e8168e945",
-  "./clinical-engine.js?v=6541e98e8168e945",
-  "./app.js?v=6541e98e8168e945",
-  "./patient-document.js?v=6541e98e8168e945",
-  "./pdf-enhancements.js?v=6541e98e8168e945",
-  "./aps-safety-2026.js?v=6541e98e8168e945",
-  "./farmacia-popular.js?v=6541e98e8168e945",
-  "./document-flow.js?v=6541e98e8168e945",
-  "./app-shell.js?v=6541e98e8168e945",
-  "./manifest.webmanifest?v=6541e98e8168e945",
-  "./assets/icons/icon-32.png?v=6541e98e8168e945",
-  "./assets/icons/icon-180.png?v=6541e98e8168e945",
-  "./assets/icons/icon-192.png?v=6541e98e8168e945",
-  "./assets/icons/icon-512.png?v=6541e98e8168e945"
+  "./styles.css?v=4804df17c9c0ab6b",
+  "./document-flow.css?v=4804df17c9c0ab6b",
+  "./pdf-enhancements.css?v=4804df17c9c0ab6b",
+  "./pdf-design-2026.css?v=4804df17c9c0ab6b",
+  "./aps-safety-2026.css?v=4804df17c9c0ab6b",
+  "./farmacia-popular.css?v=4804df17c9c0ab6b",
+  "./app-runtime.js?v=4804df17c9c0ab6b",
+  "./clinical-engine.js?v=4804df17c9c0ab6b",
+  "./app.js?v=4804df17c9c0ab6b",
+  "./patient-document.js?v=4804df17c9c0ab6b",
+  "./pdf-enhancements.js?v=4804df17c9c0ab6b",
+  "./aps-safety-2026.js?v=4804df17c9c0ab6b",
+  "./farmacia-popular.js?v=4804df17c9c0ab6b",
+  "./document-flow.js?v=4804df17c9c0ab6b",
+  "./app-shell.js?v=4804df17c9c0ab6b",
+  "./manifest.webmanifest?v=4804df17c9c0ab6b",
+  "./assets/icons/icon-32.png?v=4804df17c9c0ab6b",
+  "./assets/icons/icon-180.png?v=4804df17c9c0ab6b",
+  "./assets/icons/icon-192.png?v=4804df17c9c0ab6b",
+  "./assets/icons/icon-512.png?v=4804df17c9c0ab6b"
 ];
 
 const SHELL_ASSET_BY_PATH = new Map(
