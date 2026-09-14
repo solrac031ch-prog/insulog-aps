@@ -6,7 +6,11 @@ on:
   push:
     branches: [main]
     paths:
+      - "patient-document.js"
+      - "pdf-enhancements.js"
+      - "pdf-enhancements.css"
       - "pdf-design-2026.css"
+      - "document-flow.css"
       - "pdf-preview.html"
       - "index.html"
       - "sw.js"
@@ -22,55 +26,81 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate isolated one-page Letter design contract
+      - name: Validate readable Letter document contract
         shell: python
         run: |
           from pathlib import Path
 
-          css = Path("pdf-design-2026.css").read_text(encoding="utf-8")
+          design = Path("pdf-design-2026.css").read_text(encoding="utf-8")
+          structure = Path("pdf-enhancements.css").read_text(encoding="utf-8")
+          flow = Path("document-flow.css").read_text(encoding="utf-8")
+          document = Path("patient-document.js").read_text(encoding="utf-8")
           html = Path("index.html").read_text(encoding="utf-8")
           preview = Path("pdf-preview.html").read_text(encoding="utf-8")
           sw = Path("sw.js").read_text(encoding="utf-8")
 
-          required_css = [
+          required_design = [
               "size: Letter portrait",
-              "margin: 0.4cm",
-              ".pdf-carta-una-pagina",
-              ".pdf-doc-header::after",
+              "margin: 0.38in 0.42in",
+              ".pdf-doc-title",
               ".pdf-patient-row",
               ".pdf-insulina-paciente",
               ".pdf-insulina-line strong",
               ".pdf-medicamentos-paciente",
               ".pdf-indicaciones",
-              ".tabla-registro-hgt .grupo-mediciones th",
+              ".tabla-registro-hgt thead",
+              "display: table-header-group",
               ".pdf-firma-control",
               ".pdf-doc-footer",
-              ".pdf-densidad-amplia",
-              ".pdf-densidad-compacta",
-              "height: 20.2px !important",
-              "height: 17.5px !important",
-              "page-break-inside: avoid !important",
-              "break-inside: avoid-page !important"
+              ".pdf-contenido-extenso",
+              "break-inside: auto",
+              "height: 18.5px"
           ]
-          for token in required_css:
-              if token not in css:
-                  raise SystemExit(f"Missing patient PDF design marker: {token}")
+          for token in required_design:
+              if token not in design:
+                  raise SystemExit(f"Missing readable PDF design marker: {token}")
 
-          if "overflow: hidden" in css:
-              raise SystemExit("Patient PDF must never force one page by clipping content")
+          for token in [
+              "pdf-doc-header", "pdf-doc-title", "pdf-patient-row",
+              "pdf-insulina-paciente", "pdf-indicaciones", "pdf-firma-control",
+              "pdf-doc-footer", "Registro de control - 15 días"
+          ]:
+              if token not in document:
+                  raise SystemExit(f"Patient document semantic structure missing: {token}")
 
-          asset = "./pdf-design-2026.css?v=20260827-1"
-          if f'href="{asset}"' not in preview:
-              raise SystemExit("PDF design must load inside pdf-preview.html")
-          if f'href="{asset}"' in html:
-              raise SystemExit("PDF design CSS must remain isolated from the parent application")
-          if asset not in sw:
-              raise SystemExit("PDF design must remain available in the offline app shell")
-          if './pdf-preview.html?v=20260910-1' not in sw:
-              raise SystemExit("Isolated preview page must be available offline")
+          if "@media print" in structure:
+              raise SystemExit("pdf-enhancements.css must not compete with the visual print design")
+          if ".pdf-insulina-paciente" in flow or ".tabla-registro-hgt" in flow:
+              raise SystemExit("document-flow.css must not override patient-document visual components")
 
-          for legacy in ["normalizarAsset", "respuestaTexto"]:
-              if legacy in sw:
-                  raise SystemExit(f"PDF wiring must not depend on service-worker rewriting: {legacy}")
+          forbidden_design = [
+              "overflow: hidden",
+              "height: 16.4px",
+              "height: 17.2px",
+              "height: 17.5px",
+              "font-size: 9.4px",
+              "zoom:",
+              "width: 108.7%"
+          ]
+          for token in forbidden_design:
+              if token in design:
+                  raise SystemExit(f"Unreadable PDF compression workaround returned: {token}")
 
-          print("Patient PDF design is isolated and keeps the Letter one-page contract without clipping")
+          structure_asset = "./pdf-enhancements.css?v=20260914-1"
+          design_asset = "./pdf-design-2026.css?v=20260914-1"
+          flow_asset = "./document-flow.css?v=20260914-1"
+          for asset in [structure_asset, design_asset, flow_asset]:
+              if f'href="{asset}"' not in preview:
+                  raise SystemExit(f"PDF preview missing current asset: {asset}")
+              if asset not in sw:
+                  raise SystemExit(f"PDF asset missing from offline shell: {asset}")
+
+          if preview.index(design_asset) < preview.index(flow_asset):
+              raise SystemExit("pdf-design-2026.css must load after document-flow.css and remain the final visual authority")
+
+          if 'href="./pdf-enhancements.css' in html or 'href="./pdf-design-2026.css' in html:
+              raise SystemExit("PDF presentation CSS must remain isolated from the parent application")
+          if './pdf-preview.html?v=20260914-1' not in sw:
+              raise SystemExit("Current isolated preview page must be available offline")
+
+          print("Patient PDF keeps a readable Letter contract with a single visual authority")
