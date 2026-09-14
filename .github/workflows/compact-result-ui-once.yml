@@ -1,0 +1,75 @@
+name: Compact result UI once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/compact-result-ui-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  simplify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove duplicated explanation from result UI
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('app-shell.js')
+          text = path.read_text(encoding='utf-8')
+
+          old_guard = 'if (decisionCard && !byId("best-decision-trace")) {'
+          new_guard = 'if (decisionCard && !byId("best-professional-review")) {'
+          if text.count(old_guard) != 1:
+              raise SystemExit(f'Expected exactly one legacy guard, found {text.count(old_guard)}')
+          text = text.replace(old_guard, new_guard, 1)
+
+          duplicated_panel = '''        <details id="best-decision-trace" class="card compact-card best-card text-left">
+          <summary>Por qué Insulog recomienda esto</summary>
+          <div id="best-decision-body"></div>
+        </details>
+'''
+          if text.count(duplicated_panel) != 1:
+              raise SystemExit(f'Expected exactly one duplicated explanation panel, found {text.count(duplicated_panel)}')
+          text = text.replace(duplicated_panel, '', 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Refresh canonical PWA release fingerprint
+        run: python scripts/app_shell_release.py --write
+
+      - name: Validate static and clinical invariants
+        shell: bash
+        run: |
+          node --check app-shell.js
+          node --check phase6b-professional-decision.js
+          node --check phase6b-document-sync.js
+          npm run check:clinical-protocol
+          npm run test:clinical-copy
+          npm run test:note-presenter
+          npm run check:invariants
+          npm run check:release
+
+      - name: Commit UI simplification and remove one-off workflow
+        shell: bash
+        run: |
+          rm .github/workflows/compact-result-ui-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app-shell.js index.html pdf-preview.html sw.js .github/workflows/compact-result-ui-once.yml
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Simplify result screen and remove duplicate explanation"
+          git push origin HEAD:main
