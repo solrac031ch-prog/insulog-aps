@@ -2,13 +2,16 @@ from pathlib import Path
 from urllib.parse import urlsplit
 import re
 
+from app_shell_release import compute_release
+
 ROOT = Path(__file__).resolve().parents[1]
 SW = (ROOT / "sw.js").read_text(encoding="utf-8")
 CODE = re.sub(r"//.*", "", SW)
+EXPECTED_RELEASE = compute_release()
 
 REQUIRED = [
-    'const CACHE_NAME = "insulog-shell-20260914-atomic26"',
-    'const DEPLOYMENT_REVISION = "phase8d-immutable-shell-20260914-r1"',
+    f'const CACHE_NAME = "insulog-shell-{EXPECTED_RELEASE}"',
+    f'const DEPLOYMENT_REVISION = "release-{EXPECTED_RELEASE}"',
     'const SHELL_ASSET_BY_PATH = new Map(',
     'new Request(asset, { cache: "reload" })',
     'event.waitUntil(precacheFreshShell())',
@@ -50,6 +53,11 @@ if len(assets) != len(set(assets)):
     duplicates = sorted({asset for asset in assets if assets.count(asset) > 1})
     raise SystemExit(f"Duplicate app-shell entries: {duplicates}")
 
+versioned_assets = [asset for asset in assets if "?v=" in asset]
+wrong_versions = [asset for asset in versioned_assets if not asset.endswith(f"?v={EXPECTED_RELEASE}")]
+if wrong_versions:
+    raise SystemExit(f"App-shell assets with noncanonical release token: {wrong_versions}")
+
 paths = [urlsplit(asset).path for asset in assets]
 normalized_paths = [path if path.startswith("./") else f"./{path.lstrip('/')}" for path in paths]
 if len(normalized_paths) != len(set(normalized_paths)):
@@ -84,4 +92,4 @@ if any("farmacia-cerro-navia.json" in asset for asset in assets):
 if CODE.count("cache.put(") != 1:
     raise SystemExit("Shell cache must be populated only during atomic install")
 
-print(f"Atomic immutable shell passed with {len(assets)} unique assets")
+print(f"Atomic immutable shell passed for release {EXPECTED_RELEASE} with {len(assets)} unique assets")

@@ -60,7 +60,7 @@ test("PDF 8C mantiene jerarquía legible y tabla HGT usable", async ({ page, con
   });
 
   const printPage = await context.newPage();
-  await printPage.goto("/pdf-preview.html?v=20260914-1");
+  await printPage.goto("/pdf-preview.html");
   await printPage.evaluate(({ className, html }) => {
     const root = document.getElementById("pdf");
     root.className = className;

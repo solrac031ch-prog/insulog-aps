@@ -1,32 +1,32 @@
 "use strict";
 
-const CACHE_NAME = "insulog-shell-20260914-atomic26";
-const DEPLOYMENT_REVISION = "phase8d-immutable-shell-20260914-r1";
-const PDF_PREVIEW_PATH = "./pdf-preview.html?v=20260914-1";
+const CACHE_NAME = "insulog-shell-6541e98e8168e945";
+const DEPLOYMENT_REVISION = "release-6541e98e8168e945";
+const PDF_PREVIEW_PATH = "./pdf-preview.html?v=6541e98e8168e945";
 
 const APP_SHELL = [
   "./index.html",
   PDF_PREVIEW_PATH,
-  "./styles.css?v=20260910-2",
-  "./document-flow.css?v=20260914-1",
-  "./pdf-enhancements.css?v=20260914-1",
-  "./pdf-design-2026.css?v=20260914-1",
-  "./aps-safety-2026.css?v=20260827-2",
-  "./farmacia-popular.css?v=20260827-2",
-  "./app-runtime.js?v=20260910-2",
-  "./clinical-engine.js?v=20260910-3",
-  "./app.js?v=20260910-4",
-  "./patient-document.js?v=20260910-2",
-  "./pdf-enhancements.js?v=20260910-5",
-  "./aps-safety-2026.js?v=20260910-3",
-  "./farmacia-popular.js?v=20260827-4",
-  "./document-flow.js?v=20260910-2",
-  "./app-shell.js?v=20260910-2",
-  "./manifest.webmanifest?v=20260826",
-  "./assets/icons/icon-32.png?v=20260826",
-  "./assets/icons/icon-180.png?v=20260826",
-  "./assets/icons/icon-192.png?v=20260826",
-  "./assets/icons/icon-512.png?v=20260826"
+  "./styles.css?v=6541e98e8168e945",
+  "./document-flow.css?v=6541e98e8168e945",
+  "./pdf-enhancements.css?v=6541e98e8168e945",
+  "./pdf-design-2026.css?v=6541e98e8168e945",
+  "./aps-safety-2026.css?v=6541e98e8168e945",
+  "./farmacia-popular.css?v=6541e98e8168e945",
+  "./app-runtime.js?v=6541e98e8168e945",
+  "./clinical-engine.js?v=6541e98e8168e945",
+  "./app.js?v=6541e98e8168e945",
+  "./patient-document.js?v=6541e98e8168e945",
+  "./pdf-enhancements.js?v=6541e98e8168e945",
+  "./aps-safety-2026.js?v=6541e98e8168e945",
+  "./farmacia-popular.js?v=6541e98e8168e945",
+  "./document-flow.js?v=6541e98e8168e945",
+  "./app-shell.js?v=6541e98e8168e945",
+  "./manifest.webmanifest?v=6541e98e8168e945",
+  "./assets/icons/icon-32.png?v=6541e98e8168e945",
+  "./assets/icons/icon-180.png?v=6541e98e8168e945",
+  "./assets/icons/icon-192.png?v=6541e98e8168e945",
+  "./assets/icons/icon-512.png?v=6541e98e8168e945"
 ];
 
 const SHELL_ASSET_BY_PATH = new Map(
