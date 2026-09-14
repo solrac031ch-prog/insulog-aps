@@ -1,0 +1,69 @@
+name: Clinical r2 final alignment
+
+on:
+  push:
+    branches: [clinical-alignment-r2]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Align MINSAL 2026 boundary and documentation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('clinical-engine.js')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('const hba1cIndication = Number.isFinite(hba1c) && hba1c >= 10;', 'const hba1cIndication = Number.isFinite(hba1c) && hba1c > 10;')
+          s = s.replace('const symptomaticCatabolism = catabolicNonUrgent.length > 0;\n    const symptomaticMarkedHyperglycemia =', 'const hasWeightLoss = catabolicNonUrgent.some((item) => String(item).toLowerCase().includes("baja de peso"));\n    const symptomaticCatabolism = catabolicNonUrgent.length > 0;\n    const symptomaticMarkedHyperglycemia =')
+          s = s.replace('const indicated = hba1cIndication || symptomaticCatabolism || therapeuticFailure || symptomaticMarkedHyperglycemia;', 'const indicated = hba1cIndication || hasWeightLoss || therapeuticFailure || symptomaticMarkedHyperglycemia;')
+          p.write_text(s, encoding='utf-8')
+
+          for name in ['tests/clinical-engine.test.js', 'tests/clinical-engine-regression.test.js']:
+              p = Path(name)
+              s = p.read_text(encoding='utf-8')
+              s = s.replace('const highA1c = engine.suggestInitialScheme({ hba1c: 10 });', 'const boundaryA1c = engine.suggestInitialScheme({ hba1c: 10 });\nassert.equal(boundaryA1c.indicated, false);\n\nconst highA1c = engine.suggestInitialScheme({ hba1c: 10.1 });')
+              p.write_text(s, encoding='utf-8')
+
+          p = Path('app.js')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('failureButton.textContent = "Fracaso terapia oral documentado";\n      failureButton.dataset.value = "Fracaso terapia oral documentado";', 'failureButton.textContent = "Fracaso persistente pese a terapia oral optimizada y adherencia";\n      failureButton.dataset.value = "Fracaso terapia oral optimizada y adherente";')
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('README.md')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('APS-NPH-2026.09.14-r1', 'APS-NPH-2026.09.14-r2')
+          if 'Clinical Alignment r2' not in s:
+              marker = '## Estado de ingeniería\n'
+              insert = ('## Clinical Alignment r2\n\n'
+                        '- Motor clínico alineado con Vía Clínica MINSAL DM2 APS 2026 y detalle técnico del Protocolo de Insulinización MINSAL 2022.\n'
+                        '- Urgencias metabólicas e hipoglicemia nivel 3 bloquean titulación y derivan de inmediato.\n'
+                        '- Titulación NPH basada en el menor de 3 glicemias, metas individualizadas y ajustes porcentuales.\n'
+                        '- Techo automático de insulina basal: 0,5 UI/kg/día; sin intensificación automática de monodosis a BID en r2.\n\n')
+              s = s.replace(marker, insert + marker)
+          p.write_text(s, encoding='utf-8')
+          PY
+          python scripts/app_shell_release.py --write
+      - name: Run core clinical checks
+        run: |
+          node --check clinical-engine.js
+          node --check app.js
+          node tests/clinical-engine.test.js
+          node tests/clinical-engine-regression.test.js
+          node tests/clinical-engine-contract.test.js
+          node tests/clinical-copy.test.js
+          python scripts/check_invariants.py
+          python scripts/app_shell_release.py --check
+      - name: Commit final alignment
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add clinical-engine.js app.js README.md tests/clinical-engine.test.js tests/clinical-engine-regression.test.js index.html pdf-preview.html sw.js
+          git commit -m "Clinical r2: cerrar alineación MINSAL 2026"
+          git push
