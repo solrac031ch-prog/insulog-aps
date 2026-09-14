@@ -166,7 +166,7 @@ async function gotoClinicalNote(page) {
   await fillFasting(page, [160, 160, 160]);
   await page.locator("#ajustar-seguimiento-btn").click();
   await expect(page.locator("#p5")).toHaveClass(/active/);
-  await expect(page.locator("#nota-clinica")).toContainText("Nuevo Esquema sugerido");
+  await expect(page.locator("#nota-clinica")).toContainText("Nuevo esquema sugerido");
 }
 
 for (const profile of [
