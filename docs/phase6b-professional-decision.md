@@ -65,4 +65,4 @@ Phase 6B no modifica:
 - límite basal de 0,5 UI/kg/día;
 - reglas de urgencia.
 
-Una pauta manual >0,5 UI/kg/día se bloquea antes de poder registrarse como decisión final.
+El umbral de 0,5 UI/kg/día sigue siendo un guardrail para la recomendación automática. Una pauta manual >0,5 UI/kg/día puede registrarse y emitirse cuando el profesional la modifica de forma explícita y deja una justificación clínica; Insulog mantiene una advertencia visible y documenta que se trata de una excepción por criterio profesional. Las rutas de urgencia siguen bloqueadas.

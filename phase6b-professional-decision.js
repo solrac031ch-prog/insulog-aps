@@ -246,8 +246,9 @@
     if (!Number.isInteger(am) || !Number.isInteger(pm) || am < 0 || pm < 0 || am > 150 || pm > 150) throw new Error("Ingrese dosis AM y PM enteras entre 0 y 150 UI.");
     if (am + pm <= 0) throw new Error("La pauta final debe contener al menos una dosis de NPH.");
     if (String(reason || "").trim().length < 5) throw new Error("Registre un motivo clínico breve para modificar la recomendación.");
-    const weight = currentWeight();
-    if (weight && (am + pm) / weight > 0.5) throw new Error("La pauta final supera 0,5 UI/kg/día de insulina basal. Reevalue antes de emitirla.");
+    // El umbral de 0,5 UI/kg/día limita la recomendación automática de Clinical r2.
+    // Una pauta manual modificada por el profesional puede superarlo si queda justificada;
+    // se conserva como advertencia visible y no como bloqueo de la decisión clínica.
   }
 
   function finalizeAccepted() {
