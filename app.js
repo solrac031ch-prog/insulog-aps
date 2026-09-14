@@ -135,11 +135,6 @@
   }
 
   function calcularSeguimientoPro() {
-    if (byId("nivel3-referido")?.checked) {
-      renderNotaClinica(clinicalCopy.buildLevel3HypoglycemiaNote());
-      go(5);
-      return { urgent: true, level: 3 };
-    }
 
     const peso = parseFloat(byId("peso-seguimiento")?.value);
     const tipo = byId("tipo-esquema")?.value;

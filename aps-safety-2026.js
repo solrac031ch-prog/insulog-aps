@@ -318,10 +318,10 @@
     const descripcion = document.getElementById("hipo-ada-descripcion");
     if (!alerta || !titulo || !descripcion) return;
 
-    titulo.textContent = `⚠️ Hipoglicemia ADA nivel ${evento.nivel}`;
+    titulo.textContent = "⚠️ Hipoglicemia detectada";
     descripcion.textContent = evento.nivel === 2
-      ? `Se registró al menos un HGT <54 mg/dL (mínimo ${evento.minimo} mg/dL). Antes de ajustar la NPH, confirme si alguno de los episodios requirió asistencia de otra persona.`
-      : `Se registró al menos un HGT entre 54 y 69 mg/dL (mínimo ${evento.minimo} mg/dL). Antes de ajustar la NPH, confirme si alguno de los episodios requirió asistencia de otra persona.`;
+      ? `Se registró al menos un HGT <54 mg/dL (mínimo ${evento.minimo} mg/dL). Antes de ajustar la NPH, confirme si alguno de los episodios fue nivel 3.`
+      : `Se registró al menos un HGT entre 54 y 69 mg/dL (mínimo ${evento.minimo} mg/dL). Antes de ajustar la NPH, confirme si alguno de los episodios fue nivel 3.`;
 
     alerta.classList.remove("is-hidden");
     alerta.setAttribute("aria-hidden", "false");

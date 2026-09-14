@@ -76,9 +76,8 @@
       tracking.insertAdjacentHTML("beforebegin", `
         <div class="card card-blue text-left compact-card" id="metas-seguridad-r2">
           <p class="card-title text-center">Meta individual y seguridad</p>
-          <div class="form-grid form-grid-2">
+          <div class="form-grid">
             <div class="field"><label for="meta-hba1c-seguimiento">Meta individual de HbA1c</label><select id="meta-hba1c-seguimiento"><option value="7">&lt;7% · preprandial 80–130</option><option value="8">&lt;8% · preprandial 100–150</option><option value="8.5">&lt;8,5% · preprandial 100–160</option></select></div>
-            <label class="aps-med-option"><input type="checkbox" id="nivel3-referido"><span class="aps-med-copy"><span class="aps-med-name">Hipoglicemia nivel 3 desde el último control</span><small class="aps-med-safety">Marque si algún episodio requirió asistencia de otra persona, independientemente de si existe un HGT &lt;70 registrado.</small></span></label>
           </div>
         </div>`);
     }
@@ -93,22 +92,6 @@
     if (strong) strong.textContent = "⚠️ dosis alta de insulina basal: no escalar automáticamente si alcanza ≥0,5 UI/kg/día";
     const lead = p41?.querySelector(".lead");
     if (lead) lead.textContent = "La Vía Clínica DM2 2026 establece 0,5 UI/kg/día como dosis máxima de insulina basal. Revise técnica, adherencia, patrón glicémico y necesidad de intensificación o derivación.";
-  }
-
-  function protectLevel3Hypoglycemia() {
-    document.addEventListener("click", (event) => {
-      if (event.target.closest("#hipo-con-ayuda")) {
-        const checkbox = byId("nivel3-referido");
-        if (checkbox) checkbox.checked = true;
-      }
-    }, true);
-
-    actions.decorate("calculate-followup", (next) => (context) => {
-      if (!byId("nivel3-referido")?.checked) return next(context);
-      app.notes.render(clinicalCopy.buildLevel3HypoglycemiaNote());
-      runtime.navigation.go(5);
-      return { urgent: true, level: 3 };
-    });
   }
 
   function registerServiceWorker() {
@@ -127,7 +110,6 @@
     const fecha = byId("fecha-hoy");
     if (fecha) fecha.textContent = new Date().toLocaleDateString("es-CL");
     injectClinicalR2Controls();
-    protectLevel3Hypoglycemia();
     document.addEventListener("input", app.inputs.handle);
     setupActionDelegation();
     setupButtonFeedback();

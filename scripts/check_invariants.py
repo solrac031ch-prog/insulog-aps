@@ -214,7 +214,7 @@ require(
         "const runtime = window.InsulogRuntime", "const clinicalEngine = window.InsulogClinicalEngine",
         "const state = runtime.state", "const actions = runtime.actions",
         "clinicalEngine.suggestInitialScheme", "clinicalEngine.calculateInitialDose", "clinicalEngine.calculateFollowup",
-        "ayunasRaw.length < 3", "3 glicemias pre-almuerzo", "meta-hba1c-seguimiento", "nivel3-referido",
+        "ayunasRaw.length < 3", "3 glicemias pre-almuerzo", "meta-hba1c-seguimiento",
         "resultado.blocksAutomaticEscalation", "minAy", "minPre",
         'actions.register("define-initial-scheme"', 'actions.register("calculate-initial"',
         'actions.register("prepare-followup"', 'actions.register("calculate-followup"',
@@ -228,7 +228,7 @@ forbid(
     [
         "globalData", "function nav(", "function redondearPar", "function analizarGlicemias",
         "function calcularAjuste", "function dosisSegundaDosis", "window.calcular", "window.generar",
-        "resultado.dosisKg >= 0.7", "resultado.dosisKg >= 1", "hba1cEstimada",
+        "resultado.dosisKg >= 0.7", "resultado.dosisKg >= 1", "hba1cEstimada", "nivel3-referido",
     ],
     "Legacy app globals or duplicated clinical thresholds",
 )
@@ -365,8 +365,8 @@ require(
         "const runtime = window.InsulogRuntime", "const app = window.InsulogApp", "const actions = runtime.actions",
         "function setupActionDelegation", 'closest("[data-action]")', "actions.invoke(action, { element, event })",
         "document.addEventListener(\"input\", app.inputs.handle)", "function registerServiceWorker",
-        'updateViaCache: "none"', "registration.update()", "injectClinicalR2Controls", "protectLevel3Hypoglycemia",
-        "meta-hba1c-seguimiento", "nivel3-referido", "edad-inicio", "imc-inicio", "vfg-inicio",
+        'updateViaCache: "none"', "registration.update()", "injectClinicalR2Controls",
+        "meta-hba1c-seguimiento", "edad-inicio", "imc-inicio", "vfg-inicio",
         "runtime.navigation.go(0)", "window.InsulogShell", "DOMContentLoaded",
     ],
     "Application shell boundary",
