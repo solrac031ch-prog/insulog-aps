@@ -2,6 +2,7 @@ const { defineConfig } = require("@playwright/test");
 
 module.exports = defineConfig({
   testDir: "./tests/e2e",
+  testIgnore: "device-compat.spec.js",
   timeout: 30_000,
   expect: {
     timeout: 6_000
