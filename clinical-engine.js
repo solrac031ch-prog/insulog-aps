@@ -17,7 +17,6 @@
     return Math.max(0, Math.round(value));
   }
 
-  // Alias conservado por compatibilidad con consumidores previos.
   function roundEven(value) { return roundUnits(value); }
 
   function normalizeTargetA1c(value = 7) {
@@ -227,8 +226,11 @@
     const currentPerKg = Number.isFinite(weight) && weight > 0 ? (am + pm) / weight : Number.NaN;
     const projectedPerKg = Number.isFinite(weight) && weight > 0 ? (newAm + newPm) / weight : Number.NaN;
     const projectedSafety = assessDoseSafety(projectedPerKg);
+    let automaticEscalationBlocked = false;
     if (newAm + newPm > am + pm && projectedSafety.blocksAutomaticEscalation) {
-      newAm = am; newPm = pm;
+      automaticEscalationBlocked = true;
+      newAm = am;
+      newPm = pm;
       warnings.push("La titulación propuesta superaría 0,5 UI/kg/día de insulina basal; se bloqueó el aumento automático y se requiere reevaluación clínica.");
     }
 
@@ -256,7 +258,10 @@
       promPre: preLunch?.promedio !== null && preLunch ? Math.round(preLunch.promedio) : "N/A",
       minAy: fasting.min !== null ? fasting.min : "N/A", minPre: preLunch?.min !== null && preLunch ? preLunch.min : "N/A",
       promedioGlobal: globalAverage !== null ? Math.round(globalAverage) : "N/A", dosisKg: dosePerKg, currentDosePerKg: currentPerKg,
-      doseSafety, requiresHighDoseReview: doseSafety.requiresHighDoseReview, blocksAutomaticEscalation: doseSafety.blocksAutomaticEscalation,
+      doseSafety,
+      requiresHighDoseReview: automaticEscalationBlocked || doseSafety.requiresHighDoseReview,
+      blocksAutomaticEscalation: automaticEscalationBlocked || doseSafety.blocksAutomaticEscalation,
+      automaticEscalationBlocked,
       razonamiento: reasoning, advertencias: warnings, excluidos: [], discordantes: discordant, explicacion: explanation,
       targetA1c: normalizeTargetA1c(targetA1c)
     });
