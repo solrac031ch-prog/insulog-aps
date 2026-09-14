@@ -7,9 +7,30 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  refresh-release:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Refresh canonical PWA release
+        run: |
+          python scripts/app_shell_release.py --write
+          if git diff --quiet; then
+            echo "Release fingerprint already canonical"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html pdf-preview.html sw.js
+          git commit -m "Build: refresh Phase 6B PWA release"
+          git push origin HEAD:main
+
   validate:
     runs-on: ubuntu-latest
     steps:
@@ -27,6 +48,8 @@ jobs:
           node --check app.js
           node --check patient-document.js
           node --check app-shell.js
+          node --check phase6b-professional-decision.js
+          node --check phase6b-document-sync.js
           node --check pdf-enhancements.js
           node --check aps-safety-2026.js
           node --check farmacia-popular.js
