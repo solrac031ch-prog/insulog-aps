@@ -190,7 +190,7 @@ require(
         "function calculateInitialDose", 'scheme !== "doble_dosis" && safeFactor > 0.2',
         "function detectDiscordantHighs", "function analyzeGlucose", "hypoglycemiaLevel2", "minimum < 54", "minimum < 70",
         "function classifyHypoglycemia", "requiredAssistance", "urgent: true",
-        "function calculateAdjustment", "analysis.min", "percent = -20", "percent = -10", "percent = 10", "percent = 20",
+        "function calculateAdjustment", "analysis.min", "analysis.hipo ? -20 : -10", "percent = 10", "percent = 20",
         "function assessDoseSafety", "dosePerKg >= 0.5", "dosePerKg >= 0.4",
         "requiresHighDoseReview", "blocksAutomaticEscalation", "automaticEscalationBlocked",
         "function calculateFollowup", "preLunchValues", "preElevenValues", "se bloqueó el aumento automático",
