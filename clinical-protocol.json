@@ -1,9 +1,19 @@
 {
   "protocolId": "insulog-aps-nph",
-  "version": "APS-NPH-2026.09.14-r1",
+  "version": "APS-NPH-2026.09.14-r2",
   "status": "baseline",
-  "scope": "Insulinización con NPH en APS chilena: inicio, seguimiento, hipoglicemia y seguridad de dosis alta.",
+  "scope": "Insulinización con NPH en APS chilena: inicio, seguimiento, hipoglicemia, metas individualizadas y seguridad de dosis basal.",
   "engine": "clinical-engine.js",
+  "sources": [
+    "MINSAL Chile: Vía Clínica Diabetes Mellitus tipo 2, 2026",
+    "MINSAL Chile: Protocolo de Insulinización para personas con Diabetes Mellitus tipo 2, 2021/2022",
+    "ADA Standards of Care in Diabetes 2026: hipoglicemia y seguridad"
+  ],
+  "intentionalLocalRules": [
+    "Seguimiento práctico APS cada 15 días cuando la disponibilidad local no permite titulación semanal.",
+    "Los valores altos discordantes se señalan para revisión, pero nunca se excluyen automáticamente.",
+    "No se autoriza autotitulación por el paciente; la dosis sugerida requiere revisión clínica."
+  ],
   "regressionMatrix": [
     "tests/clinical-engine.test.js",
     "tests/clinical-engine-regression.test.js",
