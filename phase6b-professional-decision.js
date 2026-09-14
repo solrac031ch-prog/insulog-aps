@@ -141,32 +141,6 @@
     };
   }
 
-  function renderDataQuality() {
-    const card = byId("best-data-quality");
-    if (!card) return;
-    const quality = qualitySnapshot();
-    const fasting = byId("best-quality-fasting");
-    const pre = byId("best-quality-pre");
-    const summary = byId("best-quality-summary");
-
-    if (fasting) {
-      fasting.textContent = `Ayunas ${Math.min(quality.fastingCount, 3)}/3 ${quality.fastingSufficient ? "✓" : ""}`;
-      fasting.className = `best-quality-chip ${quality.fastingSufficient ? "is-ok" : "is-pending"}`;
-    }
-    if (pre) {
-      const text = quality.preLunchRequired
-        ? `Pre-almuerzo ${Math.min(quality.preLunchCount, 3)}/3 ${quality.preLunchSufficient ? "✓" : ""}`
-        : `Pre-almuerzo: no requerido para ajustar NPH PM`;
-      pre.textContent = text;
-      pre.className = `best-quality-chip ${quality.preLunchSufficient ? "is-ok" : "is-pending"}`;
-    }
-    if (summary) {
-      summary.textContent = quality.sufficient
-        ? "Datos suficientes para aplicar la regla de titulación Clinical r2."
-        : "Datos parciales: complete los HGT requeridos antes de titular.";
-      summary.className = `best-quality-summary ${quality.sufficient ? "is-ok" : "is-pending"}`;
-    }
-  }
 
   function setReviewStatus(message, ok = true) {
     const node = byId("best-review-status");
@@ -216,34 +190,14 @@
       .best-modify-panel { margin-top: 14px; padding: 16px; border: 1px solid #bdd8f8; border-radius: var(--radius); background: #f7fbff; }
       .best-modify-panel textarea { min-height: 88px; resize: vertical; }
       .best-final-summary { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: var(--surface-soft); line-height: 1.5; }
-      .best-quality-card { max-width: 760px; }
-      .best-quality-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin-top: 10px; }
-      .best-quality-chip { display: block; padding: 10px 12px; border-radius: 999px; text-align: center; font-size: .88rem; font-weight: 800; }
-      .best-quality-chip.is-ok, .best-quality-summary.is-ok { color: #0b6b3a; background: #edf9f2; }
-      .best-quality-chip.is-pending, .best-quality-summary.is-pending { color: #8a5a00; background: #fff7e5; }
-      .best-quality-summary { margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; text-align: center; font-size: .86rem; font-weight: 750; }
       .phase6b-final-dose { margin-top: 5px; }
       @media (max-width: 620px) {
-        .best-review-actions.phase6b-actions, .best-quality-grid { grid-template-columns: 1fr; }
+        .best-review-actions.phase6b-actions { grid-template-columns: 1fr; }
       }
     `;
     document.head.appendChild(style);
   }
 
-  function injectDataQualityUI() {
-    const host = byId("metas-seguridad-r2");
-    if (!host || byId("best-data-quality")) return;
-    host.insertAdjacentHTML("afterend", `
-      <div id="best-data-quality" class="card compact-card best-quality-card text-left">
-        <p class="card-title text-center">Suficiencia de datos para titular</p>
-        <div class="best-quality-grid">
-          <span id="best-quality-fasting" class="best-quality-chip is-pending"></span>
-          <span id="best-quality-pre" class="best-quality-chip is-pending"></span>
-        </div>
-        <p id="best-quality-summary" class="best-quality-summary is-pending"></p>
-      </div>`);
-    renderDataQuality();
-  }
 
   function injectProfessionalDecisionUI() {
     const review = byId("best-professional-review");
@@ -475,17 +429,9 @@
 
   function init() {
     injectStyles();
-    injectDataQualityUI();
     injectProfessionalDecisionUI();
     registerActions();
     observeNoteAndHistory();
-    document.addEventListener("input", (event) => {
-      if (event.target.matches("#tabla-seguimiento .ay, #tabla-seguimiento .pre")) renderDataQuality();
-    });
-    document.addEventListener("change", (event) => {
-      if (event.target.id === "tipo-esquema") renderDataQuality();
-    });
-    renderDataQuality();
     renderDecisionUI();
   }
 
