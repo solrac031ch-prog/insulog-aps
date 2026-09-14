@@ -1,5 +1,6 @@
 const { test, expect } = require("@playwright/test");
 
+// Final Phase 6A browser contract: explainability, human review and ephemeral session history.
 async function expectActivePage(page, id) {
   const section = page.locator(`#${id}`);
   await expect(section).toHaveClass(/(^|\s)active(\s|$)/);
