@@ -53,13 +53,13 @@ async function precacheFreshShell() {
 
 self.addEventListener("install", (event) => {
   // El worker nuevo solo queda listo si pudo descargar el shell completo.
-  // No usamos skipWaiting: una atención ya abierta sigue con su versión anterior.
+  // No adelantamos la activación: una atención ya abierta sigue con su versión anterior.
   event.waitUntil(precacheFreshShell());
 });
 
 self.addEventListener("activate", (event) => {
   // La activación ocurre cuando la versión anterior ya no controla clientes.
-  // Recién entonces retiramos caches viejos; no tomamos pestañas abiertas con clients.claim().
+  // Recién entonces retiramos caches viejos y no reclamamos pestañas ya abiertas.
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
       keys
