@@ -31,7 +31,8 @@
     return document.querySelector(".page.active")?.id || null;
   }
 
-  function go(pagina, { focusHeading = true } = {}) {
+  function go(pagina) {
+    const { focusHeading = true } = arguments[1] || {};
     const targetId = `p${pagina}`;
 
     all(".page").forEach((page) => {
