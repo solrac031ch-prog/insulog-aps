@@ -3,9 +3,11 @@
 (() => {
   const runtime = window.InsulogRuntime;
   const clinicalEngine = window.InsulogClinicalEngine;
+  const clinicalCopy = window.InsulogClinicalCopy;
 
   if (!runtime) throw new Error("InsulogRuntime debe cargarse antes de app.js");
   if (!clinicalEngine) throw new Error("InsulogClinicalEngine debe cargarse antes de app.js");
+  if (!clinicalCopy) throw new Error("InsulogClinicalCopy debe cargarse antes de app.js");
 
   const { byId, all, show } = runtime.dom;
   const { go } = runtime.navigation;
@@ -118,17 +120,13 @@
     `;
     show(preview, true);
 
-    const nota = `INICIO
-Paciente con criterios de inicio de insulina bajo ${data.criteria}.
-Esquema sugerido: ${data.textoEsquemaInicio || "NPH monodosis nocturna"}
-Motivo: ${data.motivoEsquemaInicio || "Inicio conservador con NPH nocturna."}
-Se inicia insulina NPH en dosis de:
-- ${resultado.am} unidades antes del desayuno
-- ${resultado.pm} unidades antes de dormir
-
-Educación por enfermería para inicio de insulina.
-Evaluación por nutricionista.
-Control médico en 15 días con seguimiento de glicemia en ayunas y Antes de las once.`;
+    const nota = clinicalCopy.buildInitialNote({
+      criteria: data.criteria,
+      schemeText: data.textoEsquemaInicio || "NPH monodosis nocturna",
+      reason: data.motivoEsquemaInicio || "Inicio conservador con NPH nocturna.",
+      am: resultado.am,
+      pm: resultado.pm
+    });
 
     renderNotaClinica(nota);
     go(5);
@@ -234,15 +232,18 @@ Control médico en 15 días con seguimiento de glicemia en ayunas y Antes de las
       return resultado;
     }
 
-    const nota = `SEGUIMIENTO APS
-Promedios usados: Ayunas ${data.promAy} | Pre-once ${data.promPre}
-Promedio global estimado: ${data.promedioGlobal} mg/dL
-HbA1c estimada a 90 días si mantiene este patrón: ${data.hba1cEstimada}%
-Esquema actual: AM ${data.amActual} UI | PM ${data.pmActual} UI
-Nuevo Esquema sugerido: AM ${resultado.am} UI | PM ${resultado.pm} UI
-Dosis total: ${resultado.am + resultado.pm} UI/día (${resultado.dosisKg.toFixed(2)} UI/kg/día)
-Razonamiento:
-${data.explicacion}`;
+    const nota = clinicalCopy.buildFollowupNote({
+      promAy: data.promAy,
+      promPre: data.promPre,
+      promedioGlobal: data.promedioGlobal,
+      hba1cEstimada: data.hba1cEstimada,
+      amActual: data.amActual,
+      pmActual: data.pmActual,
+      am: resultado.am,
+      pm: resultado.pm,
+      dosisKg: resultado.dosisKg,
+      explicacion: data.explicacion
+    });
 
     renderNotaClinica(nota);
     go(5);
@@ -259,16 +260,18 @@ ${data.explicacion}`;
     state.patch({ acciones: accionesSeleccionadas.join("\n") });
     const data = state.snapshot();
 
-    const nota = `SEGUIMIENTO APS
-Promedios usados: Ayunas ${data.promAy} | Pre-once ${data.promPre}
-Promedio global estimado: ${data.promedioGlobal} mg/dL
-HbA1c estimada a 90 días si mantiene este patrón: ${data.hba1cEstimada}%
-Esquema actual: AM ${data.amActual} UI | PM ${data.pmActual} UI
-Nuevo Esquema sugerido: AM ${data.am} UI | PM ${data.pm} UI
-Razonamiento: ${data.explicacion}
-
-ALERTA DOSIS ALTA (>0.7 UI/kg):
-${data.acciones || "Mantener controles y seguimiento por medicina interna APS."}`;
+    const nota = clinicalCopy.buildHighDoseNote({
+      promAy: data.promAy,
+      promPre: data.promPre,
+      promedioGlobal: data.promedioGlobal,
+      hba1cEstimada: data.hba1cEstimada,
+      amActual: data.amActual,
+      pmActual: data.pmActual,
+      am: data.am,
+      pm: data.pm,
+      explicacion: data.explicacion,
+      acciones: data.acciones
+    });
 
     renderNotaClinica(nota);
     go(5);

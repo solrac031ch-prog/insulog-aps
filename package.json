@@ -8,10 +8,11 @@
     "check:invariants": "python scripts/check_invariants.py",
     "check:release": "python scripts/app_shell_release.py && python scripts/check_atomic_shell.py",
     "release:write": "python scripts/app_shell_release.py --write",
+    "test:clinical-copy": "node tests/clinical-copy.test.js",
     "test:e2e": "playwright test",
     "test:devices": "playwright test --config=playwright.devices.config.js",
     "test:e2e:report": "playwright show-report",
-    "verify": "npm run check:clinical-protocol && npm run check:invariants && npm run check:release && npm run test:e2e && npm run test:devices"
+    "verify": "npm run check:clinical-protocol && npm run test:clinical-copy && npm run check:invariants && npm run check:release && npm run test:e2e && npm run test:devices"
   },
   "devDependencies": {
     "@playwright/test": "1.55.0",

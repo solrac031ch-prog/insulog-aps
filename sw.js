@@ -1,32 +1,33 @@
 "use strict";
 
-const CACHE_NAME = "insulog-shell-4804df17c9c0ab6b";
-const DEPLOYMENT_REVISION = "release-4804df17c9c0ab6b";
-const PDF_PREVIEW_PATH = "./pdf-preview.html?v=4804df17c9c0ab6b";
+const CACHE_NAME = "insulog-shell-239bc6b77d3afe3d";
+const DEPLOYMENT_REVISION = "release-239bc6b77d3afe3d";
+const PDF_PREVIEW_PATH = "./pdf-preview.html?v=239bc6b77d3afe3d";
 
 const APP_SHELL = [
   "./index.html",
   PDF_PREVIEW_PATH,
-  "./styles.css?v=4804df17c9c0ab6b",
-  "./document-flow.css?v=4804df17c9c0ab6b",
-  "./pdf-enhancements.css?v=4804df17c9c0ab6b",
-  "./pdf-design-2026.css?v=4804df17c9c0ab6b",
-  "./aps-safety-2026.css?v=4804df17c9c0ab6b",
-  "./farmacia-popular.css?v=4804df17c9c0ab6b",
-  "./app-runtime.js?v=4804df17c9c0ab6b",
-  "./clinical-engine.js?v=4804df17c9c0ab6b",
-  "./app.js?v=4804df17c9c0ab6b",
-  "./patient-document.js?v=4804df17c9c0ab6b",
-  "./pdf-enhancements.js?v=4804df17c9c0ab6b",
-  "./aps-safety-2026.js?v=4804df17c9c0ab6b",
-  "./farmacia-popular.js?v=4804df17c9c0ab6b",
-  "./document-flow.js?v=4804df17c9c0ab6b",
-  "./app-shell.js?v=4804df17c9c0ab6b",
-  "./manifest.webmanifest?v=4804df17c9c0ab6b",
-  "./assets/icons/icon-32.png?v=4804df17c9c0ab6b",
-  "./assets/icons/icon-180.png?v=4804df17c9c0ab6b",
-  "./assets/icons/icon-192.png?v=4804df17c9c0ab6b",
-  "./assets/icons/icon-512.png?v=4804df17c9c0ab6b"
+  "./styles.css?v=239bc6b77d3afe3d",
+  "./document-flow.css?v=239bc6b77d3afe3d",
+  "./pdf-enhancements.css?v=239bc6b77d3afe3d",
+  "./pdf-design-2026.css?v=239bc6b77d3afe3d",
+  "./aps-safety-2026.css?v=239bc6b77d3afe3d",
+  "./farmacia-popular.css?v=239bc6b77d3afe3d",
+  "./app-runtime.js?v=239bc6b77d3afe3d",
+  "./clinical-engine.js?v=239bc6b77d3afe3d",
+  "./clinical-copy.js?v=239bc6b77d3afe3d",
+  "./app.js?v=239bc6b77d3afe3d",
+  "./patient-document.js?v=239bc6b77d3afe3d",
+  "./pdf-enhancements.js?v=239bc6b77d3afe3d",
+  "./aps-safety-2026.js?v=239bc6b77d3afe3d",
+  "./farmacia-popular.js?v=239bc6b77d3afe3d",
+  "./document-flow.js?v=239bc6b77d3afe3d",
+  "./app-shell.js?v=239bc6b77d3afe3d",
+  "./manifest.webmanifest?v=239bc6b77d3afe3d",
+  "./assets/icons/icon-32.png?v=239bc6b77d3afe3d",
+  "./assets/icons/icon-180.png?v=239bc6b77d3afe3d",
+  "./assets/icons/icon-192.png?v=239bc6b77d3afe3d",
+  "./assets/icons/icon-512.png?v=239bc6b77d3afe3d"
 ];
 
 const SHELL_ASSET_BY_PATH = new Map(
