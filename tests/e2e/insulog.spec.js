@@ -356,7 +356,7 @@ test("el documento aislado imprime en una sola hoja Letter", async ({ page, cont
   expect(rendered.html).toContain("Paciente prueba impresión");
 
   const printPage = await context.newPage();
-  await printPage.goto("/pdf-preview.html?v=20260910-1");
+  await printPage.goto("/pdf-preview.html");
   await printPage.evaluate(({ className, html }) => {
     const root = document.getElementById("pdf");
     root.className = className;
