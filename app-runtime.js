@@ -17,6 +17,7 @@
   });
 
   let runtimeState = { ...INITIAL_STATE };
+  let hasNavigated = false;
   const actionHandlers = new Map();
 
   const byId = (id) => document.getElementById(id);
@@ -32,6 +33,8 @@
   }
 
   function go(pagina) {
+    const options = arguments[1] || {};
+    const focusHeading = options.focusHeading ?? hasNavigated;
     const targetId = `p${pagina}`;
 
     all(".page").forEach((page) => {
@@ -48,10 +51,12 @@
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
     });
 
-    if (heading) {
+    if (heading && focusHeading) {
       heading.setAttribute("tabindex", "-1");
       requestAnimationFrame(() => heading.focus({ preventScroll: true }));
     }
+
+    hasNavigated = true;
   }
 
   function snapshotState() {
@@ -119,7 +124,7 @@
   }
 
   window.InsulogRuntime = Object.freeze({
-    version: "2026.09.10-phase6",
+    version: "2026.09.14-phase8a",
     dom: Object.freeze({ byId, all, show: showElement }),
     navigation: Object.freeze({ go, activePageId }),
     state: Object.freeze({
