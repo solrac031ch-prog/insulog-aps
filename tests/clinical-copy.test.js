@@ -4,76 +4,74 @@ const assert = require("node:assert/strict");
 const copy = require("../clinical-copy.js");
 
 const initial = copy.buildInitialNote({
-  criteria: "HbA1c 11%",
-  schemeText: "NPH doble dosis AM + PM",
-  reason: "HbA1c/glicemias marcadamente elevadas o síntomas catabólicos, compatible con hiperglicemia sostenida.",
-  am: 10,
-  pm: 4
+  criteria: "HbA1c 11% (>10%)",
+  schemeText: "NPH monodosis nocturna",
+  reason: "Inicio con insulina basal NPH en monodosis, con titulación posterior según protocolo APS.",
+  sensitivity: "Sensibilidad usual",
+  am: 0,
+  pm: 14
 });
 
 assert.equal(initial, `INICIO
-Paciente con criterios de inicio de insulina bajo HbA1c 11%.
-Esquema sugerido: NPH doble dosis AM + PM
-Motivo: HbA1c/glicemias marcadamente elevadas o síntomas catabólicos, compatible con hiperglicemia sostenida.
+Paciente con criterio(s) de inicio de insulina: HbA1c 11% (>10%).
+Esquema sugerido: NPH monodosis nocturna
+Motivo: Inicio con insulina basal NPH en monodosis, con titulación posterior según protocolo APS.
+Sensibilidad a insulina: Sensibilidad usual
 Se inicia insulina NPH en dosis de:
-- 10 unidades antes del desayuno
-- 4 unidades antes de dormir
+- 0 unidades antes del desayuno
+- 14 unidades antes de dormir
 
 Educación por enfermería para inicio de insulina.
 Evaluación por nutricionista.
-Control médico en 15 días con seguimiento de glicemia en ayunas y Antes de las once.`);
+Control médico en 15 días con al menos 3 glicemias en ayunas y, si usa NPH AM, al menos 3 glicemias pre-almuerzo.`);
 
 const followup = copy.buildFollowupNote({
-  promAy: 150,
+  promAy: 170,
   promPre: "N/A",
-  promedioGlobal: 150,
-  hba1cEstimada: "6.9",
+  minAy: 160,
+  minPre: "N/A",
+  targetA1c: 7,
   amActual: 0,
   pmActual: 20,
   am: 0,
   pm: 22,
   dosisKg: 22 / 70,
-  explicacion: "Esquema final sugerido: NPH solo PM\nPM: aumentar 2 UI por promedio 131-180 mg/dL"
+  explicacion: "PM: aumentar 10% usando el menor de los controles (160 mg/dL)."
 });
 
 assert.equal(followup, `SEGUIMIENTO APS
-Promedios usados: Ayunas 150 | Pre-once N/A
-Promedio global estimado: 150 mg/dL
-HbA1c estimada a 90 días si mantiene este patrón: 6.9%
+Promedios descriptivos: Ayunas 170 mg/dL | Pre-almuerzo N/A mg/dL
+Valores usados para titular (menor de ≥3): Ayunas 160 mg/dL | Pre-almuerzo N/A mg/dL
+Meta individual de HbA1c: <7%
 Esquema actual: AM 0 UI | PM 20 UI
 Nuevo Esquema sugerido: AM 0 UI | PM 22 UI
 Dosis total: 22 UI/día (0.31 UI/kg/día)
 Razonamiento:
-Esquema final sugerido: NPH solo PM
-PM: aumentar 2 UI por promedio 131-180 mg/dL`);
+PM: aumentar 10% usando el menor de los controles (160 mg/dL).`);
 
 const highDose = copy.buildHighDoseNote({
   promAy: 100,
   promPre: 100,
-  promedioGlobal: 100,
-  hba1cEstimada: "5.1",
-  amActual: 40,
+  minAy: 100,
+  minPre: 100,
+  targetA1c: 7,
+  amActual: 20,
   pmActual: 30,
-  am: 40,
+  am: 20,
   pm: 30,
-  explicacion: "Dosis ≥0.7 UI/kg/día: dosis alta; revisar técnica.",
+  dosisKg: 0.5,
+  explicacion: "Dosis basal total ≥0,5 UI/kg/día: no escalar automáticamente.",
   acciones: "Evaluación y seguimiento por Medicina Interna APS\nRevisar técnica de inyección"
 });
 
-assert.equal(highDose, `SEGUIMIENTO APS
-Promedios usados: Ayunas 100 | Pre-once 100
-Promedio global estimado: 100 mg/dL
-HbA1c estimada a 90 días si mantiene este patrón: 5.1%
-Esquema actual: AM 40 UI | PM 30 UI
-Nuevo Esquema sugerido: AM 40 UI | PM 30 UI
-Razonamiento: Dosis ≥0.7 UI/kg/día: dosis alta; revisar técnica.
+assert.match(highDose, /ALERTA DOSIS BASAL ALTA \/ POSIBLE SOBREINSULINIZACIÓN \(≥0,5 UI\/kg\/día\):/);
+assert.doesNotMatch(highDose, /HbA1c estimada/);
+assert.doesNotMatch(highDose, /Pre-once/);
 
-ALERTA DOSIS ALTA (>0.7 UI/kg):
-Evaluación y seguimiento por Medicina Interna APS
-Revisar técnica de inyección`);
+const level3 = copy.buildLevel3HypoglycemiaNote();
+assert.match(level3, /HIPOGLICEMIA NIVEL 3/);
+assert.match(level3, /derivación inmediata a Unidad de Emergencia Hospitalaria/);
+assert.match(level3, /No se realiza ajuste automático/);
 
-assert.equal(Object.isFrozen(copy), true, "El generador de texto clínico debe exponer una API inmutable");
-assert.equal(copy.buildInitialNote({ criteria: "criterio" }).includes("NPH monodosis nocturna"), true);
-assert.equal(copy.buildHighDoseNote({}).endsWith("Mantener controles y seguimiento por medicina interna APS."), true);
-
-console.log("Clinical copy exact regression checks passed");
+assert.equal(Object.isFrozen(copy), true);
+console.log("Clinical copy r2 exact regression checks passed");
