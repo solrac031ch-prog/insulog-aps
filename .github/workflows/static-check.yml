@@ -23,6 +23,7 @@ jobs:
           node --check app-runtime.js
           node --check clinical-engine.js
           node --check clinical-copy.js
+          node --check note-presenter.js
           node --check app.js
           node --check patient-document.js
           node --check app-shell.js
@@ -35,6 +36,7 @@ jobs:
           node --check tests/clinical-engine-regression.test.js
           node --check tests/clinical-engine-contract.test.js
           node --check tests/clinical-copy.test.js
+          node --check tests/note-presenter.test.js
 
       - name: Run clinical engine equivalence tests
         run: |
@@ -44,6 +46,9 @@ jobs:
 
       - name: Run exact clinical-copy regression
         run: npm run test:clinical-copy
+
+      - name: Run exact note-presenter regression
+        run: npm run test:note-presenter
 
       - name: Validate manifest JSON
         run: |
