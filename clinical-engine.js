@@ -108,7 +108,7 @@
         canProceed: false,
         scheme: "none",
         schemeText: "Sin indicación automática de NPH en este flujo",
-        reason: "No se documenta un criterio suficiente de insulinización en el algoritmo. Mantener/optimizar manejo de DM2 y reevaluar según meta individualizada y Vía Clínica MINSAL 2026.",
+        reason: "No se registra un criterio suficiente de insulinización en el algoritmo. Mantener/optimizar manejo de DM2 y reevaluar según meta individualizada y Vía Clínica MINSAL 2026.",
         catabolicText: catabolic.join(", "),
         hypoRiskText: hypoRisk.join(", "),
         acceptanceText: acceptanceCriteria.join(", "),
