@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Check JavaScript syntax
         run: |
@@ -39,7 +41,12 @@ jobs:
           node tests/clinical-engine-contract.test.js
 
       - name: Validate manifest JSON
-        run: python -m json.tool manifest.webmanifest > /dev/null
+        run: |
+          python -m json.tool manifest.webmanifest > /dev/null
+          python -m json.tool clinical-protocol.json > /dev/null
+
+      - name: Validate clinical protocol governance
+        run: npm run check:clinical-protocol
 
       - name: Validate application invariants through maintenance command
         run: npm run check:invariants
