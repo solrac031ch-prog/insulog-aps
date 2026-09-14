@@ -1,3 +1,4 @@
+// Clinical r2 final validation trigger: production code unchanged.
 const { test, expect } = require("@playwright/test");
 
 async function expectActivePage(page, id) {
