@@ -29,6 +29,8 @@ SHELL_FILES = [
     "farmacia-popular.js",
     "document-flow.js",
     "app-shell.js",
+    "phase6b-professional-decision.js",
+    "phase6b-document-sync.js",
     "manifest.webmanifest",
     "assets/icons/icon-32.png",
     "assets/icons/icon-180.png",
