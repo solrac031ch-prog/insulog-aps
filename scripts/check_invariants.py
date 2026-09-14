@@ -109,6 +109,7 @@ require(
     "Phase 7B screen polish styles",
 )
 
+
 def asset(path: str) -> str:
     return f"./{path}?v={RELEASE}"
 
@@ -179,27 +180,31 @@ forbid(
     "Runtime leakage",
 )
 
-# Pure clinical engine remains independent from browser state.
+# Pure clinical engine: protect the current APS-NPH-2026 r2 contract.
 require(
     clinical_engine,
     [
-        "InsulogClinicalEngine", "function roundEven", "Math.ceil(value / 2) * 2",
-        "function suggestInitialScheme", "hba1c > 9", "hba1c >= 11", "fasting > 250", "fasting >= 250",
-        "function calculateInitialDose", "total * 0.66",
-        "function detectDiscordantHighs", "function analyzeGlucose", "value < 54", "value < 70",
-        "function classifyHypoglycemia", "requiredAssistance", "minimum < 54",
-        "function calculateAdjustment", "analysis.promedio < 80", "analysis.promedio <= 130", "analysis.promedio <= 180",
-        "function calculateSecondDose", "Math.min(10, Math.max(4, weightKg * 0.1))",
-        "function assessDoseSafety", "dosePerKg >= 1", "dosePerKg >= 0.7",
-        "requiresHighDoseReview", "blocksAutomaticEscalation",
-        "function calculateFollowup", "preElevenValues.length >= 3",
+        "InsulogClinicalEngine", "TARGET_PROFILES", "function roundUnits", "Math.round(value)",
+        "function suggestInitialScheme", "hba1cValue > 10", "containsAcuteEmergency", "Unidad de Emergencia Hospitalaria",
+        "function assessInsulinSensitivity", "bmiValue < 20", "egfrValue < 60", "ageValue > 70", "bmiValue >= 30",
+        "function calculateInitialDose", 'scheme !== "doble_dosis" && safeFactor > 0.2',
+        "function detectDiscordantHighs", "function analyzeGlucose", "hypoglycemiaLevel2", "minimum < 54", "minimum < 70",
+        "function classifyHypoglycemia", "requiredAssistance", "urgent: true",
+        "function calculateAdjustment", "analysis.min", "percent = -20", "percent = -10", "percent = 10", "percent = 20",
+        "function assessDoseSafety", "dosePerKg >= 0.5", "dosePerKg >= 0.4",
+        "requiresHighDoseReview", "blocksAutomaticEscalation", "automaticEscalationBlocked",
+        "function calculateFollowup", "preLunchValues", "preElevenValues", "se bloqueó el aumento automático",
     ],
-    "Pure clinical engine invariants",
+    "Pure clinical engine r2 invariants",
 )
 forbid(
     clinical_engine,
-    ["document", "querySelector", "runtimeState", "localStorage", "sessionStorage", "indexedDB", "InsulogRuntime"],
-    "Pure clinical engine browser coupling",
+    [
+        "document", "querySelector", "runtimeState", "localStorage", "sessionStorage", "indexedDB", "InsulogRuntime",
+        "hba1c > 9", "hba1c >= 11", "dosePerKg >= 0.7", "dosePerKg >= 1", "hipoSevera",
+        "analysis.promedio < 80", "analysis.promedio <= 130", "analysis.promedio <= 180",
+    ],
+    "Pure clinical engine browser coupling or retired clinical rules",
 )
 
 # App adapter: local implementation registered as named actions, no legacy globals.
@@ -209,20 +214,21 @@ require(
         "const runtime = window.InsulogRuntime", "const clinicalEngine = window.InsulogClinicalEngine",
         "const state = runtime.state", "const actions = runtime.actions",
         "clinicalEngine.suggestInitialScheme", "clinicalEngine.calculateInitialDose", "clinicalEngine.calculateFollowup",
-        "ayunasRaw.length < 3", "resultado.requiresHighDoseReview",
+        "ayunasRaw.length < 3", "3 glicemias pre-almuerzo", "meta-hba1c-seguimiento", "nivel3-referido",
+        "resultado.requiresHighDoseReview", "minAy", "minPre",
         'actions.register("define-initial-scheme"', 'actions.register("calculate-initial"',
         'actions.register("prepare-followup"', 'actions.register("calculate-followup"',
         'actions.register("generate-high-dose-note"', 'actions.register("finish"',
         "window.InsulogApp",
     ],
-    "Clinical UI adapter invariants",
+    "Clinical UI adapter r2 invariants",
 )
 forbid(
     app,
     [
         "globalData", "function nav(", "function redondearPar", "function analizarGlicemias",
         "function calcularAjuste", "function dosisSegundaDosis", "window.calcular", "window.generar",
-        "resultado.dosisKg >= 0.7", "resultado.dosisKg >= 1",
+        "resultado.dosisKg >= 0.7", "resultado.dosisKg >= 1", "hba1cEstimada",
     ],
     "Legacy app globals or duplicated clinical thresholds",
 )
@@ -352,19 +358,20 @@ forbid(
 require(doc_css, ["@media print", ".pdf-preview-frame", ".pdf-render-staging", "body.pdf-isolated-document"], "Document-flow print isolation")
 forbid(doc_css, [".pdf-insulina-paciente", ".tabla-registro-hgt", "height: 16.4px", "height: 17.2px"], "Document-flow visual leakage")
 
-# Shell: one delegated click listener dispatches declarative actions.
+# Shell: one delegated click listener dispatches declarative actions and injects r2 controls.
 require(
     shell_js,
     [
         "const runtime = window.InsulogRuntime", "const app = window.InsulogApp", "const actions = runtime.actions",
         "function setupActionDelegation", 'closest("[data-action]")', "actions.invoke(action, { element, event })",
         "document.addEventListener(\"input\", app.inputs.handle)", "function registerServiceWorker",
-        'updateViaCache: "none"', "registration.update()",
+        'updateViaCache: "none"', "registration.update()", "injectClinicalR2Controls", "protectLevel3Hypoglycemia",
+        "meta-hba1c-seguimiento", "nivel3-referido", "edad-inicio", "imc-inicio", "vfg-inicio",
         "runtime.navigation.go(0)", "window.InsulogShell", "DOMContentLoaded",
     ],
     "Application shell boundary",
 )
-forbid(shell_js, ["globalData", "typeof handleInput", "calcularAjuste", "calculateFollowup", "MEDICAMENTOS_APS", "generarDocumento"], "Shell leakage")
+forbid(shell_js, ["globalData", "typeof handleInput", "calcularAjuste", "MEDICAMENTOS_APS", "generarDocumento"], "Shell leakage")
 
 # Only namespaced window exports are allowed in application layers.
 application_js = "\n".join([runtime_js, app, patient_document_js, pdf_js, aps_js, pharmacy_js, doc_js, shell_js])
@@ -431,4 +438,4 @@ if "followup-flow-2026.js" in html or "followup-flow-2026.js" in sw:
 runtime_sources = "\n".join([runtime_js, clinical_engine, app, patient_document_js, pdf_js, doc_js, aps_js, pharmacy_js, shell_js])
 forbid(runtime_sources, ["localStorage", "sessionStorage", "indexedDB"], "Patient data persistence")
 
-print(f"Insulog release {RELEASE}: immutable shell, readable PDF, clinical engine, pharmacy and privacy invariants passed")
+print(f"Insulog release {RELEASE}: immutable shell, readable PDF, clinical engine r2, pharmacy and privacy invariants passed")
