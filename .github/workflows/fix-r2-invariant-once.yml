@@ -1,0 +1,38 @@
+name: Fix r2 invariant once
+
+on:
+  push:
+    paths:
+      - .github/workflows/fix-r2-invariant-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Align invariant with ternary percentage rule
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/check_invariants.py')
+          s = p.read_text(encoding='utf-8')
+          old = '"function calculateAdjustment", "analysis.min", "percent = -20", "percent = -10", "percent = 10", "percent = 20",'
+          new = '"function calculateAdjustment", "analysis.min", "analysis.hipo ? -20 : -10", "percent = 10", "percent = 20",'
+          if old not in s:
+              raise SystemExit('Expected invariant sequence not found')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+      - name: Verify invariants locally
+        run: python scripts/check_invariants.py
+      - name: Commit fix and remove workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/check_invariants.py
+          git rm .github/workflows/fix-r2-invariant-once.yml
+          git commit -m "Chore: align clinical r2 invariant with percentage rule"
+          git push
+# trigger
