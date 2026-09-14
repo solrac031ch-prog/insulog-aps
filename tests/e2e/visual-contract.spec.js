@@ -56,19 +56,26 @@ async function perceptualHash(page, screenshotBuffer) {
   }, src);
 }
 
-async function settleVisual(page) {
-  await page.evaluate(async () => {
+async function settleVisual(page, { resetScroll = true } = {}) {
+  await page.evaluate(async (shouldResetScroll) => {
     document.documentElement.style.scrollBehavior = "auto";
     document.body.style.scrollBehavior = "auto";
     if (document.fonts?.ready) await document.fonts.ready;
-    window.scrollTo(0, 0);
-  });
-  await page.waitForFunction(() => window.scrollY === 0);
+    if (shouldResetScroll) window.scrollTo(0, 0);
+  }, resetScroll);
+  if (resetScroll) await page.waitForFunction(() => window.scrollY === 0);
   await page.waitForTimeout(80);
 }
 
-async function captureVisual(page, testInfo, key) {
-  await settleVisual(page);
+async function captureVisual(page, testInfo, key, options = {}) {
+  await settleVisual(page, { resetScroll: !options.focusSelector });
+
+  if (options.focusSelector) {
+    const target = page.locator(options.focusSelector);
+    await expect(target).toBeVisible();
+    await target.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(80);
+  }
 
   const path = testInfo.outputPath(`${key}.png`);
   const screenshot = await page.screenshot({
@@ -88,7 +95,7 @@ async function captureVisual(page, testInfo, key) {
     return hash;
   }
 
-  expect(expected, `Missing visual baseline for ${key}`).toBeTruthy();
+  expect(expected, `Missing visual baseline for ${key}; current hash ${hash}`).toBeTruthy();
   const distance = hammingDistance(hash, expected.hash);
   expect(
     distance,
@@ -110,6 +117,56 @@ async function gotoFollowup(page) {
   await expect(page.locator("#p35")).toHaveClass(/active/);
   await page.locator("#p35").getByRole("button", { name: "CONTINUAR AL REGISTRO DE GLICEMIAS", exact: true }).click();
   await expect(page.locator("#p4")).toHaveClass(/active/);
+}
+
+async function fillFasting(page, values) {
+  const inputs = page.locator("#tabla-seguimiento .ay");
+  for (let index = 0; index < values.length; index += 1) {
+    await inputs.nth(index).fill(String(values[index]));
+  }
+}
+
+async function fillPreEleven(page, values) {
+  const inputs = page.locator("#tabla-seguimiento .pre");
+  for (let index = 0; index < values.length; index += 1) {
+    await inputs.nth(index).fill(String(values[index]));
+  }
+}
+
+async function gotoHypoglycemiaAlert(page) {
+  await gotoFollowup(page);
+  await page.locator("#peso-seguimiento").fill("70");
+  await page.locator("#tipo-esquema").selectOption("pm");
+  await page.locator("#pm-actual").fill("20");
+  await fillFasting(page, [60, 105, 110]);
+  await page.locator("#ajustar-seguimiento-btn").click();
+  await expect(page.locator("#p4")).toHaveClass(/active/);
+  await expect(page.locator("#alerta-hipoglicemia-ada")).toBeVisible();
+  await expect(page.locator("#hipo-ada-titulo")).toContainText("nivel 1");
+}
+
+async function gotoHighDoseReview(page) {
+  await gotoFollowup(page);
+  await page.locator("#peso-seguimiento").fill("50");
+  await page.locator("#tipo-esquema").selectOption("2");
+  await page.locator("#am-actual").fill("20");
+  await page.locator("#pm-actual").fill("20");
+  await fillFasting(page, [160, 160, 160]);
+  await fillPreEleven(page, [160, 160, 160]);
+  await page.locator("#ajustar-seguimiento-btn").click();
+  await expect(page.locator("#p41")).toHaveClass(/active/);
+  await expect(page.locator("#p41")).toContainText("dosis alta");
+}
+
+async function gotoClinicalNote(page) {
+  await gotoFollowup(page);
+  await page.locator("#peso-seguimiento").fill("70");
+  await page.locator("#tipo-esquema").selectOption("pm");
+  await page.locator("#pm-actual").fill("20");
+  await fillFasting(page, [160, 160, 160]);
+  await page.locator("#ajustar-seguimiento-btn").click();
+  await expect(page.locator("#p5")).toHaveClass(/active/);
+  await expect(page.locator("#nota-clinica")).toContainText("Nuevo Esquema sugerido");
 }
 
 for (const profile of [
@@ -135,6 +192,21 @@ for (const profile of [
     test(`seguimiento HGT ${profile.name}`, async ({ page }, testInfo) => {
       await gotoFollowup(page);
       await captureVisual(page, testInfo, `${profile.name}-p4`);
+    });
+
+    test(`alerta de hipoglicemia ${profile.name}`, async ({ page }, testInfo) => {
+      await gotoHypoglycemiaAlert(page);
+      await captureVisual(page, testInfo, `${profile.name}-hypo`, { focusSelector: "#alerta-hipoglicemia-ada" });
+    });
+
+    test(`revisión de dosis alta ${profile.name}`, async ({ page }, testInfo) => {
+      await gotoHighDoseReview(page);
+      await captureVisual(page, testInfo, `${profile.name}-high-dose`);
+    });
+
+    test(`nota clínica ${profile.name}`, async ({ page }, testInfo) => {
+      await gotoClinicalNote(page);
+      await captureVisual(page, testInfo, `${profile.name}-note`);
     });
   });
 }
