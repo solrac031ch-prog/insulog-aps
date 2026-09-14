@@ -46,3 +46,6 @@ jobs:
 
       - name: Validate immutable app shell
         run: python scripts/check_atomic_shell.py
+
+      - name: Compute canonical release fingerprint
+        run: python scripts/app_shell_release.py --print
