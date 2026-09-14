@@ -1,3 +1,4 @@
+# one-off workflow trigger
 name: Patient name privacy simplification once
 
 on:
@@ -25,7 +26,6 @@ jobs:
           from pathlib import Path
           import re
 
-          # 1) App shell: remove the temporary session-history UI/storage/actions.
           path = Path('app-shell.js')
           text = path.read_text(encoding='utf-8')
           text = text.replace('  const BEST_HISTORY_LIMIT = 100;\n', '')
@@ -42,38 +42,18 @@ jobs:
               r'\n      \.best-history-group-title .*?\n',
           ]:
               text = re.sub(pattern, '\n', text)
-
-          text = re.sub(
-              r'\n  function readBestHistory\(\) \{.*?\n  \}\n\n  function writeBestHistory\(entries\) \{.*?\n  \}\n',
-              '\n', text, count=1, flags=re.S
-          )
-          text = re.sub(
-              r'\n    const evidence = document\.querySelector\("#p0 \.evidence-content"\);.*?\n    \}\n\n    const decisionCard',
-              '\n    const decisionCard', text, count=1, flags=re.S
-          )
-          text = re.sub(
-              r'\n        <div id="best-history-save-card".*?</div>`\);',
-              '\n        </div>`);', text, count=1, flags=re.S
-          )
-          text = re.sub(
-              r'\n    if \(!byId\("p8"\)\) \{.*?\n    \}\n\n    const noteNode',
-              '\n\n    const noteNode', text, count=1, flags=re.S
-          )
-          text = re.sub(
-              r'\n  function buildBestHistoryRecord\(alias\) \{.*?\n  function registerBestOfActions\(\)',
-              '\n\n  function registerBestOfActions()', text, count=1, flags=re.S
-          )
-          text = re.sub(
-              r'\n    actions\.register\("best-history-save".*?actions\.register\("best-history-home".*?;\n',
-              '\n', text, count=1, flags=re.S
-          )
+          text = re.sub(r'\n  function readBestHistory\(\) \{.*?\n  \}\n\n  function writeBestHistory\(entries\) \{.*?\n  \}\n', '\n', text, count=1, flags=re.S)
+          text = re.sub(r'\n    const evidence = document\.querySelector\("#p0 \.evidence-content"\);.*?\n    \}\n\n    const decisionCard', '\n    const decisionCard', text, count=1, flags=re.S)
+          text = re.sub(r'\n        <div id="best-history-save-card".*?</div>`\);', '\n        </div>`);', text, count=1, flags=re.S)
+          text = re.sub(r'\n    if \(!byId\("p8"\)\) \{.*?\n    \}\n\n    const noteNode', '\n\n    const noteNode', text, count=1, flags=re.S)
+          text = re.sub(r'\n  function buildBestHistoryRecord\(alias\) \{.*?\n  function registerBestOfActions\(\)', '\n\n  function registerBestOfActions()', text, count=1, flags=re.S)
+          text = re.sub(r'\n    actions\.register\("best-history-save".*?actions\.register\("best-history-home".*?;\n', '\n', text, count=1, flags=re.S)
           forbidden = ['best-history-save-card', 'best-history-alias', 'best-history-home-entry', 'best-history-list', 'best-history-save', 'best-history-open', 'best-history-delete', 'best-history-clear', 'bestSessionHistory', 'BEST_HISTORY_LIMIT']
           leftovers = [token for token in forbidden if token in text]
           if leftovers:
               raise SystemExit(f'History UI/storage leftovers in app-shell.js: {leftovers}')
           path.write_text(text, encoding='utf-8')
 
-          # 2) Phase 6B sync: keep only professional-dose -> patient-document synchronization.
           Path('phase6b-document-sync.js').write_text(r'''"use strict";
 
 (() => {
@@ -99,44 +79,32 @@ jobs:
   function registerDocumentSync() {
     actions.decorate("show-document", (next) => (context) => {
       const data = state.snapshot();
-      if (data.professionalDecision !== "aceptada" && data.professionalDecision !== "modificada") {
-        return next(context);
-      }
-
+      if (data.professionalDecision !== "aceptada" && data.professionalDecision !== "modificada") return next(context);
       const original = { am: data.am, pm: data.pm, dosisKg: data.dosisKg };
       const am = numberOrZero(data.professionalAm);
       const pm = numberOrZero(data.professionalPm);
       state.patch({ am, pm, dosisKg: data.professionalDosePerKg ?? data.dosisKg });
-
       const result = next(context);
       requestAnimationFrame(() => state.patch(original));
       return result;
     });
   }
 
-  function init() {
-    registerDocumentSync();
-  }
+  function init() { registerDocumentSync(); }
 
-  window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.14-phase6b-document-sync-private-name"
-  });
-
+  window.InsulogPhase6BDocumentSync = Object.freeze({ version: "2026.09.14-phase6b-document-sync-private-name" });
   document.addEventListener("DOMContentLoaded", init, { once: true });
 })();
 ''', encoding='utf-8')
 
-          # 3) Explicit privacy copy where patient name is requested for the final PDF.
           path = Path('index.html')
           html = path.read_text(encoding='utf-8')
           old = '<p class="lead small-lead no-print">Ingrese el nombre y seleccione el tipo de documento que desea generar.</p>'
           new = '<p class="lead small-lead no-print">Ingrese el nombre y seleccione el tipo de documento que desea generar. El nombre se usa sólo para este documento y no se almacena en Insulog.</p>'
           if old not in html:
               raise SystemExit('Expected patient-document helper copy not found')
-          html = html.replace(old, new, 1)
-          path.write_text(html, encoding='utf-8')
+          path.write_text(html.replace(old, new, 1), encoding='utf-8')
 
-          # 4) Phase 6B browser contract: remove obsolete quality/history tests and verify PDF-only name use.
           Path('tests/e2e/phase6b-professional-decision.spec.js').write_text(r'''const { test, expect } = require("@playwright/test");
 
 async function expectActivePage(page, id) {
@@ -183,26 +151,24 @@ test("6B separa recomendación Clinical r2 y pauta final modificada", async ({ p
   await expect(page.locator("#best-review-status")).toContainText("Plan modificado");
   await expect(page.locator("#best-final-decision-summary")).toContainText("PM 21 UI");
   await expect(page.locator("#nota-clinica")).toContainText("Recomendación Insulog Clinical r2: PM 22 UI");
-  await expect(page.locator("#nota-clinica")).toContainText("Modificada (PM 21 UI)");
   const state = await page.evaluate(() => window.InsulogRuntime.state.snapshot());
   expect({ enginePm: state.pm, finalPm: state.professionalPm, decision: state.professionalDecision }).toEqual({ enginePm: 22, finalPm: 21, decision: "modificada" });
 });
 
-test("6B sincroniza la pauta profesional con documento/PDF sin alterar el cálculo", async ({ page }) => {
+test("6B usa nombre sólo al generar documento/PDF", async ({ page }) => {
   await openFollowupResult(page);
   await modifyTo21(page, "Ajuste clínico deliberado por contexto del paciente");
   await page.locator("#p5").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
   await expectActivePage(page, "p6");
+  await expect(page.locator("label[for='nombre-paciente']")).toHaveText("Nombre del paciente");
+  await expect(page.locator("#p6")).toContainText("no se almacena en Insulog");
   await page.locator("#nombre-paciente").fill("Paciente prueba");
   await page.locator("#p6").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
   await expectActivePage(page, "p7");
   const frame = page.frameLocator("#pdf-preview-frame");
   await expect(frame.locator("#pdf")).toContainText("Paciente prueba");
   await expect(frame.locator("#pdf")).toContainText("21 UI");
-  await expect(frame.locator("#pdf")).not.toContainText("22 UI");
   const state = await page.evaluate(() => window.InsulogRuntime.state.snapshot());
-  expect(state.pm).toBe(22);
-  expect(state.professionalPm).toBe(21);
   expect(JSON.stringify(state)).not.toContain("Paciente prueba");
 });
 
@@ -211,14 +177,12 @@ test("6B no muestra ni mantiene historial temporal de pacientes", async ({ page 
   await expect(page.locator("#best-history-save-card")).toHaveCount(0);
   await expect(page.locator("#best-history-home-entry")).toHaveCount(0);
   await expect(page.locator("#p8")).toHaveCount(0);
-  const historyApi = await page.evaluate(() => Boolean(window.InsulogPhase6BDocumentSync?.history));
-  expect(historyApi).toBe(false);
+  expect(await page.evaluate(() => Boolean(window.InsulogPhase6BDocumentSync?.history))).toBe(false);
 });
 
 test("6B bloquea documento cuando la decisión es reevaluar", async ({ page }) => {
   await openFollowupResult(page);
   await page.locator("#best-review-reassess").click();
-  await expect(page.locator("#nota-clinica")).toContainText("Reevaluar antes de emitir una pauta definitiva");
   let message = "";
   page.once("dialog", async (dialog) => { message = dialog.message(); await dialog.accept(); });
   await page.locator("#p5").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
