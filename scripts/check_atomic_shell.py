@@ -4,6 +4,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 SW = (ROOT / "sw.js").read_text(encoding="utf-8")
+CODE = re.sub(r"//.*", "", SW)
 
 REQUIRED = [
     'const CACHE_NAME = "insulog-shell-20260914-atomic26"',
@@ -27,7 +28,7 @@ FORBIDDEN = [
     "refreshAsset",
     "event.waitUntil(refresh",
 ]
-found = [token for token in FORBIDDEN if token in SW]
+found = [token for token in FORBIDDEN if token in CODE]
 if found:
     raise SystemExit(f"Unsafe per-request shell update returned: {found}")
 
@@ -36,6 +37,12 @@ if not match:
     raise SystemExit("APP_SHELL declaration not found")
 
 assets = re.findall(r'"([^"\n]+)"', match.group(1))
+if "PDF_PREVIEW_PATH" in match.group(1):
+    pdf_match = re.search(r'const PDF_PREVIEW_PATH = "([^"]+)"', SW)
+    if not pdf_match:
+        raise SystemExit("PDF_PREVIEW_PATH is referenced but not declared")
+    assets.insert(1, pdf_match.group(1))
+
 if not assets:
     raise SystemExit("APP_SHELL is empty")
 
@@ -74,7 +81,7 @@ if missing_paths:
 if any("farmacia-cerro-navia.json" in asset for asset in assets):
     raise SystemExit("Farmacia Popular live JSON must remain network-only")
 
-if SW.count("cache.put(") != 1:
+if CODE.count("cache.put(") != 1:
     raise SystemExit("Shell cache must be populated only during atomic install")
 
 print(f"Atomic immutable shell passed with {len(assets)} unique assets")
