@@ -54,6 +54,8 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run Insulog browser safety net
+        env:
+          VISUAL_RECORD: "1"
         run: npm run test:e2e
 
       - name: Upload visual contract captures
