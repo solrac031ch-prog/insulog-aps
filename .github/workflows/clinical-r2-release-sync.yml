@@ -1,0 +1,27 @@
+name: Clinical r2 release sync
+
+on:
+  push:
+    branches: [clinical-alignment-r2]
+
+permissions:
+  contents: write
+
+jobs:
+  sync-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compute and write canonical app-shell release
+        run: python scripts/app_shell_release.py --write
+      - name: Commit canonical release tokens if needed
+        run: |
+          if git diff --quiet; then
+            echo "Release already canonical"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html pdf-preview.html sw.js
+          git commit -m "Clinical r2: sincronizar release del app shell"
+          git push
