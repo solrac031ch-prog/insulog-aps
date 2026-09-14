@@ -67,8 +67,15 @@ async function settleVisual(page) {
   await page.waitForTimeout(80);
 }
 
-async function captureVisual(page, testInfo, key) {
+async function captureVisual(page, testInfo, key, options = {}) {
   await settleVisual(page);
+
+  if (options.focusSelector) {
+    const target = page.locator(options.focusSelector);
+    await expect(target).toBeVisible();
+    await target.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(80);
+  }
 
   const path = testInfo.outputPath(`${key}.png`);
   const screenshot = await page.screenshot({
@@ -189,7 +196,7 @@ for (const profile of [
 
     test(`alerta de hipoglicemia ${profile.name}`, async ({ page }, testInfo) => {
       await gotoHypoglycemiaAlert(page);
-      await captureVisual(page, testInfo, `${profile.name}-hypo`);
+      await captureVisual(page, testInfo, `${profile.name}-hypo`, { focusSelector: "#alerta-hipoglicemia-ada" });
     });
 
     test(`revisión de dosis alta ${profile.name}`, async ({ page }, testInfo) => {
