@@ -1,3 +1,4 @@
+// Final Phase 6B browser contract: data sufficiency, professional override and document sync.
 const { test, expect } = require("@playwright/test");
 
 async function expectActivePage(page, id) {
