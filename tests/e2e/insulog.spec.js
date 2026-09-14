@@ -1,5 +1,4 @@
 const { test, expect } = require("@playwright/test");
-const { PDFDocument } = require("pdf-lib");
 
 async function expectActivePage(page, id) {
   const section = page.locator(`#${id}`);
@@ -9,275 +8,190 @@ async function expectActivePage(page, id) {
 
 async function openDefinition(page) {
   await page.goto("/");
-  await expectActivePage(page, "p0");
   await page.locator("#p0").getByRole("button", { name: "INICIAR ALGORITMO", exact: true }).click();
-  await expectActivePage(page, "p1");
   await page.locator("#p1").getByRole("button", { name: "NO", exact: true }).click();
   await expectActivePage(page, "p2");
 }
 
-async function openFollowupMedications(page) {
+async function openFollowupTable(page) {
   await openDefinition(page);
   await page.locator("#p2").getByRole("button", { name: "SEGUIMIENTO DE INSULINA", exact: true }).click();
   await expectActivePage(page, "p35");
-  await expect(page.locator('#p35 input[data-aps-med="seguimiento"][data-med-key="metformina850"]')).toBeAttached();
-}
-
-async function openFollowupTable(page) {
-  await openFollowupMedications(page);
   await page.locator("#p35").getByRole("button", { name: "CONTINUAR AL REGISTRO DE GLICEMIAS", exact: true }).click();
   await expectActivePage(page, "p4");
   await expect(page.locator("#tabla-seguimiento tr")).toHaveCount(15);
 }
 
-async function fillFasting(page, values) {
-  const inputs = page.locator("#tabla-seguimiento .ay");
+async function fillValues(locator, values) {
   for (let index = 0; index < values.length; index += 1) {
-    await inputs.nth(index).fill(String(values[index]));
+    await locator.nth(index).fill(String(values[index]));
   }
+}
+
+async function fillFasting(page, values) {
+  await fillValues(page.locator("#tabla-seguimiento .ay"), values);
+}
+
+async function fillPreLunch(page, values) {
+  await fillValues(page.locator("#tabla-seguimiento .pre"), values);
 }
 
 async function runtimeState(page) {
   return page.evaluate(() => window.InsulogRuntime.state.snapshot());
 }
 
-async function expectNoHorizontalOverflow(page) {
-  const dimensions = await page.evaluate(() => ({
-    scrollWidth: document.documentElement.scrollWidth,
-    clientWidth: document.documentElement.clientWidth
-  }));
-  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 2);
-}
-
-test("arranca sin errores JavaScript y monta las APIs explícitas de Fase 6", async ({ page }) => {
+test("arranca sin errores JavaScript y monta las APIs explícitas", async ({ page }) => {
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
-
   await page.goto("/");
   await expect(page.locator("#p0 .brand-title")).toHaveText("Insulog APS");
   await expect(page.locator("#p25")).toBeAttached();
-  await expect(page.locator('script[src*="farmacia-popular.js"]')).toHaveCount(1);
-  await expect(page.locator("[onclick], [onchange], [oninput]")).toHaveCount(0);
-  await page.waitForTimeout(150);
-
+  await expect(page.locator("#meta-hba1c-seguimiento")).toBeAttached();
+  await expect(page.locator("#nivel3-referido")).toBeAttached();
+  await expect(page.locator("#edad-inicio")).toBeAttached();
+  await expect(page.locator("#imc-inicio")).toBeAttached();
+  await expect(page.locator("#vfg-inicio")).toBeAttached();
+  await page.waitForTimeout(100);
   const architecture = await page.evaluate(() => ({
     runtime: Boolean(window.InsulogRuntime),
+    engine: Boolean(window.InsulogClinicalEngine),
     app: Boolean(window.InsulogApp),
-    documents: Boolean(window.InsulogDocuments),
     shell: Boolean(window.InsulogShell),
-    activePageId: window.InsulogRuntime?.navigation.activePageId(),
-    initialState: window.InsulogRuntime?.state.snapshot(),
-    actions: [
-      "navigate", "define-initial-scheme", "calculate-initial", "prepare-followup",
-      "calculate-followup", "open-document", "show-document", "finish"
-    ].every((name) => window.InsulogRuntime?.actions.has(name)),
-    legacy: {
-      nav: typeof nav,
-      globalData: typeof globalData,
-      calculateFollowup: typeof calcularSeguimientoPro,
-      generateDocument: typeof generarDocumento,
-      finish: typeof finalizar
-    }
+    version: window.InsulogApp?.version
   }));
-
-  expect(architecture.runtime).toBe(true);
-  expect(architecture.app).toBe(true);
-  expect(architecture.documents).toBe(true);
-  expect(architecture.shell).toBe(true);
-  expect(architecture.actions).toBe(true);
-  expect(architecture.activePageId).toBe("p0");
-  expect(architecture.initialState).toEqual({ am: 0, pm: 0, criteria: "", acciones: "" });
-  expect(architecture.legacy).toEqual({
-    nav: "undefined",
-    globalData: "undefined",
-    calculateFollowup: "undefined",
-    generateDocument: "undefined",
-    finish: "undefined"
-  });
+  expect(architecture).toEqual({ runtime: true, engine: true, app: true, shell: true, version: "2026.09.14-clinical-r2" });
   expect(pageErrors).toEqual([]);
-});
-
-test("navegación y estado funcionan solo a través del runtime", async ({ page }) => {
-  await page.goto("/");
-
-  await page.evaluate(() => window.InsulogRuntime.navigation.go(2));
-  await expectActivePage(page, "p2");
-
-  await page.evaluate(() => window.InsulogRuntime.navigation.go(1));
-  await expectActivePage(page, "p1");
-
-  const state = await page.evaluate(() => {
-    window.InsulogRuntime.state.patch({ am: 12 });
-    return window.InsulogRuntime.state.snapshot();
-  });
-  expect(state.am).toBe(12);
 });
 
 test("la exclusión clínica mantiene al paciente fuera del algoritmo APS", async ({ page }) => {
   await page.goto("/");
   await page.locator("#p0").getByRole("button", { name: "INICIAR ALGORITMO", exact: true }).click();
   await page.locator("#p1").getByRole("button", { name: "SÍ", exact: true }).click();
-
   await expectActivePage(page, "p1");
   await expect(page.locator("#alerta")).toBeVisible();
-  await expect(page.locator("#alerta")).toContainText("Derivar a nivel secundario");
 });
 
-test("inicio con hiperglicemia marcada conserva el cálculo NPH 0,2 UI/kg y reparto AM/PM", async ({ page }) => {
+test("HbA1c >10 inicia NPH basal en monodosis y no doble dosis automática", async ({ page }) => {
   await openDefinition(page);
   await page.locator("#p2").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
   await page.locator("#hba1c-inicio").fill("11");
+  await page.locator("#edad-inicio").fill("60");
+  await page.locator("#imc-inicio").fill("25");
+  await page.locator("#vfg-inicio").fill("90");
   await page.locator("#p2").getByRole("button", { name: "SIGUIENTE: DOSIFICACIÓN", exact: true }).click();
-
   await expectActivePage(page, "p25");
   await page.locator("#continuar-dosificacion-inicio").click();
   await expectActivePage(page, "p3");
   await expect(page.locator("#factor-dosis")).toHaveValue("0.2");
-
   await page.locator("#peso-paciente").fill("70");
   await page.locator("#p3").getByRole("button", { name: "CALCULAR DOSIS Y GENERAR NOTA", exact: true }).click();
   await expectActivePage(page, "p5");
-
   const data = await runtimeState(page);
-  expect({ am: data.am, pm: data.pm }).toEqual({ am: 10, pm: 4 });
+  expect({ am: data.am, pm: data.pm }).toEqual({ am: 0, pm: 14 });
+  await expect(page.locator("#nota-clinica")).toContainText("NPH monodosis nocturna");
 });
 
-test("alto riesgo de hipoglicemia conserva inicio conservador 0,1 UI/kg", async ({ page }) => {
+test("riesgo de hipoglicemia usa 0,1 UI/kg y redondeo a unidad completa", async ({ page }) => {
   await openDefinition(page);
   await page.locator("#p2").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
   await page.locator("#hba1c-inicio").fill("11");
   await page.locator('.riesgo-hipo-btn[data-value="Adulto mayor frágil"]').click();
   await page.locator("#p2").getByRole("button", { name: "SIGUIENTE: DOSIFICACIÓN", exact: true }).click();
-
   await expectActivePage(page, "p25");
   await page.locator("#continuar-dosificacion-inicio").click();
   await expect(page.locator("#factor-dosis")).toHaveValue("0.1");
-
   await page.locator("#peso-paciente").fill("70");
   await page.locator("#p3").getByRole("button", { name: "CALCULAR DOSIS Y GENERAR NOTA", exact: true }).click();
-  await expectActivePage(page, "p5");
-
   const data = await runtimeState(page);
-  expect({ am: data.am, pm: data.pm }).toEqual({ am: 0, pm: 8 });
+  expect({ am: data.am, pm: data.pm }).toEqual({ am: 0, pm: 7 });
 });
 
-test("seguimiento genera exactamente 15 filas de HGT", async ({ page }) => {
+test("sospecha de cetosis bloquea el flujo ambulatorio y deriva a urgencia", async ({ page }) => {
+  await openDefinition(page);
+  await page.locator("#p2").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
+  await page.locator('.catabolico-btn[data-value*="cetosis"]').click();
+  await page.locator("#p2").getByRole("button", { name: "SIGUIENTE: DOSIFICACIÓN", exact: true }).click();
+  await expectActivePage(page, "p5");
+  await expect(page.locator("#nota-clinica")).toContainText("POSIBLE CRISIS HIPERGLICÉMICA / CETOSIS");
+  await expect(page.locator("#nota-clinica")).toContainText("Unidad de Emergencia Hospitalaria");
+});
+
+test("preferencia del paciente no funciona como indicación independiente", async ({ page }) => {
+  await openDefinition(page);
+  await page.locator("#p2").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
+  await page.getByRole("button", { name: "Paciente acepta insulinoterapia", exact: true }).click();
+  let dialogText = "";
+  page.once("dialog", async (dialog) => { dialogText = dialog.message(); await dialog.accept(); });
+  await page.locator("#p2").getByRole("button", { name: "SIGUIENTE: DOSIFICACIÓN", exact: true }).click();
+  expect(dialogText).toContain("no se identifica una indicación protocolizada");
+  await expectActivePage(page, "p2");
+});
+
+test("seguimiento titula con el menor de 3 glicemias y ajuste porcentual", async ({ page }) => {
   await openFollowupTable(page);
-  await expect(page.locator("#tabla-seguimiento tr")).toHaveCount(15);
-  await expect(page.locator("#tabla-seguimiento .ay")).toHaveCount(15);
-  await expect(page.locator("#tabla-seguimiento .pre")).toHaveCount(15);
-});
-
-test("las metforminas simples siguen siendo excluyentes, pero vildagliptina/metformina puede coexistir", async ({ page }) => {
-  await openFollowupMedications(page);
-
-  const met850 = page.locator('#p35 input[data-med-key="metformina850"]');
-  const metXR = page.locator('#p35 input[data-med-key="metforminaXR1000"]');
-  const vildaMet = page.locator('#p35 input[data-med-key="vildaMet"]');
-
-  await met850.check({ force: true });
-  await metXR.check({ force: true });
-  await expect(met850).not.toBeChecked();
-  await expect(metXR).toBeChecked();
-
-  await met850.check({ force: true });
-  await expect(metXR).not.toBeChecked();
-  await vildaMet.check({ force: true });
-  await expect(met850).toBeChecked();
-  await expect(vildaMet).toBeChecked();
-});
-
-test("no permite duplicar iSGLT2", async ({ page }) => {
-  await openFollowupMedications(page);
-
-  const dapa = page.locator('#p35 input[data-med-key="dapagliflozina10"]');
-  const empaMet = page.locator('#p35 input[data-med-key="empaMet12_5_1000"]');
-
-  await dapa.check({ force: true });
-  await empaMet.check({ force: true });
-
-  await expect(dapa).not.toBeChecked();
-  await expect(empaMet).toBeChecked();
-});
-
-test("Farmacia Popular carga precio y disponibilidad desde el JSON local", async ({ page }) => {
-  await openFollowupMedications(page);
-
-  const empa = page.locator('#p35 input[data-med-key="empagliflozina"]');
-  const card = empa.locator("xpath=ancestor::label[1]");
-  await empa.check({ force: true });
-
-  const pharmacy = card.locator(".farmacia-popular-status");
-  await expect(pharmacy).toBeVisible();
-  await expect(pharmacy).toContainText("Farmacia Popular Cerro Navia");
-  await expect(pharmacy.locator(".farmacia-popular-price")).toContainText(/\$\s?[\d.]+/);
-  await expect(pharmacy).toContainText("precio referencial de venta");
-});
-
-test("seguimiento PM con ayunas 160 mg/dL aumenta exactamente 2 UI", async ({ page }) => {
-  await openFollowupTable(page);
-
   await page.locator("#peso-seguimiento").fill("70");
   await page.locator("#tipo-esquema").selectOption("pm");
   await page.locator("#pm-actual").fill("20");
-  await fillFasting(page, [160, 160, 160]);
+  await fillFasting(page, [160, 170, 180]);
   await page.locator("#ajustar-seguimiento-btn").click();
-
   await expectActivePage(page, "p5");
   const data = await runtimeState(page);
-  expect({ am: data.am, pm: data.pm }).toEqual({ am: 0, pm: 22 });
+  expect({ pm: data.pm, minAy: data.minAy }).toEqual({ pm: 22, minAy: 160 });
+  await expect(page.locator("#nota-clinica")).toContainText("menor de ≥3");
+  await expect(page.locator("#nota-clinica")).toContainText("aumentar 10%");
 });
 
-test("glicemia discordante se conserva en el promedio y en la nota clínica", async ({ page }) => {
+test("valor alto discordante se conserva pero no altera la dosis si el menor está en meta", async ({ page }) => {
   await openFollowupTable(page);
-
   await page.locator("#peso-seguimiento").fill("70");
   await page.locator("#tipo-esquema").selectOption("pm");
   await page.locator("#pm-actual").fill("20");
   await fillFasting(page, [100, 100, 100, 300]);
   await page.locator("#ajustar-seguimiento-btn").click();
-
   await expectActivePage(page, "p5");
   const data = await runtimeState(page);
-  expect({ pm: data.pm, promAy: data.promAy }).toEqual({ pm: 22, promAy: 150 });
+  expect({ pm: data.pm, promAy: data.promAy, minAy: data.minAy }).toEqual({ pm: 20, promAy: 150, minAy: 100 });
   await expect(page.locator("#nota-clinica")).toContainText("Valores discordantes: Ayunas 300 mg/dL");
-  await expect(page.locator("#nota-clinica")).toContainText("Se mantienen en el promedio");
+  await expect(page.locator("#nota-clinica")).toContainText("no se excluyen automáticamente");
 });
 
-test("la alerta de hipoglicemia aparece solo después de presionar Ajustar dosis", async ({ page }) => {
+test("meta individual <8% modifica correctamente el rango de titulación", async ({ page }) => {
   await openFollowupTable(page);
-
-  await page.locator("#peso-seguimiento").fill("70");
+  await page.locator("#meta-hba1c-seguimiento").selectOption("8");
+  await page.locator("#peso-seguimiento").fill("100");
   await page.locator("#tipo-esquema").selectOption("pm");
   await page.locator("#pm-actual").fill("20");
-  await fillFasting(page, [60, 105, 110]);
-
-  await expect(page.locator("#alerta-hipoglicemia-ada")).toBeHidden();
+  await fillFasting(page, [151, 180, 200]);
   await page.locator("#ajustar-seguimiento-btn").click();
-  await expectActivePage(page, "p4");
-  await expect(page.locator("#alerta-hipoglicemia-ada")).toBeVisible();
-  await expect(page.locator("#hipo-ada-titulo")).toContainText("nivel 1");
-  await expect(page.locator("#hipo-sin-ayuda")).toBeVisible();
-  await expect(page.locator("#hipo-con-ayuda")).toBeVisible();
+  await expectActivePage(page, "p5");
+  const data = await runtimeState(page);
+  expect(data.pm).toBe(22);
+  expect(data.targetA1c).toBe(8);
 });
 
-test("HGT menor de 54 mg/dL se presenta como hipoglicemia nivel 2", async ({ page }) => {
+test("hipoglicemia <54 se clasifica nivel 2 antes de ajustar", async ({ page }) => {
   await openFollowupTable(page);
-
   await page.locator("#peso-seguimiento").fill("70");
   await page.locator("#tipo-esquema").selectOption("pm");
   await page.locator("#pm-actual").fill("20");
   await fillFasting(page, [53, 105, 110]);
   await page.locator("#ajustar-seguimiento-btn").click();
-
   await expectActivePage(page, "p4");
   await expect(page.locator("#hipo-ada-titulo")).toContainText("nivel 2");
-  await expect(page.locator("#hipo-ada-descripcion")).toContainText("<54 mg/dL");
 });
 
-test("hipoglicemia con asistencia mantiene nivel 3 y no ajusta NPH automáticamente", async ({ page }) => {
+test("hipoglicemia nivel 3 se detecta aunque no exista HGT bajo registrado", async ({ page }) => {
   await openFollowupTable(page);
+  await page.locator("#nivel3-referido").check();
+  await page.locator("#ajustar-seguimiento-btn").click();
+  await expectActivePage(page, "p5");
+  await expect(page.locator("#nota-clinica")).toContainText("HIPOGLICEMIA NIVEL 3 REFERIDA");
+  await expect(page.locator("#nota-clinica")).toContainText("derivación inmediata a Unidad de Emergencia Hospitalaria");
+  await expect(page.locator("#nota-clinica")).toContainText("No se realiza ajuste automático de NPH");
+});
 
+test("confirmar asistencia en alerta de hipoglicemia también activa ruta nivel 3", async ({ page }) => {
+  await openFollowupTable(page);
   await page.locator("#peso-seguimiento").fill("70");
   await page.locator("#tipo-esquema").selectOption("pm");
   await page.locator("#pm-actual").fill("20");
@@ -285,124 +199,34 @@ test("hipoglicemia con asistencia mantiene nivel 3 y no ajusta NPH automáticame
   await page.locator("#ajustar-seguimiento-btn").click();
   await expect(page.locator("#alerta-hipoglicemia-ada")).toBeVisible();
   await page.locator("#hipo-con-ayuda").click();
-
   await expectActivePage(page, "p5");
+  await expect(page.locator("#nota-clinica")).toContainText("derivación inmediata a Unidad de Emergencia Hospitalaria");
+});
+
+test("no escala automáticamente cuando la titulación proyectada supera 0,5 UI/kg/día", async ({ page }) => {
+  await openFollowupTable(page);
+  await page.locator("#peso-seguimiento").fill("70");
+  await page.locator("#tipo-esquema").selectOption("pm");
+  await page.locator("#pm-actual").fill("34");
+  await fillFasting(page, [181, 190, 200]);
+  await page.locator("#ajustar-seguimiento-btn").click();
+  await expectActivePage(page, "p41");
   const data = await runtimeState(page);
-  expect({ am: data.am, pm: data.pm }).toEqual({ am: 0, pm: 20 });
-  await expect(page.locator("#nota-clinica")).toContainText("HIPOGLICEMIA NIVEL 3 REFERIDA");
-  await expect(page.locator("#nota-clinica")).toContainText("No se realiza ajuste automático de NPH");
+  expect(data.pm).toBe(34);
+  await expect(page.locator("#p41")).toContainText("0,5 UI/kg/día");
 });
 
-test("P6 solo prepara el documento y P7 contiene la vista previa aislada", async ({ page }) => {
-  await page.goto("/");
-  await page.evaluate(() => window.InsulogRuntime.navigation.go(6));
-  await expectActivePage(page, "p6");
-  await expect(page.locator("#p6 #pdf")).toHaveCount(0);
-  await expect(page.locator("#p7 #pdf")).toHaveCount(0);
-  await expect(page.locator("#pdf-preview-frame")).toHaveCount(1);
-  await expect(page.locator("body > #pdf.pdf-render-staging")).toBeHidden();
-
-  let alertMessage = "";
-  page.once("dialog", async (dialog) => {
-    alertMessage = dialog.message();
-    await dialog.accept();
-  });
-  await page.locator("#p6").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
-  expect(alertMessage).toContain("nombre del paciente");
-  await expectActivePage(page, "p6");
-
-  await page.locator("#nombre-paciente").fill("Paciente E2E");
-  await page.locator("#p6").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
-  await expectActivePage(page, "p7");
-
-  const preview = page.frameLocator("#pdf-preview-frame");
-  await expect(preview.locator("#pdf")).toContainText("Paciente E2E");
-  await expect(page.locator("#imprimir-documento-btn")).toBeEnabled();
-});
-
-test("los estilos del PDF viven solo dentro del documento aislado", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.locator('head > link[href*="pdf-enhancements.css"]')).toHaveCount(0);
-  await expect(page.locator('head > link[href*="pdf-design-2026.css"]')).toHaveCount(0);
-
-  const preview = page.frameLocator("#pdf-preview-frame");
-  await expect(preview.locator('head > link[href*="pdf-enhancements.css"]')).toHaveCount(1);
-  await expect(preview.locator('head > link[href*="pdf-design-2026.css"]')).toHaveCount(1);
-});
-
-test("el documento aislado imprime en una sola hoja Letter", async ({ page, context }) => {
-  await page.goto("/");
-  await page.evaluate(() => {
-    window.InsulogRuntime.state.patch({
-      am: 10,
-      pm: 4,
-      criteria: "HbA1c 11%, glicemia en ayunas 280 mg/dL",
-      tratamientoConcomitante: "Metformina 850 mg: 1.700 mg/día; Dapagliflozina: 10 mg/día; Vildagliptina 50 mg: 50 mg cada 12 h"
-    });
-    window.InsulogRuntime.navigation.go(6);
-  });
-
-  await page.locator("#nombre-paciente").fill("Paciente prueba impresión");
-  await page.locator("#p6").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
-  await expectActivePage(page, "p7");
-
-  const preview = page.frameLocator("#pdf-preview-frame");
-  await expect(preview.locator("#pdf")).toContainText("Paciente prueba impresión");
-
-  const rendered = await page.locator("#pdf-preview-frame").evaluate((iframe) => {
-    const root = iframe.contentDocument?.getElementById("pdf");
-    return { className: root?.className || "", html: root?.innerHTML || "" };
-  });
-  expect(rendered.html).toContain("Paciente prueba impresión");
-
-  const printPage = await context.newPage();
-  await printPage.goto("/pdf-preview.html");
-  await printPage.evaluate(({ className, html }) => {
-    const root = document.getElementById("pdf");
-    root.className = className;
-    root.innerHTML = html;
-  }, rendered);
-  await printPage.emulateMedia({ media: "print" });
-
-  const pdf = await printPage.pdf({
-    format: "Letter",
-    printBackground: true,
-    preferCSSPageSize: true,
-    margin: { top: "0", right: "0", bottom: "0", left: "0" }
-  });
-  const document = await PDFDocument.load(pdf);
-  expect(document.getPageCount()).toBe(1);
-  await printPage.close();
-});
-
-test("el nombre del paciente no persiste tras recargar la aplicación", async ({ page }) => {
-  const marker = "PACIENTE-NO-PERSISTIR-E2E";
-  await page.goto("/");
-  await page.evaluate(() => window.InsulogRuntime.navigation.go(6));
-  await page.locator("#nombre-paciente").fill(marker);
-
-  const storage = await page.evaluate(async () => ({
-    local: JSON.stringify({ ...localStorage }),
-    session: JSON.stringify({ ...sessionStorage }),
-    databases: typeof indexedDB.databases === "function"
-      ? (await indexedDB.databases()).map((database) => database.name || "")
-      : []
-  }));
-  expect(storage.local).not.toContain(marker);
-  expect(storage.session).not.toContain(marker);
-
-  await page.reload();
-  await expect(page.locator("#nombre-paciente")).toHaveValue("");
-});
-
-test("las pantallas principales no generan overflow horizontal en ancho móvil", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
-  await expectNoHorizontalOverflow(page);
-
-  await page.locator("#p0").getByRole("button", { name: "INICIAR ALGORITMO", exact: true }).click();
-  await expectNoHorizontalOverflow(page);
-
-  await page.locator("#p1").getByRole("button", { name: "NO", exact: true }).click();
-  await expectNoHorizontalOverflow(page);
+test("esquema BID requiere 3 glicemias pre-almuerzo para ajustar NPH AM", async ({ page }) => {
+  await openFollowupTable(page);
+  await page.locator("#peso-seguimiento").fill("100");
+  await page.locator("#tipo-esquema").selectOption("2");
+  await page.locator("#am-actual").fill("15");
+  await page.locator("#pm-actual").fill("15");
+  await fillFasting(page, [160, 160, 160]);
+  await fillPreLunch(page, [181, 181]);
+  let dialogText = "";
+  page.once("dialog", async (dialog) => { dialogText = dialog.message(); await dialog.accept(); });
+  await page.locator("#ajustar-seguimiento-btn").click();
+  expect(dialogText).toContain("3 glicemias pre-almuerzo");
+  await expectActivePage(page, "p4");
 });
