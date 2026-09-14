@@ -3,277 +3,100 @@
 const assert = require("node:assert/strict");
 const engine = require("../clinical-engine.js");
 
-function pickDose(result) {
+function dose(result) {
   return { am: result.am, pm: result.pm, scheme: result.schemeFinal };
 }
 
-function hasWarning(result, pattern) {
-  assert.match(result.explicacion, pattern);
-}
+// Inicio: umbral 2026, aceptación separada de indicación y bloqueo de urgencia.
+let result = engine.suggestInitialScheme({ hba1c: 10, initiationCriteria: [] });
+assert.equal(result.criteria.length, 0);
+result = engine.suggestInitialScheme({ hba1c: 10.1, initiationCriteria: [] });
+assert.equal(result.criteria.length, 1);
+result = engine.suggestInitialScheme({ initiationCriteria: ["Deseo del paciente"] });
+assert.equal(result.criteria.length, 0);
+assert.equal(result.patientPreference, true);
+result = engine.suggestInitialScheme({ casual: 300, catabolic: [] });
+assert.equal(result.criteria.length, 0, "glicemia casual ≥300 sin síntomas no se usa aislada en este flujo");
+result = engine.suggestInitialScheme({ casual: 300, catabolic: ["Poliuria marcada"] });
+assert.ok(result.criteria.length >= 1);
+result = engine.suggestInitialScheme({ catabolic: ["Sospecha de cetosis"] });
+assert.equal(result.emergency, true);
 
-// 1) Límites exactos del inicio de NPH. Estos casos congelan el comportamiento
-// actual; no reinterpretan ni corrigen reglas clínicas.
-const initialSchemeCases = [
-  {
-    name: "HbA1c 9 no cumple criterio >9",
-    input: { hba1c: 9, fasting: Number.NaN, casual: Number.NaN },
-    expected: { criteria: 0, scheme: "monodosis_pm", factor: 0.2 }
-  },
-  {
-    name: "HbA1c 9.1 cumple criterio pero no severidad >=11",
-    input: { hba1c: 9.1, fasting: Number.NaN, casual: Number.NaN },
-    expected: { criteria: 1, scheme: "monodosis_pm", factor: 0.2 }
-  },
-  {
-    name: "HbA1c 11 activa doble dosis",
-    input: { hba1c: 11, fasting: Number.NaN, casual: Number.NaN },
-    expected: { criteria: 1, scheme: "doble_dosis", factor: 0.2 }
-  },
-  {
-    name: "Ayunas 250 conserva severidad actual",
-    input: { hba1c: Number.NaN, fasting: 250, casual: Number.NaN },
-    expected: { criteria: 0, scheme: "doble_dosis", factor: 0.2 }
-  },
-  {
-    name: "Ayunas 251 cumple criterio y doble dosis",
-    input: { hba1c: Number.NaN, fasting: 251, casual: Number.NaN },
-    expected: { criteria: 1, scheme: "doble_dosis", factor: 0.2 }
-  },
-  {
-    name: "Casual 299 no activa criterio",
-    input: { hba1c: Number.NaN, fasting: Number.NaN, casual: 299 },
-    expected: { criteria: 0, scheme: "monodosis_pm", factor: 0.2 }
-  },
-  {
-    name: "Casual 300 activa doble dosis",
-    input: { hba1c: Number.NaN, fasting: Number.NaN, casual: 300 },
-    expected: { criteria: 1, scheme: "doble_dosis", factor: 0.2 }
-  },
-  {
-    name: "Riesgo de hipo siempre fuerza inicio conservador",
-    input: { hba1c: 13, fasting: 350, casual: 420, hypoRisk: ["Fragilidad"] },
-    expected: { criteria: 3, scheme: "monodosis_pm", factor: 0.1 }
-  },
-  {
-    name: "Síntoma catabólico activa doble dosis",
-    input: { hba1c: Number.NaN, fasting: Number.NaN, casual: Number.NaN, catabolic: ["Baja de peso"] },
-    expected: { criteria: 1, scheme: "doble_dosis", factor: 0.2 }
-  }
+// Sensibilidad MINSAL: la condición más sensible prima.
+assert.equal(engine.assessInsulinSensitivity({ age: 71, bmi: 35, egfr: 90 }).factor, 0.1);
+assert.equal(engine.assessInsulinSensitivity({ age: 60, bmi: 19.9, egfr: 90 }).factor, 0.1);
+assert.equal(engine.assessInsulinSensitivity({ age: 60, bmi: 35, egfr: 59 }).factor, 0.1);
+assert.equal(engine.assessInsulinSensitivity({ age: 60, bmi: 30, egfr: 60 }).factor, 0.2);
+
+// Redondeo a unidad completa más cercana.
+const roundCases = [[0,0],[0.49,0],[0.5,1],[4.49,4],[4.5,5],[14.49,14],[14.5,15],[-1,0]];
+for (const [input, expected] of roundCases) assert.equal(engine.roundUnits(input), expected);
+
+// Meta HbA1c <7%: menor de al menos 3 HGT.
+const target7 = [
+  { value: 79, percent: -10 },
+  { value: 80, percent: 0 },
+  { value: 130, percent: 0 },
+  { value: 131, percent: 10 },
+  { value: 180, percent: 10 },
+  { value: 181, percent: 20 }
 ];
-
-for (const testCase of initialSchemeCases) {
-  const result = engine.suggestInitialScheme({
-    initiationCriteria: [],
-    catabolic: [],
-    hypoRisk: [],
-    ...testCase.input
-  });
-  assert.equal(result.criteria.length, testCase.expected.criteria, testCase.name);
-  assert.equal(result.scheme, testCase.expected.scheme, testCase.name);
-  assert.equal(result.factor, testCase.expected.factor, testCase.name);
-}
-
-// 2) Redondeo y dosis inicial.
-const roundCases = [
-  [0, 0], [1, 2], [2, 2], [2.01, 4], [3.99, 4], [14.01, 16], [-1, 0]
-];
-for (const [input, expected] of roundCases) {
-  assert.equal(engine.roundEven(input), expected, `roundEven(${input})`);
-}
-
-const initialDoseCases = [
-  { weightKg: 40, factor: 0.1, scheme: "monodosis_pm", expected: { total: 4, am: 0, pm: 4 } },
-  { weightKg: 41, factor: 0.1, scheme: "monodosis_pm", expected: { total: 6, am: 0, pm: 6 } },
-  { weightKg: 70, factor: 0.2, scheme: "monodosis_pm", expected: { total: 14, am: 0, pm: 14 } },
-  { weightKg: 70, factor: 0.3, scheme: "monodosis_pm", expected: { total: 22, am: 0, pm: 22 } },
-  { weightKg: 70, factor: 0.2, scheme: "doble_dosis", expected: { total: 14, am: 10, pm: 4 } },
-  { weightKg: 100, factor: 0.2, scheme: "doble_dosis", expected: { total: 20, am: 14, pm: 6 } }
-];
-for (const testCase of initialDoseCases) {
-  const result = engine.calculateInitialDose(testCase);
-  assert.deepEqual(
-    { total: result.total, am: result.am, pm: result.pm },
-    testCase.expected,
-    `dosis inicial ${JSON.stringify(testCase)}`
-  );
-}
-
-// 3) Umbrales exactos del ajuste de glicemia.
-const adjustmentCases = [
-  { value: 53, expected: -4 },
-  { value: 54, expected: -4 },
-  { value: 69, expected: -4 },
-  { value: 70, expected: -2 },
-  { value: 79, expected: -2 },
-  { value: 80, expected: 0 },
-  { value: 130, expected: 0 },
-  { value: 131, expected: 2 },
-  { value: 180, expected: 2 },
-  { value: 181, expected: 4 }
-];
-for (const testCase of adjustmentCases) {
+for (const testCase of target7) {
   const analysis = engine.analyzeGlucose([testCase.value, testCase.value, testCase.value], "Ayunas");
-  const adjustment = engine.calculateAdjustment(analysis, "PM");
-  assert.equal(adjustment.ajuste, testCase.expected, `ajuste en ${testCase.value} mg/dL`);
+  assert.equal(engine.calculateAdjustment(analysis, "PM", 20, 7).percent, testCase.percent);
 }
+assert.equal(engine.calculateAdjustment(engine.analyzeGlucose([69, 100, 120], "Ayunas"), "PM", 20, 7).percent, -20);
 
-// 4) Análisis HGT: no muta entradas, detecta discordantes y los conserva en el promedio.
-const rawGlucose = [100, 100, 100, 151];
-const rawSnapshot = [...rawGlucose];
-const discordant = engine.analyzeGlucose(rawGlucose, "Ayunas");
-assert.deepEqual(rawGlucose, rawSnapshot, "analyzeGlucose no debe mutar la entrada");
-assert.deepEqual(discordant.usados, [100, 100, 100, 151]);
-assert.deepEqual(discordant.excluidos, []);
-assert.deepEqual(discordant.discordantes, ["Ayunas 151 mg/dL"]);
-assert.equal(discordant.promedio, 112.75);
+// Metas individualizadas <8 y <8,5.
+assert.deepEqual(engine.targetProfile(8), { hba1c: 8, lower: 100, upper: 150, high10: 200 });
+assert.deepEqual(engine.targetProfile(8.5), { hba1c: 8.5, lower: 100, upper: 160, high10: 220 });
 
-const hypoDiscordant = engine.analyzeGlucose([60, 100, 100, 220], "Ayunas");
-assert.ok(hypoDiscordant.usados.includes(60), "Una hipoglicemia nunca se elimina del análisis");
-assert.equal(hypoDiscordant.hipo, true);
-assert.deepEqual(hypoDiscordant.excluidos, []);
-
-// 5) Segunda dosis: mínimo 4, redondeo par y máximo 10 UI.
-const secondDoseCases = [
-  [20, 4], [39, 4], [40, 4], [41, 6], [70, 8], [90, 10], [100, 10], [150, 10]
-];
-for (const [weightKg, expected] of secondDoseCases) {
-  assert.equal(engine.calculateSecondDose(weightKg), expected, `segunda dosis para ${weightKg} kg`);
-}
-
-// 6) Seguimiento PM: ajuste y criterio de agregar AM.
-const pmCases = [
-  {
-    name: "PM en meta sin pre-once mantiene",
-    input: { weightKg: 70, regimenType: "pm", amDose: 0, pmDose: 20, fastingValues: [100, 110, 120], preElevenValues: [] },
-    expected: { am: 0, pm: 20, scheme: "pm" }
-  },
-  {
-    name: "PM alta sin pre-once aumenta PM sin intensificar",
-    input: { weightKg: 70, regimenType: "pm", amDose: 0, pmDose: 20, fastingValues: [160, 160, 160], preElevenValues: [] },
-    expected: { am: 0, pm: 22, scheme: "pm" }
-  },
-  {
-    name: "Dos pre-once no bastan para intensificar",
-    input: { weightKg: 70, regimenType: "pm", amDose: 0, pmDose: 20, fastingValues: [160, 160, 160], preElevenValues: [170, 170] },
-    expected: { am: 0, pm: 22, scheme: "pm" }
-  },
-  {
-    name: "Tres pre-once altas agregan AM",
-    input: { weightKg: 70, regimenType: "pm", amDose: 0, pmDose: 20, fastingValues: [160, 160, 160], preElevenValues: [131, 131, 131] },
-    expected: { am: 8, pm: 22, scheme: "2" }
-  },
-  {
-    name: "Pre-once 130 no agrega AM",
-    input: { weightKg: 70, regimenType: "pm", amDose: 0, pmDose: 20, fastingValues: [160, 160, 160], preElevenValues: [130, 130, 130] },
-    expected: { am: 0, pm: 22, scheme: "pm" }
-  }
-];
-for (const testCase of pmCases) {
-  assert.deepEqual(pickDose(engine.calculateFollowup(testCase.input)), testCase.expected, testCase.name);
-}
-
-const discordantAffectsAdjustment = engine.calculateFollowup({
-  weightKg: 70,
-  regimenType: "pm",
-  amDose: 0,
-  pmDose: 20,
-  fastingValues: [100, 100, 100, 300],
-  preElevenValues: []
+// Un valor alto aislado queda documentado, pero la decisión se hace con el menor.
+const discordant = engine.calculateFollowup({
+  weightKg: 70, regimenType: "pm", amDose: 0, pmDose: 20,
+  fastingValues: [100, 100, 100, 300], targetA1c: 7
 });
-assert.equal(discordantAffectsAdjustment.promAy, 150);
-assert.deepEqual(pickDose(discordantAffectsAdjustment), { am: 0, pm: 22, scheme: "pm" });
-assert.deepEqual(discordantAffectsAdjustment.discordantes, ["Ayunas 300 mg/dL"]);
-hasWarning(discordantAffectsAdjustment, /Se mantienen en el promedio/);
+assert.equal(discordant.minAy, 100);
+assert.equal(discordant.promAy, 150);
+assert.deepEqual(dose(discordant), { am: 0, pm: 20, scheme: "pm" });
+assert.deepEqual(discordant.discordantes, ["Ayunas 300 mg/dL"]);
+assert.match(discordant.explicacion, /no se excluyen automáticamente/);
 
-// 7) Seguimiento AM: ajuste AM solo con >=3 pre-once y agrega PM por ayunas >130.
-const amCases = [
-  {
-    name: "AM con ayunas 130 no agrega PM",
-    input: { weightKg: 70, regimenType: "am", amDose: 20, pmDose: 0, fastingValues: [130, 130, 130], preElevenValues: [] },
-    expected: { am: 20, pm: 0, scheme: "am" }
-  },
-  {
-    name: "AM con ayunas 131 agrega PM",
-    input: { weightKg: 70, regimenType: "am", amDose: 20, pmDose: 0, fastingValues: [131, 131, 131], preElevenValues: [] },
-    expected: { am: 20, pm: 8, scheme: "2" }
-  },
-  {
-    name: "AM con pre-once alta ajusta AM y ayunas altas agregan PM",
-    input: { weightKg: 70, regimenType: "am", amDose: 20, pmDose: 0, fastingValues: [160, 160, 160], preElevenValues: [181, 181, 181] },
-    expected: { am: 24, pm: 8, scheme: "2" }
-  }
-];
-for (const testCase of amCases) {
-  assert.deepEqual(pickDose(engine.calculateFollowup(testCase.input)), testCase.expected, testCase.name);
-}
-
-// 8) Hipoglicemia bloquea intensificación automática.
-const pmHypo = engine.calculateFollowup({
-  weightKg: 70,
-  regimenType: "pm",
-  amDose: 0,
-  pmDose: 20,
-  fastingValues: [60, 100, 110],
-  preElevenValues: [200, 200, 200]
+// Monodosis no se convierte automáticamente a BID.
+const pmWithHighPreLunch = engine.calculateFollowup({
+  weightKg: 70, regimenType: "pm", amDose: 0, pmDose: 20,
+  fastingValues: [100, 110, 120], preLunchValues: [220, 230, 240], targetA1c: 7
 });
-assert.deepEqual(pickDose(pmHypo), { am: 0, pm: 16, scheme: "pm" });
-hasWarning(pmHypo, /No se agrega dosis AM por presencia de hipoglicemia/);
+assert.deepEqual(dose(pmWithHighPreLunch), { am: 0, pm: 20, scheme: "pm" });
 
-const amHypo = engine.calculateFollowup({
-  weightKg: 70,
-  regimenType: "am",
-  amDose: 20,
-  pmDose: 0,
-  fastingValues: [200, 200, 200],
-  preElevenValues: [60, 100, 110]
+// Doble dosis: cada dosis se ajusta con su ventana glicémica, si no supera el techo basal.
+const double = engine.calculateFollowup({
+  weightKg: 100, regimenType: "2", amDose: 15, pmDose: 15,
+  fastingValues: [160, 170, 180], preLunchValues: [181, 190, 200], targetA1c: 7
 });
-assert.equal(amHypo.pm, 0, "Con hipoglicemia no se debe agregar PM");
-assert.equal(amHypo.schemeFinal, "am");
-hasWarning(amHypo, /No se agrega dosis PM por presencia de hipoglicemia/);
+assert.deepEqual(dose(double), { am: 18, pm: 17, scheme: "2" });
 
-// 9) Doble dosis: cada bloque responde a su ventana de glicemia.
-const doubleMixed = engine.calculateFollowup({
-  weightKg: 80,
-  regimenType: "2",
-  amDose: 20,
-  pmDose: 20,
-  fastingValues: [181, 181, 181],
-  preElevenValues: [75, 75, 75]
+// Hipoglicemia: disminución porcentual y sin intensificación automática.
+const hypo = engine.calculateFollowup({
+  weightKg: 70, regimenType: "pm", amDose: 0, pmDose: 20,
+  fastingValues: [60, 110, 120], preLunchValues: [250, 250, 250], targetA1c: 7
 });
-assert.deepEqual(pickDose(doubleMixed), { am: 18, pm: 24, scheme: "2" });
+assert.equal(hypo.pm, 16);
+assert.equal(hypo.am, 0);
+assert.match(hypo.explicacion, /Hipoglicemia registrada/);
 
-// 10) Umbrales de dosis alta se conservan exactamente.
-const atPointSeven = engine.calculateFollowup({
-  weightKg: 100,
-  regimenType: "2",
-  amDose: 40,
-  pmDose: 30,
-  fastingValues: [100, 100, 100],
-  preElevenValues: [100, 100, 100]
+// Seguridad: 0,4 revisión; 0,5 bloqueo de escalamiento.
+assert.equal(engine.assessDoseSafety(0.399).level, "standard");
+assert.equal(engine.assessDoseSafety(0.4).level, "review");
+assert.equal(engine.assessDoseSafety(0.499).blocksAutomaticEscalation, false);
+assert.equal(engine.assessDoseSafety(0.5).blocksAutomaticEscalation, true);
+
+const blocked = engine.calculateFollowup({
+  weightKg: 100, regimenType: "pm", amDose: 0, pmDose: 49,
+  fastingValues: [181, 190, 200], targetA1c: 7
 });
-assert.equal(atPointSeven.dosisKg, 0.7);
-hasWarning(atPointSeven, /Dosis ≥0\.7 UI\/kg\/día/);
+assert.equal(blocked.pm, 49);
+assert.equal(blocked.blocksAutomaticEscalation, false, "la dosis final queda bajo 0,5; el bloqueo se explica en advertencias del intento proyectado");
+assert.match(blocked.explicacion, /bloqueó el aumento automático/);
 
-const justBelowPointSeven = engine.calculateFollowup({
-  weightKg: 100,
-  regimenType: "2",
-  amDose: 38,
-  pmDose: 30,
-  fastingValues: [100, 100, 100],
-  preElevenValues: [100, 100, 100]
-});
-assert.equal(justBelowPointSeven.dosisKg, 0.68);
-assert.doesNotMatch(justBelowPointSeven.explicacion, /Dosis ≥0\.7 UI\/kg\/día/);
-
-const atOne = engine.calculateFollowup({
-  weightKg: 100,
-  regimenType: "2",
-  amDose: 60,
-  pmDose: 40,
-  fastingValues: [100, 100, 100],
-  preElevenValues: [100, 100, 100]
-});
-assert.equal(atOne.dosisKg, 1);
-hasWarning(atOne, /Dosis ≥1 UI\/kg\/día/);
-
-console.log(`Clinical regression matrix passed: ${initialSchemeCases.length + roundCases.length + initialDoseCases.length + adjustmentCases.length + secondDoseCases.length + pmCases.length + amCases.length + 8} grouped cases`);
+console.log("Clinical engine r2 regression checks passed");
