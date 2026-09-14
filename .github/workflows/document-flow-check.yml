@@ -13,6 +13,7 @@ on:
       - "pdf-design-2026.css"
       - "sw.js"
       - "scripts/check_atomic_shell.py"
+      - "scripts/app_shell_release.py"
       - ".github/workflows/document-flow-check.yml"
 
 permissions:
@@ -31,7 +32,12 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
+          import sys
 
+          sys.path.insert(0, "scripts")
+          from app_shell_release import compute_release
+
+          release = compute_release()
           html = Path("index.html").read_text(encoding="utf-8")
           preview = Path("pdf-preview.html").read_text(encoding="utf-8")
           js = Path("document-flow.js").read_text(encoding="utf-8")
@@ -100,32 +106,37 @@ jobs:
               if forbidden in css or forbidden in design:
                   raise SystemExit(f"PDF must not use distortion/compression workaround: {forbidden}")
 
-          for asset in [
-              './styles.css?v=20260910-2',
-              './document-flow.css?v=20260914-1',
-              './pdf-enhancements.css?v=20260914-1',
-              './pdf-design-2026.css?v=20260914-1'
-          ]:
+          preview_assets = [
+              f'./styles.css?v={release}',
+              f'./document-flow.css?v={release}',
+              f'./pdf-enhancements.css?v={release}',
+              f'./pdf-design-2026.css?v={release}'
+          ]
+          for asset in preview_assets:
               if f'href="{asset}"' not in preview:
                   raise SystemExit(f"Isolated preview asset missing: {asset}")
 
           if 'href="./pdf-enhancements.css' in html or 'href="./pdf-design-2026.css' in html:
               raise SystemExit("PDF presentation CSS must not load in the parent application")
 
-          for asset in [
-              './pdf-preview.html?v=20260914-1',
-              './document-flow.css?v=20260914-1',
-              './document-flow.js?v=20260910-2'
-          ]:
+          shell_assets = [
+              f'./pdf-preview.html?v={release}',
+              f'./document-flow.css?v={release}',
+              f'./document-flow.js?v={release}'
+          ]
+          for asset in shell_assets:
               if asset not in sw:
                   raise SystemExit(f"Current isolated document asset missing from app shell: {asset}")
 
-          if 'const CACHE_NAME = "insulog-shell-20260914-atomic26"' not in sw:
-              raise SystemExit("Phase 8D must ship the readable PDF inside the immutable cache")
+          if f'const CACHE_NAME = "insulog-shell-{release}"' not in sw:
+              raise SystemExit("PDF must ship inside the canonical immutable release cache")
           if 'refreshNavigation' in sw or 'refreshAsset' in sw:
               raise SystemExit("Document resources must not be refreshed independently inside an active shell")
 
-          print("P6/P7 isolated document flow and immutable readable Letter checks passed")
+          print(f"P6/P7 isolated document flow OK for release {release}")
 
       - name: Validate immutable shell contract
         run: python scripts/check_atomic_shell.py
+
+      - name: Validate canonical release fingerprint
+        run: python scripts/app_shell_release.py
