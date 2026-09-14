@@ -510,8 +510,8 @@ Conducta: tratar la hipoglicemia según condición clínica, asegurar acompañam
 
     const failureButton = Array.from(document.querySelectorAll(".inicio-btn")).find((button) => button.textContent.includes("Fracaso terapia oral"));
     if (failureButton) {
-      failureButton.textContent = "Fracaso terapia oral documentado";
-      failureButton.dataset.value = "Fracaso terapia oral documentado";
+      failureButton.textContent = "Fracaso persistente pese a terapia oral optimizada y adherencia";
+      failureButton.dataset.value = "Fracaso terapia oral optimizada y adherente";
     }
 
     const acceptanceButton = Array.from(document.querySelectorAll(".inicio-btn")).find((button) => button.textContent.includes("Deseo del paciente"));

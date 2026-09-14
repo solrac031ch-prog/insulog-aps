@@ -91,13 +91,14 @@
       });
     }
 
-    const hba1cIndication = Number.isFinite(hba1c) && hba1c >= 10;
+    const hba1cIndication = Number.isFinite(hba1c) && hba1c > 10;
+    const hasWeightLoss = catabolicNonUrgent.some((item) => String(item).toLowerCase().includes("baja de peso"));
     const symptomaticCatabolism = catabolicNonUrgent.length > 0;
     const symptomaticMarkedHyperglycemia =
       symptomaticCatabolism &&
       ((Number.isFinite(casual) && casual >= 300) ||
        (Number.isFinite(fasting) && fasting >= 250));
-    const indicated = hba1cIndication || symptomaticCatabolism || therapeuticFailure || symptomaticMarkedHyperglycemia;
+    const indicated = hba1cIndication || hasWeightLoss || therapeuticFailure || symptomaticMarkedHyperglycemia;
 
     if (!indicated) {
       return Object.freeze({

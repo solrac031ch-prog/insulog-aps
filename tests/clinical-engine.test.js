@@ -18,7 +18,10 @@ const noIndication = engine.suggestInitialScheme({ hba1c: 9.2, initiationCriteri
 assert.equal(noIndication.indicated, false);
 assert.equal(noIndication.canProceed, false);
 
-const highA1c = engine.suggestInitialScheme({ hba1c: 10 });
+const boundaryA1c = engine.suggestInitialScheme({ hba1c: 10 });
+assert.equal(boundaryA1c.indicated, false);
+
+const highA1c = engine.suggestInitialScheme({ hba1c: 10.1 });
 assert.equal(highA1c.indicated, true);
 assert.equal(highA1c.scheme, "monodosis_pm");
 
