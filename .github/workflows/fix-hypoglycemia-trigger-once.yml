@@ -1,0 +1,137 @@
+name: Fix hypoglycemia trigger once
+
+on:
+  push:
+    paths:
+      - .github/workflows/fix-hypoglycemia-trigger-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply hypoglycemia UI behavior
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          def read(path):
+              return Path(path).read_text(encoding='utf-8')
+
+          def write(path, text):
+              Path(path).write_text(text, encoding='utf-8')
+
+          # 1) Remove the permanent level-3 checkbox shortcut from the clinical adapter.
+          path = 'app.js'
+          s = read(path)
+          s2, n = re.subn(
+              r'\n    if \(byId\("nivel3-referido"\)\?\.checked\) \{\n      renderNotaClinica\(clinicalCopy\.buildLevel3HypoglycemiaNote\(\)\);\n      go\(5\);\n      return \{ urgent: true, level: 3 \};\n    \}\n',
+              '\n',
+              s,
+              count=1,
+          )
+          if n != 1:
+              raise SystemExit(f'app.js: expected permanent level-3 shortcut once, found {n}')
+          write(path, s2)
+
+          # 2) Keep only the individualized HbA1c target in the always-visible safety card.
+          path = 'app-shell.js'
+          s = read(path)
+          old = '''          <div class="form-grid form-grid-2">\n            <div class="field"><label for="meta-hba1c-seguimiento">Meta individual de HbA1c</label><select id="meta-hba1c-seguimiento"><option value="7">&lt;7% · preprandial 80–130</option><option value="8">&lt;8% · preprandial 100–150</option><option value="8.5">&lt;8,5% · preprandial 100–160</option></select></div>\n            <label class="aps-med-option"><input type="checkbox" id="nivel3-referido"><span class="aps-med-copy"><span class="aps-med-name">Hipoglicemia nivel 3 desde el último control</span><small class="aps-med-safety">Marque si algún episodio requirió asistencia de otra persona, independientemente de si existe un HGT &lt;70 registrado.</small></span></label>\n          </div>'''
+          new = '''          <div class="form-grid">\n            <div class="field"><label for="meta-hba1c-seguimiento">Meta individual de HbA1c</label><select id="meta-hba1c-seguimiento"><option value="7">&lt;7% · preprandial 80–130</option><option value="8">&lt;8% · preprandial 100–150</option><option value="8.5">&lt;8,5% · preprandial 100–160</option></select></div>\n          </div>'''
+          if old not in s:
+              raise SystemExit('app-shell.js: permanent level-3 checkbox block not found')
+          s = s.replace(old, new, 1)
+
+          # Remove the shell-level shortcut. The dedicated APS safety flow will ask only after a low HGT is detected.
+          s2, n = re.subn(
+              r'\n  function protectLevel3Hypoglycemia\(\) \{.*?\n  \}\n\n  function registerServiceWorker',
+              '\n  function registerServiceWorker',
+              s,
+              count=1,
+              flags=re.S,
+          )
+          if n != 1:
+              raise SystemExit(f'app-shell.js: protectLevel3Hypoglycemia block expected once, found {n}')
+          s2 = s2.replace('    protectLevel3Hypoglycemia();\n', '', 1)
+          write(path, s2)
+
+          # 3) Make the conditional question explicit: was this a level-3 event?
+          path = 'index.html'
+          s = read(path)
+          replacements = {
+              '¿Alguno de los episodios requirió ayuda de otra persona para tratar la hipoglicemia?': '¿Alguno de los episodios fue hipoglicemia nivel 3 (requirió ayuda de otra persona)?',
+              'NO, NO REQUIRIÓ AYUDA': 'NO, NO FUE NIVEL 3',
+              'SÍ, REQUIRIÓ AYUDA': 'SÍ, FUE NIVEL 3',
+              'Si requirió asistencia, ADA 2026 clasifica el evento como hipoglicemia nivel 3 independientemente del valor de glucosa.': 'Nivel 3 significa que el episodio requirió asistencia de otra persona para su recuperación.'
+          }
+          for old_text, new_text in replacements.items():
+              if old_text not in s:
+                  raise SystemExit(f'index.html: expected text not found: {old_text}')
+              s = s.replace(old_text, new_text, 1)
+          write(path, s)
+
+          # 4) The alert should identify a detected low HGT; the level-3 classification comes from the answer.
+          path = 'aps-safety-2026.js'
+          s = read(path)
+          old = '    titulo.textContent = `⚠️ Hipoglicemia ADA nivel ${evento.nivel}`;'
+          new = '    titulo.textContent = "⚠️ Hipoglicemia detectada";'
+          if old not in s:
+              raise SystemExit('aps-safety-2026.js: alert title not found')
+          s = s.replace(old, new, 1)
+          s = s.replace(
+              'Antes de ajustar la NPH, confirme si alguno de los episodios requirió asistencia de otra persona.',
+              'Antes de ajustar la NPH, confirme si alguno de los episodios fue nivel 3.',
+          )
+          write(path, s)
+
+          # 5) Governance: the permanent level-3 checkbox is retired.
+          path = 'scripts/check_invariants.py'
+          s = read(path)
+          s = s.replace('"ayunasRaw.length < 3", "3 glicemias pre-almuerzo", "meta-hba1c-seguimiento", "nivel3-referido",',
+                        '"ayunasRaw.length < 3", "3 glicemias pre-almuerzo", "meta-hba1c-seguimiento",', 1)
+          marker = '"resultado.dosisKg >= 0.7", "resultado.dosisKg >= 1", "hba1cEstimada",'
+          if marker not in s:
+              raise SystemExit('check_invariants.py: app forbidden marker not found')
+          s = s.replace(marker, '"resultado.dosisKg >= 0.7", "resultado.dosisKg >= 1", "hba1cEstimada", "nivel3-referido",', 1)
+          write(path, s)
+
+          # Sanity checks.
+          for path in ['app.js', 'app-shell.js', 'index.html', 'aps-safety-2026.js']:
+              txt = read(path)
+              if 'nivel3-referido' in txt:
+                  raise SystemExit(f'{path}: stale nivel3-referido reference remains')
+          if 'class="aps-safety-box is-hidden"' not in read('index.html'):
+              raise SystemExit('Conditional hypoglycemia alert must remain hidden by default')
+          PY
+
+      - name: Regenerate canonical app-shell release
+        run: npm run release:write
+
+      - name: Validate clinical and release invariants
+        run: |
+          node --check app.js
+          node --check app-shell.js
+          node --check aps-safety-2026.js
+          node tests/clinical-engine.test.js
+          node tests/clinical-engine-regression.test.js
+          node tests/clinical-engine-contract.test.js
+          npm run test:clinical-copy
+          npm run test:note-presenter
+          npm run check:clinical-protocol
+          npm run check:invariants
+          npm run check:release
+
+      - name: Commit change and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js app-shell.js index.html aps-safety-2026.js scripts/check_invariants.py sw.js pdf-preview.html
+          git rm .github/workflows/fix-hypoglycemia-trigger-once.yml
+          git commit -m "Fix: mostrar nivel 3 solo ante HGT hipoglicémico"
+          git push
