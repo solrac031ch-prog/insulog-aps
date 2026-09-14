@@ -1,17 +1,16 @@
 "use strict";
 
-const CACHE_NAME = "insulog-shell-20260914-atomic25";
-const DEPLOYMENT_REVISION = "phase8c-pdf-redesign-20260914-r1";
+const CACHE_NAME = "insulog-shell-20260914-atomic26";
+const DEPLOYMENT_REVISION = "phase8d-immutable-shell-20260914-r1";
 const PDF_PREVIEW_PATH = "./pdf-preview.html?v=20260914-1";
 
 const APP_SHELL = [
   "./index.html",
   PDF_PREVIEW_PATH,
   "./styles.css?v=20260910-2",
+  "./document-flow.css?v=20260914-1",
   "./pdf-enhancements.css?v=20260914-1",
   "./pdf-design-2026.css?v=20260914-1",
-  "./document-flow.css?v=20260910-1",
-  "./document-flow.css?v=20260914-1",
   "./aps-safety-2026.css?v=20260827-2",
   "./farmacia-popular.css?v=20260827-2",
   "./app-runtime.js?v=20260910-2",
@@ -30,14 +29,15 @@ const APP_SHELL = [
   "./assets/icons/icon-512.png?v=20260826"
 ];
 
-const STATIC_PATHS = new Set(
-  APP_SHELL.map((asset) => new URL(asset, self.location.href).pathname)
+const SHELL_ASSET_BY_PATH = new Map(
+  APP_SHELL.map((asset) => [new URL(asset, self.registration.scope).pathname, asset])
 );
 
-async function fetchFresh(request) {
-  const response = await fetch(new Request(request, { cache: "reload" }));
+async function fetchFresh(asset) {
+  const request = new Request(asset, { cache: "reload" });
+  const response = await fetch(request);
   if (!response.ok) {
-    throw new Error(`No se pudo actualizar ${request.url || request}: HTTP ${response.status}`);
+    throw new Error(`No se pudo preparar ${asset}: HTTP ${response.status}`);
   }
   return response;
 }
@@ -46,25 +46,26 @@ async function precacheFreshShell() {
   const cache = await caches.open(CACHE_NAME);
 
   await Promise.all(APP_SHELL.map(async (asset) => {
-    const request = new Request(asset, { cache: "reload" });
-    const response = await fetchFresh(request);
+    const response = await fetchFresh(asset);
     await cache.put(asset, response.clone());
   }));
 }
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    precacheFreshShell().then(() => self.skipWaiting())
-  );
+  // El worker nuevo solo queda listo si pudo descargar el shell completo.
+  // No usamos skipWaiting: una atención ya abierta sigue con su versión anterior.
+  event.waitUntil(precacheFreshShell());
 });
 
 self.addEventListener("activate", (event) => {
+  // La activación ocurre cuando la versión anterior ya no controla clientes.
+  // Recién entonces retiramos caches viejos; no tomamos pestañas abiertas con clients.claim().
   event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      ))
-      .then(() => self.clients.claim())
+    caches.keys().then((keys) => Promise.all(
+      keys
+        .filter((key) => key.startsWith("insulog-shell-") && key !== CACHE_NAME)
+        .map((key) => caches.delete(key))
+    ))
   );
 });
 
@@ -80,37 +81,20 @@ self.addEventListener("fetch", (event) => {
       ? PDF_PREVIEW_PATH
       : "./index.html";
 
-    const refreshNavigation = caches.open(CACHE_NAME)
-      .then(async (cache) => {
-        const response = await fetchFresh(new Request(navigationAsset, { cache: "reload" }));
-        await cache.put(navigationAsset, response.clone());
-        return response;
-      });
-
-    event.waitUntil(refreshNavigation.catch(() => undefined));
     event.respondWith(
-      refreshNavigation.catch(async () => {
-        const cache = await caches.open(CACHE_NAME);
-        return (await cache.match(navigationAsset)) || fetch(request);
-      })
+      caches.open(CACHE_NAME)
+        .then((cache) => cache.match(navigationAsset))
+        .then((cached) => cached || fetch(request))
     );
     return;
   }
 
-  if (!STATIC_PATHS.has(url.pathname)) return;
+  const shellAsset = SHELL_ASSET_BY_PATH.get(url.pathname);
+  if (!shellAsset) return;
 
-  const refreshAsset = caches.open(CACHE_NAME)
-    .then(async (cache) => {
-      const response = await fetchFresh(request);
-      await cache.put(request, response.clone());
-      return response;
-    });
-
-  event.waitUntil(refreshAsset.catch(() => undefined));
   event.respondWith(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.match(request))
-      .then((cached) => cached || refreshAsset)
-      .catch(() => fetch(request))
+      .then((cache) => cache.match(shellAsset))
+      .then((cached) => cached || fetch(request))
   );
 });
