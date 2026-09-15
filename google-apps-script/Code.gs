@@ -6,14 +6,17 @@ const INSULOG_DRIVE_CONFIG = Object.freeze({
   controlsSheet: "Controles",
   eventsSheet: "Eventos",
   allowedOrigins: ["https://solrac031ch-prog.github.io"],
-  bridgeVersion: "2026.09.15-drive-v1"
+  bridgeVersion: "2026.09.15-drive-v2",
+  schemaVersion: "2026.09.15-schema-v2"
 });
 
 function doGet() {
   return jsonResponse_({
     ok: true,
     service: "Insulog APS Drive Bridge",
-    version: INSULOG_DRIVE_CONFIG.bridgeVersion
+    version: INSULOG_DRIVE_CONFIG.bridgeVersion,
+    schemaVersion: INSULOG_DRIVE_CONFIG.schemaVersion,
+    spreadsheetId: INSULOG_DRIVE_CONFIG.spreadsheetId
   });
 }
 
@@ -29,6 +32,7 @@ function doPost(e) {
     const patients = requiredSheet_(spreadsheet, INSULOG_DRIVE_CONFIG.patientsSheet);
     const controls = requiredSheet_(spreadsheet, INSULOG_DRIVE_CONFIG.controlsSheet);
     const events = requiredSheet_(spreadsheet, INSULOG_DRIVE_CONFIG.eventsSheet);
+    ensureSchema_(patients, controls);
 
     if (controlAlreadyExists_(controls, payload.recordId)) {
       return jsonResponse_({ ok: true, duplicate: true, recordId: payload.recordId });
@@ -36,14 +40,16 @@ function doPost(e) {
 
     const timestamp = safeDate_(payload.timestamp) || new Date();
     const patient = upsertPatient_(patients, payload, timestamp);
-    appendControl_(controls, patient.patientId, payload, timestamp);
+    appendControl_(controls, patient, payload, timestamp);
     appendAutomaticHypoglycemiaEvent_(events, patient.patientId, payload, timestamp);
 
     return jsonResponse_({
       ok: true,
       duplicate: false,
       recordId: payload.recordId,
-      patientId: patient.patientId
+      patientId: patient.patientId,
+      firstRegistration: patient.created,
+      cohortEntryType: patient.cohortEntryType
     });
   } catch (error) {
     console.error(error && error.stack ? error.stack : error);
@@ -78,6 +84,11 @@ function validatePayload_(payload) {
   const patientName = cleanName_(payload.patientName);
   if (patientName.length < 3 || patientName.length > 160) throw new Error("Nombre de paciente inválido.");
 
+  const documentType = String(payload.documentType || "").trim();
+  if (["inicio", "seguimiento"].indexOf(documentType) === -1) {
+    throw new Error("Tipo de documento inválido.");
+  }
+
   const decision = String(payload.professionalDecision || "");
   if (["Aceptada", "Modificada"].indexOf(decision) === -1) {
     throw new Error("Decisión profesional inválida.");
@@ -94,6 +105,34 @@ function requiredSheet_(spreadsheet, name) {
   return sheet;
 }
 
+function ensureSchema_(patients, controls) {
+  const properties = PropertiesService.getScriptProperties();
+  if (properties.getProperty("INSULOG_SCHEMA_VERSION") === INSULOG_DRIVE_CONFIG.schemaVersion) return;
+
+  const patientHeaders = [
+    "Tipo de ingreso a cohorte",
+    "Usaba insulina antes del primer registro",
+    "NPH AM basal (UI)",
+    "NPH PM basal (UI)",
+    "NPH final tras primer registro (UI/día)"
+  ];
+  patients.getRange(1, 11, 1, patientHeaders.length).setValues([patientHeaders]);
+
+  const yesNoRule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(["Sí", "No"], true)
+    .setAllowInvalid(false)
+    .build();
+  patients.getRange(2, 12, Math.max(1, patients.getMaxRows() - 1), 1).setDataValidation(yesNoRule);
+
+  const controlRule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(["Inicio", "Ingreso con insulina previa", "Ajuste", "Seguimiento"], true)
+    .setAllowInvalid(false)
+    .build();
+  controls.getRange(2, 5, Math.max(1, controls.getMaxRows() - 1), 1).setDataValidation(controlRule);
+
+  properties.setProperty("INSULOG_SCHEMA_VERSION", INSULOG_DRIVE_CONFIG.schemaVersion);
+}
+
 function controlAlreadyExists_(sheet, recordId) {
   if (sheet.getLastRow() < 2) return false;
   const finder = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1)
@@ -101,6 +140,12 @@ function controlAlreadyExists_(sheet, recordId) {
     .matchEntireCell(true)
     .matchCase(true);
   return Boolean(finder.findNext());
+}
+
+function cohortEntryType_(payload) {
+  return String(payload.documentType || "") === "inicio"
+    ? "Inicio de insulina registrado en Insulog"
+    : "Ya usaba insulina al primer registro en Insulog";
 }
 
 function upsertPatient_(sheet, payload, timestamp) {
@@ -111,7 +156,7 @@ function upsertPatient_(sheet, payload, timestamp) {
   let patientId = "";
 
   if (lastRow >= 2) {
-    const rows = sheet.getRange(2, 1, lastRow - 1, 10).getValues();
+    const rows = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
     for (let index = 0; index < rows.length; index += 1) {
       if (normalizeName_(rows[index][1]) === normalized) {
         patientRow = index + 2;
@@ -122,7 +167,12 @@ function upsertPatient_(sheet, payload, timestamp) {
   }
 
   const hba1c = nullableNumber_(payload.hba1c);
-  const baselineNph = nullableNumber_(payload.currentTotal);
+  const baselineAm = String(payload.documentType || "") === "inicio" ? 0 : nullableNumber_(payload.currentAm);
+  const baselinePm = String(payload.documentType || "") === "inicio" ? 0 : nullableNumber_(payload.currentPm);
+  const baselineNph = String(payload.documentType || "") === "inicio" ? 0 : nullableNumber_(payload.currentTotal);
+  const firstFinalNph = nullableNumber_(payload.finalTotal);
+  const cohortEntryType = cohortEntryType_(payload);
+  const insulinBeforeEntry = String(payload.documentType || "") === "inicio" ? "No" : "Sí";
 
   if (!patientRow) {
     patientId = Utilities.getUuid();
@@ -136,9 +186,19 @@ function upsertPatient_(sheet, payload, timestamp) {
       "Activo",
       hba1c === null ? "" : hba1c,
       baselineNph === null ? "" : baselineNph,
-      ""
+      "",
+      cohortEntryType,
+      insulinBeforeEntry,
+      baselineAm === null ? "" : baselineAm,
+      baselinePm === null ? "" : baselinePm,
+      firstFinalNph === null ? "" : firstFinalNph
     ]);
-    return { patientId: patientId, row: sheet.getLastRow(), created: true };
+    return {
+      patientId: patientId,
+      row: sheet.getLastRow(),
+      created: true,
+      cohortEntryType: cohortEntryType
+    };
   }
 
   if (!patientId) {
@@ -157,10 +217,23 @@ function upsertPatient_(sheet, payload, timestamp) {
     sheet.getRange(patientRow, 9).setValue(baselineNph);
   }
 
-  return { patientId: patientId, row: patientRow, created: false };
+  const storedCohortEntryType = String(sheet.getRange(patientRow, 11).getValue() || "").trim();
+  return {
+    patientId: patientId,
+    row: patientRow,
+    created: false,
+    cohortEntryType: storedCohortEntryType || cohortEntryType
+  };
 }
 
-function appendControl_(sheet, patientId, payload, timestamp) {
+function firstControlKind_(patient, payload) {
+  if (!patient.created) return normalizeControlKind_(payload.controlKind);
+  return String(payload.documentType || "") === "inicio"
+    ? "Inicio"
+    : "Ingreso con insulina previa";
+}
+
+function appendControl_(sheet, patient, payload, timestamp) {
   const currentAm = numberOrBlank_(payload.currentAm);
   const currentPm = numberOrBlank_(payload.currentPm);
   const currentTotal = numberOrBlank_(payload.currentTotal);
@@ -179,10 +252,10 @@ function appendControl_(sheet, patientId, payload, timestamp) {
 
   sheet.appendRow([
     String(payload.recordId),
-    patientId,
+    patient.patientId,
     cleanName_(payload.patientName),
     timestamp,
-    normalizeControlKind_(payload.controlKind),
+    firstControlKind_(patient, payload),
     weight,
     hba1c,
     "",
@@ -234,6 +307,7 @@ function appendAutomaticHypoglycemiaEvent_(sheet, patientId, payload, timestamp)
 function normalizeControlKind_(value) {
   const text = String(value || "");
   if (text === "Inicio") return "Inicio";
+  if (text === "Ingreso con insulina previa") return "Ingreso con insulina previa";
   if (text === "Seguimiento") return "Seguimiento";
   return "Ajuste";
 }
