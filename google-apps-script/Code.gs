@@ -6,7 +6,7 @@ const INSULOG_DRIVE_CONFIG = Object.freeze({
   controlsSheet: "Controles",
   eventsSheet: "Eventos",
   allowedOrigins: ["https://solrac031ch-prog.github.io"],
-  bridgeVersion: "2026.09.15-drive-v2",
+  bridgeVersion: "2026.09.15-drive-v1",
   schemaVersion: "2026.09.15-schema-v2"
 });
 
