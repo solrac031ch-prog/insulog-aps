@@ -30,9 +30,12 @@
   }
 
   function currentWeightInput() {
+    const inicio = document.getElementById("peso-paciente");
+    const seguimiento = document.getElementById("peso-seguimiento");
+    if (safeNumber(seguimiento?.value) > 0) return seguimiento;
+    if (safeNumber(inicio?.value) > 0) return inicio;
     const note = String(rawClinicalNote()).trim();
-    const id = /^INICIO\b/i.test(note) ? "peso-paciente" : "peso-seguimiento";
-    return document.getElementById(id);
+    return /^INICIO\b/i.test(note) ? inicio : (seguimiento || inicio);
   }
 
   function professionalOverrideSnapshot() {
@@ -53,8 +56,7 @@
       && total > 0
       && reason.length >= 5
       && weight !== null
-      && weight > 0
-      && !isUrgencyRoute();
+      && weight > 0;
 
     return { am, pm, reason, total, weight, weightInput, dosePerKg, baseValid };
   }
@@ -99,7 +101,7 @@
 
       // Clinical r2 mantiene 0,5 UI/kg/día como umbral de seguridad para la recomendación
       // automática. Una pauta manual modificada por un profesional puede superar ese umbral
-      // si existe justificación clínica documentada. La ruta de urgencia continúa bloqueada.
+      // si existe justificación clínica documentada. Las alertas de urgencia se conservan, pero no anulan una decisión profesional explícita.
       const originalWeight = override.weightInput.value;
       const validationWeight = (override.total / 0.5) + 0.01;
       let result;
@@ -165,7 +167,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.14-phase6b-document-sync-professional-override",
+    version: "2026.09.15-phase6b-document-sync-clinician-override",
     privacy: Object.freeze({
       patientNameStorage: "none",
       temporaryHistoryEnabled: false

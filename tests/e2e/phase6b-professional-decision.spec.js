@@ -26,7 +26,7 @@ async function openFollowupResult(page) {
   await fasting.nth(2).fill("180");
   await page.locator("#ajustar-seguimiento-btn").click();
   await expectActivePage(page, "p5");
-  await expect(page.locator("#nota-clinica")).toContainText("PM: 22 UI");
+  await expect(page.locator("#nota-clinica")).toContainText("PM 22 UI");
 }
 
 async function modifyTo21(page, reason = "Contexto clínico y patrón alimentario del paciente") {

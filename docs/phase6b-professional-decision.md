@@ -42,7 +42,7 @@ Los documentos al paciente sólo pueden generarse cuando la decisión final es `
 
 Cuando existe una modificación, el PDF utiliza temporalmente la pauta final profesional; la recomendación de Clinical r2 permanece intacta en el estado para auditoría.
 
-`REEVALUAR` y las rutas de urgencia no permiten emitir una nueva pauta ambulatoria desde esta capa.
+`REEVALUAR` no permite emitir una nueva pauta ambulatoria. Si Clinical r2 activa una ruta de urgencia, `ACEPTAR` conserva esa conducta; `MODIFICAR PLAN` permite al profesional registrar y emitir una pauta alternativa siempre que deje una justificación clínica explícita. La alerta original permanece visible y documentada.
 
 ### 5. Historial de sesión
 
@@ -65,4 +65,4 @@ Phase 6B no modifica:
 - límite basal de 0,5 UI/kg/día;
 - reglas de urgencia.
 
-El umbral de 0,5 UI/kg/día sigue siendo un guardrail para la recomendación automática. Una pauta manual >0,5 UI/kg/día puede registrarse y emitirse cuando el profesional la modifica de forma explícita y deja una justificación clínica; Insulog mantiene una advertencia visible y documenta que se trata de una excepción por criterio profesional. Las rutas de urgencia siguen bloqueadas.
+El umbral de 0,5 UI/kg/día y las rutas de urgencia siguen siendo guardrails de la recomendación automática. No son bloqueos absolutos de la decisión médica: una pauta manual puede apartarse de ellos cuando el profesional usa `MODIFICAR PLAN` y deja una justificación clínica explícita. Insulog mantiene las advertencias originales y documenta claramente la excepción por criterio profesional.

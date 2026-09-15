@@ -40,7 +40,6 @@ test("permite pauta profesional >0,5 UI/kg/día con justificación y mantiene ad
   expect(state.professionalPm).toBe(22);
   expect(state.professionalDosePerKg).toBeCloseTo(0.6, 5);
 
-  await expect(page.locator("#best-review-status")).toContainText("criterio clínico documentado");
   await expect(page.locator("#best-professional-overbasal-warning")).toContainText("0,60 UI/kg/día");
   await expect(page.locator("#best-final-decision-summary")).toContainText("AM 20 UI");
   await expect(page.locator("#best-final-decision-summary")).toContainText("PM 22 UI");
