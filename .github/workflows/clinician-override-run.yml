@@ -22,6 +22,7 @@ jobs:
       - name: Apply patch
         run: |
           python scripts/clinician_override_patch.py
+          python scripts/clinician_override_warning_patch.py
           python scripts/clinician_override_test_patch.py
       - name: Refresh canonical PWA release
         run: python scripts/app_shell_release.py --write
