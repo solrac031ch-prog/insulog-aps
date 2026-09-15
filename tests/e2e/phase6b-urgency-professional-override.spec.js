@@ -27,6 +27,9 @@ async function openFollowupResult(page) {
   await page.locator("#ajustar-seguimiento-btn").click();
   await expectActivePage(page, "p5");
 
+  // Simula una alerta crítica ya emitida por Clinical r2. La alerta debe
+  // conservarse, pero una decisión profesional explícita y justificada
+  // puede definir una pauta distinta y continuar hasta el documento final.
   await page.evaluate(() => {
     const note = document.getElementById("nota-clinica");
     const urgent = "SEGUIMIENTO NPH\nHIPOGLICEMIA NIVEL 3: Clinical r2 recomienda evaluación urgente.\nDosis sugerida AM 12 UI · PM 12 UI.";
@@ -35,8 +38,9 @@ async function openFollowupResult(page) {
   });
 }
 
-test("criterio profesional puede modificar y emitir pauta aunque Clinical r2 marque urgencia", async ({ page }) => {
+test("criterio profesional prevalece ante alerta de urgencia y llega al PDF con la pauta documentada", async ({ page }) => {
   await openFollowupResult(page);
+
   await page.locator("#best-review-modify").click();
   await expect(page.locator("#best-modify-panel")).toBeVisible();
   await expect(page.locator("#best-review-status")).toContainText("Puede modificar la pauta por criterio profesional");
@@ -52,7 +56,18 @@ test("criterio profesional puede modificar y emitir pauta aunque Clinical r2 mar
   expect(state.professionalPm).toBe(12);
   await expect(page.locator("#best-review-status")).toContainText("prevalece la pauta modificada por el profesional");
   await expect(page.locator("#nota-clinica")).toContainText("Clinical r2 había activado una ruta de urgencia");
+  await expect(page.locator("#nota-clinica")).toContainText("AM 14 UI");
+  await expect(page.locator("#nota-clinica")).toContainText("PM 12 UI");
 
   await page.locator("#p5").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
   await expectActivePage(page, "p6");
+
+  await page.locator("#nombre-paciente").fill("Paciente criterio médico");
+  await page.locator("#p6").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
+  await expectActivePage(page, "p7");
+
+  const frame = page.frameLocator("#pdf-preview-frame");
+  await expect(frame.locator("#pdf")).toContainText("Paciente criterio médico");
+  await expect(frame.locator("#pdf")).toContainText("14 UI");
+  await expect(frame.locator("#pdf")).toContainText("12 UI");
 });
