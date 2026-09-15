@@ -9,6 +9,7 @@
 
   const actions = runtime.actions;
   const state = runtime.state;
+  const AUTO_BASAL_LIMIT = 0.5;
 
   function safeNumber(value) {
     if (value === null || value === undefined || String(value).trim() === "") return null;
@@ -29,93 +30,125 @@
     return /HIPOGLICEMIA NIVEL 3|CRISIS HIPERGLIC[EÉ]MICA|CETOSIS/i.test(rawClinicalNote());
   }
 
-  function currentWeightInput() {
+  function currentWeight() {
     const note = String(rawClinicalNote()).trim();
     const id = /^INICIO\b/i.test(note) ? "peso-paciente" : "peso-seguimiento";
-    return document.getElementById(id);
+    const weight = safeNumber(document.getElementById(id)?.value);
+    return weight && weight > 0 ? weight : null;
   }
 
-  function professionalOverrideSnapshot() {
-    const am = Number(document.getElementById("best-final-am")?.value);
-    const pm = Number(document.getElementById("best-final-pm")?.value);
-    const reason = String(document.getElementById("best-modify-reason")?.value || "").trim();
-    const weightInput = currentWeightInput();
-    const weight = safeNumber(weightInput?.value);
-    const total = am + pm;
-    const dosePerKg = weight && weight > 0 ? total / weight : null;
-
-    const baseValid = Number.isInteger(am)
-      && Number.isInteger(pm)
-      && am >= 0
-      && pm >= 0
-      && am <= 150
-      && pm <= 150
-      && total > 0
-      && reason.length >= 5
-      && weight !== null
-      && weight > 0
-      && !isUrgencyRoute();
-
-    return { am, pm, reason, total, weight, weightInput, dosePerKg, baseValid };
+  function professionalDosePerKg(data = state.snapshot()) {
+    const stored = safeNumber(data.professionalDosePerKg);
+    if (stored !== null) return stored;
+    const weight = currentWeight();
+    if (!weight) return null;
+    return (numberOrZero(data.professionalAm) + numberOrZero(data.professionalPm)) / weight;
   }
 
-  function renderProfessionalOverrideWarning(dosePerKg) {
-    const formatted = Number(dosePerKg).toFixed(2).replace(".", ",");
-    const status = document.getElementById("best-review-status");
-    if (status) {
-      status.textContent = `✓ Plan modificado y documentado como decisión profesional. ⚠ La pauta final corresponde a ${formatted} UI/kg/día, sobre el umbral orientador de 0,5 UI/kg/día; se permite por criterio clínico documentado.`;
-      status.style.color = "var(--warning, #8a5a00)";
-    }
+  function formatDosePerKg(value) {
+    return Number(value).toFixed(2).replace(".", ",");
+  }
+
+  function ensureProfessionalWarning() {
+    let warning = document.getElementById("best-professional-overbasal-warning");
+    if (warning) return warning;
 
     const summary = document.getElementById("best-final-decision-summary");
-    if (summary) {
-      let warning = document.getElementById("best-professional-overbasal-warning");
-      if (!warning) {
-        warning = document.createElement("div");
-        warning.id = "best-professional-overbasal-warning";
-        warning.setAttribute("role", "note");
-        warning.style.marginTop = "10px";
-        warning.style.fontWeight = "700";
-        warning.style.color = "var(--warning, #8a5a00)";
-        summary.appendChild(warning);
-      }
-      warning.textContent = `⚠ Supera 0,5 UI/kg/día (${formatted} UI/kg/día). Excepción registrada por decisión del profesional con justificación clínica.`;
-    }
+    if (!summary) return null;
+
+    warning = document.createElement("div");
+    warning.id = "best-professional-overbasal-warning";
+    warning.className = "alert text-left is-hidden";
+    warning.setAttribute("role", "status");
+    warning.setAttribute("aria-live", "polite");
+    warning.style.marginTop = "12px";
+    warning.style.borderColor = "#f3b33d";
+    warning.style.background = "#fff8e8";
+    warning.style.color = "#7a4a00";
+    summary.insertAdjacentElement("afterend", warning);
+    return warning;
   }
 
   function clearProfessionalOverrideWarning() {
-    document.getElementById("best-professional-overbasal-warning")?.remove();
+    const warning = document.getElementById("best-professional-overbasal-warning");
+    if (!warning) return;
+    warning.classList.add("is-hidden");
+    warning.setAttribute("aria-hidden", "true");
+    warning.textContent = "";
+  }
+
+  function renderProfessionalOverrideState() {
+    const data = state.snapshot();
+    const warning = ensureProfessionalWarning();
+    if (!warning) return;
+
+    const dosePerKg = professionalDosePerKg(data);
+    const isManualOverride = data.professionalDecision === "modificada";
+    const isOverAutomaticLimit = isManualOverride && dosePerKg !== null && dosePerKg > AUTO_BASAL_LIMIT;
+
+    if (!isOverAutomaticLimit) {
+      clearProfessionalOverrideWarning();
+      return;
+    }
+
+    const formatted = formatDosePerKg(dosePerKg);
+    warning.classList.remove("is-hidden");
+    warning.setAttribute("aria-hidden", "false");
+    warning.innerHTML = `<strong>⚠️ Pauta profesional sobre el umbral automático:</strong> ${formatted} UI/kg/día. Insulog no recomienda escalar automáticamente por sobre 0,5 UI/kg/día; esta pauta puede emitirse porque fue modificada por un profesional y cuenta con justificación clínica documentada.`;
+
+    const status = document.getElementById("best-review-status");
+    if (status) {
+      status.textContent = "✓ Plan modificado; criterio clínico documentado. Puede continuar con la pauta profesional.";
+      status.style.color = "var(--success)";
+    }
+  }
+
+  function markModificationInProgress() {
+    const summary = document.getElementById("best-final-decision-summary");
+    if (summary) {
+      summary.innerHTML = "<strong>Modificación en edición:</strong> al guardar, la pauta ingresada reemplazará la decisión previa y quedará registrada como criterio profesional.";
+    }
+    clearProfessionalOverrideWarning();
+  }
+
+  function scheduleProfessionalOverrideRender() {
+    queueMicrotask(renderProfessionalOverrideState);
+    requestAnimationFrame(renderProfessionalOverrideState);
   }
 
   function registerProfessionalOverbasalizationOverride() {
-    actions.decorate("best-review-modify-save", (next) => (context) => {
-      const override = professionalOverrideSnapshot();
-
-      if (!override.baseValid || override.dosePerKg === null || override.dosePerKg <= 0.5) {
+    if (actions.has("best-review-modify")) {
+      actions.decorate("best-review-modify", (next) => (context) => {
         const result = next(context);
-        if (result) clearProfessionalOverrideWarning();
+        markModificationInProgress();
         return result;
-      }
+      });
+    }
 
-      // Clinical r2 mantiene 0,5 UI/kg/día como umbral de seguridad para la recomendación
-      // automática. Una pauta manual modificada por un profesional puede superar ese umbral
-      // si existe justificación clínica documentada. La ruta de urgencia continúa bloqueada.
-      const originalWeight = override.weightInput.value;
-      const validationWeight = (override.total / 0.5) + 0.01;
-      let result;
-
-      try {
-        override.weightInput.value = String(validationWeight);
-        result = next(context);
-      } finally {
-        override.weightInput.value = originalWeight;
-      }
-
+    actions.decorate("best-review-modify-save", (next) => (context) => {
+      // Clinical r2 conserva 0,5 UI/kg/día como techo de escalamiento automático.
+      // La decisión manual del profesional no se altera ni se recalcula: si la pauta
+      // modificada es válida, está justificada y no corresponde a una ruta de urgencia,
+      // puede superar el umbral. El exceso queda visible y documentado como advertencia.
+      const result = next(context);
       if (!result) return result;
 
-      state.patch({ professionalDosePerKg: override.dosePerKg });
-      renderProfessionalOverrideWarning(override.dosePerKg);
+      const data = state.snapshot();
+      const dosePerKg = professionalDosePerKg(data);
+      if (data.professionalDecision === "modificada" && dosePerKg !== null) {
+        state.patch({ professionalDosePerKg: dosePerKg });
+      }
+      scheduleProfessionalOverrideRender();
       return state.snapshot();
+    });
+
+    ["best-review-accept", "best-review-reassess", "best-review-modify-cancel"].forEach((actionName) => {
+      if (!actions.has(actionName)) return;
+      actions.decorate(actionName, (next) => (context) => {
+        const result = next(context);
+        scheduleProfessionalOverrideRender();
+        return result;
+      });
     });
   }
 
@@ -145,6 +178,8 @@
         return next(context);
       }
 
+      if (isUrgencyRoute()) return next(context);
+
       const original = { am: data.am, pm: data.pm, dosisKg: data.dosisKg };
       const am = numberOrZero(data.professionalAm);
       const pm = numberOrZero(data.professionalPm);
@@ -162,10 +197,12 @@
     disableTemporaryHistoryActions();
     removeTemporaryHistoryUI();
     requestAnimationFrame(removeTemporaryHistoryUI);
+    scheduleProfessionalOverrideRender();
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.14-phase6b-document-sync-professional-override",
+    version: "2026.09.14-phase6b-document-sync-professional-override-v2",
+    automaticBasalLimitUiKgDay: AUTO_BASAL_LIMIT,
     privacy: Object.freeze({
       patientNameStorage: "none",
       temporaryHistoryEnabled: false
