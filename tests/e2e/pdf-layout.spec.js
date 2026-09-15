@@ -11,6 +11,11 @@ test("PDF 8C mantiene jerarquía legible y tabla HGT usable", async ({ page, con
     window.InsulogRuntime.state.patch({
       am: 18,
       pm: 10,
+      professionalDecision: "aceptada",
+      professionalAm: 18,
+      professionalPm: 10,
+      professionalReason: "",
+      professionalDosePerKg: null,
       acciones: "- Control médico en 15 días con registro completo."
     });
     window.InsulogRuntime.navigation.go(6);
