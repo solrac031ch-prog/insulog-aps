@@ -1,0 +1,48 @@
+name: Clinician override runner
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - trigger-clinician-override.txt
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Apply patch
+        run: python scripts/clinician_override_patch.py
+      - name: Refresh canonical PWA release
+        run: python scripts/app_shell_release.py --write
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Static and clinical checks
+        run: |
+          node --check phase6b-professional-decision.js
+          node --check phase6b-document-sync.js
+          npm run check:clinical-protocol
+          npm run test:clinical-copy
+          npm run test:note-presenter
+          npm run check:invariants
+          npm run check:release
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Focused Phase 6B tests
+        run: npx playwright test tests/e2e/phase6b-urgency-professional-override.spec.js tests/e2e/phase6b-overbasal-professional-override.spec.js tests/e2e/phase6b-professional-decision.spec.js --project=chromium
+      - name: Commit validated change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add phase6b-professional-decision.js phase6b-document-sync.js docs/phase6b-professional-decision.md tests/e2e/phase6b-urgency-professional-override.spec.js index.html pdf-preview.html sw.js
+          git diff --cached --quiet && exit 0
+          git commit -m "Let documented clinician judgment override urgency guardrail"
+          git push
