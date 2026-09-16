@@ -1,0 +1,31 @@
+name: Regenerate shell fingerprint
+
+on:
+  push:
+    branches:
+      - drive-followup-validation
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: drive-followup-validation
+      - name: Regenerate app shell fingerprint
+        run: python scripts/app_shell_release.py --write
+      - name: Commit regenerated fingerprint
+        run: |
+          if git diff --quiet -- index.html pdf-preview.html sw.js; then
+            echo "Fingerprint already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html pdf-preview.html sw.js
+          git commit -m "Regenerate app shell fingerprint"
+          git push origin HEAD:drive-followup-validation
