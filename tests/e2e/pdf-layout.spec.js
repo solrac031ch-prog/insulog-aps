@@ -5,7 +5,7 @@ async function expectActivePage(page, id) {
   await expect(page.locator(`#${id}`)).toHaveClass(/active/);
 }
 
-test("PDF 8C mantiene jerarquía legible y tabla HGT usable", async ({ page, context }, testInfo) => {
+test("PDF 8C mantiene jerarquía legible, aislamiento visual y tabla HGT usable", async ({ page, context }, testInfo) => {
   await page.goto("/");
   await page.evaluate(() => {
     window.InsulogRuntime.state.patch({
@@ -30,7 +30,16 @@ test("PDF 8C mantiene jerarquía legible y tabla HGT usable", async ({ page, con
   await expect(pdf).toContainText("María Fernanda González Pérez");
   await expect(pdf).toContainText("18 UI");
   await expect(pdf).toContainText("10 UI");
+  await expect(pdf).toContainText("Pre-almuerzo");
+  await expect(pdf).not.toContainText("Preonce");
   await expect(frame.locator(".tabla-registro-hgt tbody tr")).toHaveCount(15);
+
+  const loadedStyles = await page.locator("#pdf-preview-frame").evaluate((iframe) =>
+    Array.from(iframe.contentDocument?.querySelectorAll('link[rel="stylesheet"]') || [])
+      .map((link) => link.getAttribute("href") || "")
+  );
+  expect(loadedStyles.some((href) => /(^|\/)styles\.css(?:\?|$)/.test(href))).toBe(false);
+  expect(loadedStyles.some((href) => /pdf-design-2026\.css/.test(href))).toBe(true);
 
   const metrics = await pdf.evaluate((root) => {
     const style = getComputedStyle(root);
