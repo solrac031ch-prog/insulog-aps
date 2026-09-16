@@ -73,14 +73,18 @@ test("6B pide nombre sólo al generar documento y no lo almacena en el estado", 
   expect(JSON.stringify(state)).not.toContain("Paciente prueba");
 });
 
-test("6B no muestra historial temporal ni expone API para guardar pacientes", async ({ page }) => {
+test("6B no muestra historial local y declara almacenamiento identificatorio sólo en Drive", async ({ page }) => {
   await openFollowupResult(page);
   await expect(page.locator("#best-history-save-card")).toHaveCount(0);
   await expect(page.locator("#best-history-home-entry")).toHaveCount(0);
   await expect(page.locator("#p8")).toHaveCount(0);
 
   const privacy = await page.evaluate(() => window.InsulogPhase6BDocumentSync?.privacy);
-  expect(privacy).toEqual({ patientNameStorage: "none", temporaryHistoryEnabled: false });
+  expect(privacy).toEqual({
+    patientNameStorage: "google-drive-only",
+    localPersistentPatientStorage: false,
+    temporaryHistoryEnabled: false
+  });
   expect(await page.evaluate(() => Boolean(window.InsulogPhase6BDocumentSync?.history))).toBe(false);
 });
 
