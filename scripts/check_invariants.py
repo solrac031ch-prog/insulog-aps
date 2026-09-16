@@ -133,9 +133,10 @@ require(html, ['id="pdf-preview-frame"', asset("pdf-preview.html"), 'pdf-render-
 forbid(html, ['href="./pdf-enhancements.css', 'href="./pdf-design-2026.css'], "Parent application PDF styles")
 require(
     pdf_preview_html,
-    [asset("styles.css"), asset("document-flow.css"), asset("pdf-enhancements.css"), asset("pdf-design-2026.css"), 'id="pdf"'],
+    [asset("document-flow.css"), asset("pdf-enhancements.css"), asset("pdf-design-2026.css"), 'id="pdf"'],
     "Isolated PDF document assets",
 )
+forbid(pdf_preview_html, ['href="./styles.css'], "Isolated PDF global application stylesheet")
 if pdf_preview_html.index(asset("pdf-design-2026.css")) < pdf_preview_html.index(asset("document-flow.css")):
     raise SystemExit("PDF design must load after document-flow.css and remain the final visual authority")
 
@@ -287,7 +288,7 @@ require(
     [
         "const runtime = window.InsulogRuntime", "const enhancers = []", "function useEnhancer",
         "function generarDocumento", "state.snapshot()", "enhancers.forEach", "window.InsulogDocuments",
-        "ADA 2026", "function bloqueControlFirma", "pdf-doc-title", "pdf-patient-row",
+        "Vía Clínica MINSAL DM2 2026", "Protocolo de Insulinización MINSAL 2022", "function bloqueControlFirma", "pdf-doc-title", "pdf-patient-row",
         "pdf-firma-control", "Registro de control - 15 días",
     ],
     "Patient document builder boundary",
