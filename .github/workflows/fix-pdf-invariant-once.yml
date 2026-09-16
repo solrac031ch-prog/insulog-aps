@@ -34,7 +34,7 @@ jobs:
               [asset("document-flow.css"), asset("pdf-enhancements.css"), asset("pdf-design-2026.css"), 'id="pdf"'],
               "Isolated PDF document assets",
           )
-          forbid(pdf_preview_html, ["styles.css"], "Isolated PDF global application stylesheet")
+          forbid(pdf_preview_html, ['href="./styles.css'], "Isolated PDF global application stylesheet")
           '''
           if old not in s:
               raise SystemExit('PDF invariant target not found')
