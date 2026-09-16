@@ -9,6 +9,13 @@
 
   const actions = runtime.actions;
   const state = runtime.state;
+  const DRIVE_ENDPOINT_STORAGE_KEY = "insulog.drive.bridge.endpoint.v1";
+  const DRIVE_ENDPOINT_PARAM = "driveEndpoint";
+  const DRIVE_BRIDGE_VERSION = "2026.09.15-drive-v1";
+  const EXPECTED_DRIVE_HOST = /(^|\.)script\.google\.com$/i;
+  const transientRetryQueue = [];
+  let lastDriveFingerprint = "";
+  let lastDriveRecordId = "";
 
   function safeNumber(value) {
     if (value === null || value === undefined || String(value).trim() === "") return null;
@@ -101,7 +108,8 @@
 
       // Clinical r2 mantiene 0,5 UI/kg/día como umbral de seguridad para la recomendación
       // automática. Una pauta manual modificada por un profesional puede superar ese umbral
-      // si existe justificación clínica documentada. Las alertas de urgencia se conservan, pero no anulan una decisión profesional explícita.
+      // si existe justificación clínica documentada. Las alertas de urgencia se conservan,
+      // pero no anulan una decisión profesional explícita.
       const originalWeight = override.weightInput.value;
       const validationWeight = (override.total / 0.5) + 0.01;
       let result;
@@ -140,6 +148,201 @@
     });
   }
 
+  function injectFollowupHbA1cField() {
+    if (document.getElementById("hba1c-control")) return;
+    const host = document.querySelector("#metas-seguridad-r2 .form-grid");
+    if (!host) return;
+    host.insertAdjacentHTML("beforeend", `
+      <div class="field">
+        <label for="hba1c-control">HbA1c actual (%) <span class="helper-text">opcional</span></label>
+        <input id="hba1c-control" type="number" inputmode="decimal" min="3" max="20" step="0.1" placeholder="Ej: 7,8">
+      </div>`);
+  }
+
+  function validDriveEndpoint(value) {
+    try {
+      const url = new URL(String(value || "").trim());
+      return url.protocol === "https:" && EXPECTED_DRIVE_HOST.test(url.hostname) && /\/macros\/s\//.test(url.pathname) && /\/exec\/?$/.test(url.pathname);
+    } catch {
+      return false;
+    }
+  }
+
+  function configuredDriveEndpoint() {
+    const globalEndpoint = String(window.INSULOG_DRIVE_ENDPOINT || "").trim();
+    if (validDriveEndpoint(globalEndpoint)) return globalEndpoint;
+    const stored = String(localStorage.getItem(DRIVE_ENDPOINT_STORAGE_KEY) || "").trim();
+    return validDriveEndpoint(stored) ? stored : "";
+  }
+
+  function configureDriveEndpoint(endpoint) {
+    const value = String(endpoint || "").trim();
+    if (!validDriveEndpoint(value)) throw new Error("URL de Apps Script no válida. Debe terminar en /exec.");
+    localStorage.setItem(DRIVE_ENDPOINT_STORAGE_KEY, value);
+    return value;
+  }
+
+  function configureDriveEndpointFromQuery() {
+    const url = new URL(window.location.href);
+    const endpoint = url.searchParams.get(DRIVE_ENDPOINT_PARAM);
+    if (!endpoint) return;
+    if (!validDriveEndpoint(endpoint)) {
+      console.warn("Insulog: se ignoró un driveEndpoint inválido.");
+      return;
+    }
+    configureDriveEndpoint(endpoint);
+    url.searchParams.delete(DRIVE_ENDPOINT_PARAM);
+    window.history.replaceState({}, document.title, url.toString());
+  }
+
+  function numericInputValues(selector) {
+    return Array.from(document.querySelectorAll(selector))
+      .map((input) => Number.parseInt(input.value, 10))
+      .filter(Number.isFinite);
+  }
+
+  function minimum(values) {
+    return values.length ? Math.min(...values) : null;
+  }
+
+  function totalDose(am, pm) {
+    return numberOrZero(am) + numberOrZero(pm);
+  }
+
+  function doseLabel(am, pm) {
+    const parts = [];
+    const amValue = numberOrZero(am);
+    const pmValue = numberOrZero(pm);
+    if (amValue > 0) parts.push(`AM ${Math.round(amValue)} UI`);
+    if (pmValue > 0) parts.push(`PM ${Math.round(pmValue)} UI`);
+    return parts.length ? parts.join(" · ") : "0 UI";
+  }
+
+  function controlKind(tipo, data) {
+    if (tipo === "inicio") return "Inicio";
+    const current = totalDose(data.amActual, data.pmActual);
+    const final = totalDose(data.professionalAm, data.professionalPm);
+    return current !== final ? "Ajuste" : "Seguimiento";
+  }
+
+  function makeRecordId() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    return `insulog-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
+  function stableRecordId(fingerprint) {
+    if (fingerprint === lastDriveFingerprint && lastDriveRecordId) return lastDriveRecordId;
+    lastDriveFingerprint = fingerprint;
+    lastDriveRecordId = makeRecordId();
+    return lastDriveRecordId;
+  }
+
+  function buildDriveRecord(tipo, data) {
+    const patientName = String(document.getElementById("nombre-paciente")?.value || "").trim();
+    if (!patientName) return null;
+
+    const fastingValues = numericInputValues("#tabla-seguimiento .ay");
+    const preLunchValues = numericInputValues("#tabla-seguimiento .pre");
+    const minFasting = minimum(fastingValues);
+    const minPreLunch = minimum(preLunchValues);
+    const observedMinimums = [minFasting, minPreLunch].filter((value) => value !== null);
+    const lowestGlucose = observedMinimums.length ? Math.min(...observedMinimums) : null;
+    const weight = safeNumber(currentWeightInput()?.value);
+    const hba1c = tipo === "inicio"
+      ? safeNumber(document.getElementById("hba1c-inicio")?.value)
+      : safeNumber(document.getElementById("hba1c-control")?.value);
+    const egfr = tipo === "inicio" ? safeNumber(document.getElementById("vfg-inicio")?.value) : null;
+    const currentAm = tipo === "inicio" ? 0 : numberOrZero(data.amActual);
+    const currentPm = tipo === "inicio" ? 0 : numberOrZero(data.pmActual);
+    const recommendedAm = numberOrZero(data.am);
+    const recommendedPm = numberOrZero(data.pm);
+    const finalAm = numberOrZero(data.professionalAm);
+    const finalPm = numberOrZero(data.professionalPm);
+    const decision = data.professionalDecision === "modificada" ? "Modificada" : "Aceptada";
+    const note = rawClinicalNote();
+    const fingerprint = [patientName, tipo, note, decision, finalAm, finalPm, hba1c ?? ""].join("|");
+
+    return {
+      bridgeVersion: DRIVE_BRIDGE_VERSION,
+      recordId: stableRecordId(fingerprint),
+      sourceOrigin: window.location.origin,
+      timestamp: new Date().toISOString(),
+      patientName,
+      documentType: tipo,
+      controlKind: controlKind(tipo, data),
+      weightKg: weight,
+      hba1c,
+      egfr,
+      currentAm,
+      currentPm,
+      currentTotal: totalDose(currentAm, currentPm),
+      fastingAverage: safeNumber(data.promAy),
+      preLunchAverage: safeNumber(data.promPre),
+      fastingValues,
+      preLunchValues,
+      hypoglycemia70: lowestGlucose !== null && lowestGlucose < 70,
+      hypoglycemia54: lowestGlucose !== null && lowestGlucose < 54,
+      lowestGlucose,
+      recommendedAm,
+      recommendedPm,
+      recommendedTotal: totalDose(recommendedAm, recommendedPm),
+      recommendationText: doseLabel(recommendedAm, recommendedPm),
+      finalAm,
+      finalPm,
+      finalTotal: totalDose(finalAm, finalPm),
+      professionalDecision: decision,
+      professionalReason: String(data.professionalReason || "").trim(),
+      professionalDosePerKg: safeNumber(data.professionalDosePerKg),
+      urgencyRoute: isUrgencyRoute(),
+      clinicalEngineVersion: window.InsulogClinicalEngine?.version || "",
+      documentModuleVersion: window.InsulogDocuments?.version || "",
+      appRuntimeVersion: runtime.version || ""
+    };
+  }
+
+  async function postDriveRecord(record) {
+    const endpoint = configuredDriveEndpoint();
+    if (!endpoint || !record) return { configured: Boolean(endpoint), sent: false };
+
+    await fetch(endpoint, {
+      method: "POST",
+      mode: "no-cors",
+      cache: "no-store",
+      keepalive: true,
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify(record)
+    });
+
+    return { configured: true, sent: true };
+  }
+
+  async function sendDriveRecord(record) {
+    if (!record) return;
+    try {
+      const result = await postDriveRecord(record);
+      if (!result.configured) {
+        console.info("Insulog: seguimiento Drive aún no configurado; no se almacenó información identificatoria localmente.");
+      }
+    } catch (error) {
+      transientRetryQueue.push(record);
+      console.error("Insulog: no se pudo enviar el control a Drive; se reintentará mientras esta pestaña siga abierta.", error);
+    }
+  }
+
+  async function flushTransientRetryQueue() {
+    if (!configuredDriveEndpoint() || !transientRetryQueue.length) return;
+    const pending = transientRetryQueue.splice(0, transientRetryQueue.length);
+    for (const record of pending) {
+      try {
+        await postDriveRecord(record);
+      } catch (error) {
+        transientRetryQueue.push(record);
+        console.error("Insulog: reintento de Drive fallido.", error);
+        break;
+      }
+    }
+  }
+
   function registerDocumentSync() {
     actions.decorate("show-document", (next) => (context) => {
       const data = state.snapshot();
@@ -150,26 +353,40 @@
       const original = { am: data.am, pm: data.pm, dosisKg: data.dosisKg };
       const am = numberOrZero(data.professionalAm);
       const pm = numberOrZero(data.professionalPm);
-      state.patch({ am, pm, dosisKg: data.professionalDosePerKg ?? data.dosisKg });
+      const tipo = context?.element?.dataset.documentType || state.get("tipoDocumento") || "seguimiento";
+      const driveRecord = buildDriveRecord(tipo, data);
 
+      state.patch({ am, pm, dosisKg: data.professionalDosePerKg ?? data.dosisKg });
       const result = next(context);
       requestAnimationFrame(() => state.patch(original));
+
+      if (result && driveRecord) void sendDriveRecord(driveRecord);
       return result;
     });
   }
 
   function init() {
+    configureDriveEndpointFromQuery();
+    injectFollowupHbA1cField();
     registerProfessionalOverbasalizationOverride();
     registerDocumentSync();
     disableTemporaryHistoryActions();
     removeTemporaryHistoryUI();
     requestAnimationFrame(removeTemporaryHistoryUI);
+    window.addEventListener("online", () => void flushTransientRetryQueue());
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.15-phase6b-document-sync-clinician-override",
+    version: "2026.09.15-phase6b-document-sync-drive-followup",
+    configureDriveEndpoint,
+    driveStatus: () => Object.freeze({
+      configured: Boolean(configuredDriveEndpoint()),
+      transientPending: transientRetryQueue.length
+    }),
+    flushDrive: flushTransientRetryQueue,
     privacy: Object.freeze({
-      patientNameStorage: "none",
+      patientNameStorage: "google-drive-only",
+      localPersistentPatientStorage: false,
       temporaryHistoryEnabled: false
     })
   });
