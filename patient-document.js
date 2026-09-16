@@ -79,7 +79,7 @@
           <tr class="grupo-mediciones">
             <th class="col-fecha" rowspan="2">Fecha</th>
             <th colspan="2">Ayunas</th>
-            <th colspan="2">Preonce / Precena</th>
+            <th colspan="2">Pre-almuerzo</th>
           </tr>
           <tr>
             <th class="col-hora-medicion">Hora</th>
@@ -162,7 +162,7 @@
         ${dosis}
         ${bloqueIndicaciones("Indicaciones de continuidad", [
           "Mantener rotación de sitios de punción (abdomen, muslos, brazos).",
-          "<strong>Registro:</strong> glicemias capilares en ayunas y preonce/precena, anotando hora y valor de cada medición.",
+          "<strong>Registro:</strong> glicemias capilares en ayunas y pre-almuerzo, anotando hora y valor de cada medición.",
           ...acciones
         ])}
         ${tablaRegistro()}
@@ -176,7 +176,7 @@
         </section>
         <section class="pdf-program-note">
           <div class="pdf-section-title">Control de programa</div>
-          <p>El paciente se encuentra compensado. Continuar controles regulares según cronograma en su Programa de Salud Cardiovascular (PSCV).</p>
+          <p>Continuar controles regulares según cronograma en su Programa de Salud Cardiovascular (PSCV), de acuerdo con la evaluación clínica de su equipo tratante.</p>
         </section>
         ${bloqueControlFirma()}`;
     }
@@ -185,7 +185,7 @@
       <footer class="pdf-doc-footer">
         <div>
           <strong>Vacunas:</strong> verificar COVID, influenza y neumococo según vigencia.<br>
-          Ajuste clínico basado en normas MINSAL, ADA 2026 y ALAD.
+          Apoyo clínico alineado con Vía Clínica MINSAL DM2 2026 y Protocolo de Insulinización MINSAL 2022.
         </div>
         <div class="pdf-author">
           <strong>Dr. Carlos Herrera Malaver</strong><br>
@@ -204,7 +204,7 @@
   }
 
   window.InsulogDocuments = Object.freeze({
-    version: "2026.09.14-phase8c",
+    version: "2026.09.16-phase8c-pdf-isolated",
     generate: generarDocumento,
     useEnhancer
   });
