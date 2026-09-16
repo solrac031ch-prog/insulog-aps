@@ -107,7 +107,6 @@ jobs:
                   raise SystemExit(f"PDF must not use distortion/compression workaround: {forbidden}")
 
           preview_assets = [
-              f'./styles.css?v={release}',
               f'./document-flow.css?v={release}',
               f'./pdf-enhancements.css?v={release}',
               f'./pdf-design-2026.css?v={release}'
@@ -115,6 +114,9 @@ jobs:
           for asset in preview_assets:
               if f'href="{asset}"' not in preview:
                   raise SystemExit(f"Isolated preview asset missing: {asset}")
+
+          if 'href="./styles.css' in preview:
+              raise SystemExit("The isolated PDF preview must not load application styles.css")
 
           if 'href="./pdf-enhancements.css' in html or 'href="./pdf-design-2026.css' in html:
               raise SystemExit("PDF presentation CSS must not load in the parent application")
