@@ -1,0 +1,51 @@
+name: Fix PDF isolation invariant once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/fix-pdf-invariant-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Update PDF isolation invariant
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/check_invariants.py')
+          s = p.read_text(encoding='utf-8')
+          old = '''require(
+              pdf_preview_html,
+              [asset("styles.css"), asset("document-flow.css"), asset("pdf-enhancements.css"), asset("pdf-design-2026.css"), 'id="pdf"'],
+              "Isolated PDF document assets",
+          )
+          '''
+          new = '''require(
+              pdf_preview_html,
+              [asset("document-flow.css"), asset("pdf-enhancements.css"), asset("pdf-design-2026.css"), 'id="pdf"'],
+              "Isolated PDF document assets",
+          )
+          forbid(pdf_preview_html, ["styles.css"], "Isolated PDF global application stylesheet")
+          '''
+          if old not in s:
+              raise SystemExit('PDF invariant target not found')
+          p.write_text(s.replace(old, new), encoding='utf-8')
+          PY
+      - name: Validate invariants
+        run: python scripts/check_invariants.py
+      - name: Commit invariant update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/check_invariants.py
+          git commit -m "Protect isolated patient PDF from app UI styles"
+          git push
