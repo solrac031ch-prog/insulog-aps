@@ -1,0 +1,38 @@
+name: Refresh PDF release once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/pdf-release-refresh-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Regenerate canonical app-shell release
+        run: python scripts/app_shell_release.py --write
+      - name: Validate release
+        run: python scripts/app_shell_release.py
+      - name: Commit refreshed release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html pdf-preview.html sw.js
+          if git diff --cached --quiet; then
+            echo "No release changes required"
+            exit 0
+          fi
+          git commit -m "Refresh isolated PDF app-shell release"
+          git push
