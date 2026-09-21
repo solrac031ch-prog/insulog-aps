@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Registrar automáticamente cada documento clínico emitido por Insulog en la base de Google Sheets `Insulog APS - Base de seguimiento clínico`, usando el nombre del paciente ya ingresado para generar el PDF. El profesional no escribe códigos ni identificadores adicionales.
+Registrar automáticamente cada documento clínico emitido por Insulog en la base de Google Sheets `Insulog APS - Base de seguimiento clínico`, usando nombre completo + fecha de nacimiento como identidad clínica longitudinal. El profesional no escribe códigos ni identificadores técnicos adicionales.
 
 ## Base de destino definitiva
 
@@ -24,7 +24,9 @@ Después del primer registro:
 - `Ajuste`: cambia la dosis indicada respecto de la pauta previa.
 - `Seguimiento`: se registra un control sin cambio de dosis.
 
-En `Pacientes` también se conserva la situación basal: tipo de ingreso a cohorte, si usaba insulina previamente, NPH AM/PM basal, NPH total basal y dosis final tras el primer registro.
+En `Pacientes` también se conserva la fecha de nacimiento y la situación basal: tipo de ingreso a cohorte, si usaba insulina previamente, NPH AM/PM basal, NPH total basal y dosis final tras el primer registro.
+
+La vinculación longitudinal usa **nombre normalizado + fecha de nacimiento**. Dos personas con el mismo nombre pero distinta fecha de nacimiento se mantienen como pacientes diferentes.
 
 ## Despliegue del puente de Google Apps Script
 
@@ -51,7 +53,7 @@ Insulog valida la URL, la guarda localmente y elimina el parámetro de la barra 
 
 ## Datos enviados por control
 
-- Nombre completo del paciente.
+- Nombre completo del paciente y fecha de nacimiento.
 - Fecha/hora.
 - Tipo de control: inicio, ingreso con insulina previa, ajuste o seguimiento.
 - Peso.
@@ -63,6 +65,8 @@ Insulog valida la URL, la guarda localmente y elimina el parámetro de la barra 
 - Recomendación original de Insulog.
 - Decisión final del profesional.
 - Motivo de modificación, cuando corresponde.
+- Tratamiento concomitante del día con medicamento y dosis.
+- Claves estructuradas de medicamentos y marcadores por clase: metformina, iSGLT2 y DPP-4/vildagliptina.
 - Versiones del motor clínico/documento/runtime.
 
 ## Comportamiento ante fallas
@@ -73,6 +77,6 @@ Si Drive no está configurado, Insulog no guarda nombres en almacenamiento persi
 
 Cada emisión clínica tiene un `recordId` técnico. El backend rechaza reintentos con el mismo `recordId`. Dentro de una misma sesión, volver a abrir el mismo documento sin cambiar la decisión reutiliza el identificador para evitar duplicar el control.
 
-## Limitación conocida
+## Identidad y análisis longitudinal
 
-Actualmente el emparejamiento longitudinal usa el nombre normalizado del paciente, porque el flujo clínico solicitado no añade códigos manuales. Dos pacientes distintos con exactamente el mismo nombre podrían quedar asociados al mismo registro. Antes de ampliar el estudio a varios centros conviene añadir un segundo dato clínico de desambiguación que no requiera códigos manuales, por ejemplo fecha de nacimiento.
+La identificación clínica utiliza nombre normalizado + fecha de nacimiento y el backend asigna un `patient_id` interno. Los medicamentos concomitantes se guardan en `Controles`, no como atributo fijo de `Pacientes`, porque pueden cambiar entre visitas. Esto permite reconstruir la exposición terapéutica de cada control sin perder la situación basal.
