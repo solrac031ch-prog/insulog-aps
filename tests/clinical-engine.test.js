@@ -93,4 +93,36 @@ assert.equal(engine.classifyHypoglycemia([53], false).nivel, 2);
 assert.equal(engine.classifyHypoglycemia([], true).nivel, 3, "nivel 3 no depende de una cifra registrada");
 assert.equal(engine.classifyHypoglycemia([], true).urgent, true);
 
-console.log("Clinical engine r2 checks passed");
+let level3 = engine.recommendLevel3HypoglycemiaAdjustment({
+  regimenType: "2", amDose: 12, pmDose: 12, timing: "fasting", reversibleCause: "none"
+});
+assert.equal(level3.automaticRecommendation, true);
+assert.equal(level3.implicatedDose, "pm");
+assert.deepEqual({ am: level3.am, pm: level3.pm }, { am: 12, pm: 10 });
+assert.equal(level3.reductionPercent, 20);
+
+level3 = engine.recommendLevel3HypoglycemiaAdjustment({
+  regimenType: "2", amDose: 20, pmDose: 18, timing: "daytime", reversibleCause: "none"
+});
+assert.equal(level3.automaticRecommendation, true);
+assert.equal(level3.implicatedDose, "am");
+assert.deepEqual({ am: level3.am, pm: level3.pm }, { am: 16, pm: 18 });
+
+level3 = engine.recommendLevel3HypoglycemiaAdjustment({
+  regimenType: "2", amDose: 12, pmDose: 12, timing: "fasting", reversibleCause: "reduced_intake"
+});
+assert.equal(level3.automaticRecommendation, false);
+assert.equal(level3.requiresMedicalAdjustment, true);
+
+level3 = engine.recommendLevel3HypoglycemiaAdjustment({
+  regimenType: "2", amDose: 12, pmDose: 12, timing: "unclear", reversibleCause: "none"
+});
+assert.equal(level3.automaticRecommendation, false);
+
+level3 = engine.recommendLevel3HypoglycemiaAdjustment({
+  regimenType: "pm", amDose: 0, pmDose: 24, timing: "fasting", reversibleCause: "none", severeNeurologic: true
+});
+assert.equal(level3.automaticRecommendation, false);
+assert.match(level3.reason, /pérdida de conciencia|convulsión/i);
+
+console.log("Clinical engine r3 checks passed");
