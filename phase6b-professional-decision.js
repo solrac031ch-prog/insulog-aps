@@ -39,7 +39,7 @@
   function clinicalEngineLabel() {
     const version = String(clinicalEngine?.version || "");
     const match = version.match(/-(r\d+)$/i);
-    return match ? `Insulog Clinical ${match[1]}` : "Insulog Clinical";
+    return match ? `Clinical ${match[1]}` : "Clinical";
   }
 
   function rawNote() {
@@ -119,7 +119,7 @@
       String(baseClinicalNote || rawNote()).trim(),
       "",
       "DECISIÓN PROFESIONAL",
-      `${clinicalEngineLabel()}: ${doseText(recommendation.am, recommendation.pm)}`
+      `Recomendación Insulog ${clinicalEngineLabel()}: ${doseText(recommendation.am, recommendation.pm)}`
     ];
 
     if (data.professionalDecision === "aceptada") {
