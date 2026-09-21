@@ -93,4 +93,63 @@ assert.equal(engine.classifyHypoglycemia([53], false).nivel, 2);
 assert.equal(engine.classifyHypoglycemia([], true).nivel, 3, "nivel 3 no depende de una cifra registrada");
 assert.equal(engine.classifyHypoglycemia([], true).urgent, true);
 
+assert.equal(engine.LEVEL3_DEINTENSIFICATION_PERCENT, 20);
+assert.equal(engine.LEVEL3_RULE_VERSION, "INSULOG-L3-NPH-20PCT-v1");
+
+let level3 = engine.recommendLevel3NphDeintensification({
+  regimenType: "pm",
+  amDose: 0,
+  pmDose: 24,
+  timing: "nocturnal_fasting",
+  cause: "none",
+  additionalHighRisk: false
+});
+assert.equal(level3.eligible, true);
+assert.deepEqual({ am: level3.recommendedAm, pm: level3.recommendedPm }, { am: 0, pm: 19 });
+assert.deepEqual(level3.affectedDoses, ["pm"]);
+
+level3 = engine.recommendLevel3NphDeintensification({
+  regimenType: "2",
+  amDose: 20,
+  pmDose: 25,
+  timing: "both",
+  cause: "none",
+  additionalHighRisk: false
+});
+assert.equal(level3.eligible, true);
+assert.deepEqual({ am: level3.recommendedAm, pm: level3.recommendedPm }, { am: 16, pm: 20 });
+
+level3 = engine.recommendLevel3NphDeintensification({
+  regimenType: "pm",
+  amDose: 0,
+  pmDose: 24,
+  timing: "nocturnal_fasting",
+  cause: "meal",
+  additionalHighRisk: false
+});
+assert.equal(level3.eligible, false);
+assert.match(level3.reason, /causa reversible/i);
+
+level3 = engine.recommendLevel3NphDeintensification({
+  regimenType: "pm",
+  amDose: 0,
+  pmDose: 24,
+  timing: "uncertain",
+  cause: "none",
+  additionalHighRisk: false
+});
+assert.equal(level3.eligible, false);
+assert.match(level3.reason, /momento del evento/i);
+
+level3 = engine.recommendLevel3NphDeintensification({
+  regimenType: "pm",
+  amDose: 0,
+  pmDose: 24,
+  timing: "nocturnal_fasting",
+  cause: "none",
+  additionalHighRisk: true
+});
+assert.equal(level3.eligible, false);
+assert.match(level3.reason, /alto riesgo/i);
+
 console.log("Clinical engine r2 checks passed");
