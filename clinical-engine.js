@@ -207,6 +207,92 @@
     });
   }
 
+  const LEVEL3_DEINTENSIFICATION_PERCENT = 20;
+  const LEVEL3_RULE_VERSION = "INSULOG-L3-NPH-20PCT-v1";
+
+  function recommendLevel3NphDeintensification({
+    regimenType,
+    amDose,
+    pmDose,
+    timing,
+    cause = "unknown",
+    additionalHighRisk = false
+  } = {}) {
+    const allowedRegimens = new Set(["pm", "am", "2"]);
+    const am = Number.isInteger(Number(amDose)) && Number(amDose) >= 0 ? Number(amDose) : 0;
+    const pm = Number.isInteger(Number(pmDose)) && Number(pmDose) >= 0 ? Number(pmDose) : 0;
+    const normalizedTiming = String(timing || "").trim();
+    const normalizedCause = String(cause || "unknown").trim();
+    const base = {
+      ruleVersion: LEVEL3_RULE_VERSION,
+      percentReduction: LEVEL3_DEINTENSIFICATION_PERCENT,
+      eligible: false,
+      blocked: true,
+      am,
+      pm,
+      recommendedAm: am,
+      recommendedPm: pm,
+      affectedDoses: [],
+      reason: ""
+    };
+
+    if (!allowedRegimens.has(regimenType)) {
+      return Object.freeze({ ...base, reason: "Esquema NPH no reconocido; requiere ajuste médico." });
+    }
+
+    if (additionalHighRisk) {
+      return Object.freeze({
+        ...base,
+        reason: "Hay factores de alto riesgo adicionales (episodio repetido, pérdida de conciencia/convulsión, deterioro renal o intercurrencia importante); no se aplica una reducción porcentual automática."
+      });
+    }
+
+    if (normalizedCause !== "none") {
+      const causeReasons = {
+        meal: "Existe una causa reversible relacionada con ingesta; la corrección debe individualizarse y no se aplica una reducción porcentual automática.",
+        exercise_alcohol: "Existe una causa reversible relacionada con ejercicio o alcohol; la corrección debe individualizarse y no se aplica una reducción porcentual automática.",
+        administration_error: "Existe posible error de dosis, horario o técnica; primero debe corregirse la causa y definir la pauta por criterio médico.",
+        illness_renal: "Existe intercurrencia o posible deterioro renal; requiere ajuste médico individualizado.",
+        unknown: "La causa del evento no está clara; requiere reevaluación y ajuste médico individualizado."
+      };
+      return Object.freeze({ ...base, reason: causeReasons[normalizedCause] || causeReasons.unknown });
+    }
+
+    let affected = [];
+    if (normalizedTiming === "nocturnal_fasting") affected = ["pm"];
+    else if (normalizedTiming === "morning_prelunch") affected = ["am"];
+    else if (normalizedTiming === "both") affected = ["am", "pm"];
+    else {
+      return Object.freeze({
+        ...base,
+        reason: "El momento del evento no permite identificar con suficiente seguridad la dosis NPH probablemente implicada."
+      });
+    }
+
+    affected = affected.filter((dose) => (dose === "am" ? am : pm) > 0);
+    if (!affected.length) {
+      return Object.freeze({
+        ...base,
+        reason: "La dosis probablemente implicada no está activa en el esquema actual; requiere ajuste médico."
+      });
+    }
+
+    let recommendedAm = am;
+    let recommendedPm = pm;
+    if (affected.includes("am")) recommendedAm = Math.max(0, roundUnits(am * 0.8));
+    if (affected.includes("pm")) recommendedPm = Math.max(0, roundUnits(pm * 0.8));
+
+    return Object.freeze({
+      ...base,
+      eligible: true,
+      blocked: false,
+      recommendedAm,
+      recommendedPm,
+      affectedDoses: Object.freeze([...affected]),
+      reason: `Regla Insulog: reducir 20% la dosis NPH probablemente implicada (${affected.join(" + ").toUpperCase()}) tras hipoglicemia nivel 3, cuando no se identifica una causa reversible clara ni un factor adicional que obligue a individualizar.`
+    });
+  }
+
   function calculateSecondDose(weightKg) { return Math.max(4, roundUnits(Number(weightKg) * 0.1)); }
 
   function assessDoseSafety(dosePerKg) {
@@ -348,6 +434,6 @@
   return Object.freeze({
     version: CLINICAL_ENGINE_VERSION, TARGET_PROFILES, MIN_REQUIRED_READINGS, GLUCOSE_MIN_MGDL, GLUCOSE_MAX_MGDL, normalizeGlucoseValues, roundUnits, roundEven, normalizeTargetA1c, targetProfile, assessInsulinSensitivity,
     suggestInitialScheme, calculateInitialDose, detectDiscordantHighs, analyzeGlucose, classifyHypoglycemia,
-    calculateAdjustment, calculateSecondDose, assessDoseSafety, calculateFollowup, regimenLabel
+    calculateAdjustment, calculateSecondDose, recommendLevel3NphDeintensification, LEVEL3_DEINTENSIFICATION_PERCENT, LEVEL3_RULE_VERSION, assessDoseSafety, calculateFollowup, regimenLabel
   });
 });
