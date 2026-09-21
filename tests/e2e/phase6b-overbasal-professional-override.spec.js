@@ -48,6 +48,7 @@ test("permite pauta profesional >0,5 UI/kg/día con justificación y mantiene ad
   await expectActivePage(page, "p6");
 
   await page.locator("#nombre-paciente").fill("Paciente prueba");
+  await page.locator("#fecha-nacimiento-paciente").fill("1960-05-12");
   await page.locator("#p6").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
   await expectActivePage(page, "p7");
 
