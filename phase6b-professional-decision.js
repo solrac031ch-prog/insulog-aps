@@ -52,7 +52,8 @@
       professionalAm: null,
       professionalPm: null,
       professionalReason: "",
-      professionalDosePerKg: null
+      professionalDosePerKg: null,
+      professionalUrgencyAccepted: false
     });
     if (!keepNote) lastComposedNote = "";
   }
@@ -88,6 +89,7 @@
   }
 
   function decisionLabel(decision = state.get("professionalDecision")) {
+    if (decision === "aceptada" && caseType(baseClinicalNote || rawNote()) === "urgencia") return "Conducta de urgencia de Insulog aceptada";
     if (decision === "aceptada") return "Aceptada sin cambios";
     if (decision === "modificada") return "Modificada por el profesional";
     if (decision === "reevaluar") return "Reevaluar antes de emitir pauta definitiva";
@@ -105,7 +107,12 @@
     ];
 
     if (data.professionalDecision === "aceptada") {
-      lines.push(`Decisión final del profesional: Aceptada sin cambios (${doseText(data.professionalAm, data.professionalPm)}).`);
+      if (caseType(baseClinicalNote || rawNote()) === "urgencia") {
+        lines.push("Decisión final del profesional: Aceptada la conducta de urgencia de Insulog.");
+        lines.push("No se emite una nueva pauta ambulatoria de NPH; se mantiene la alerta original y se requiere reevaluación clínica antes de reiniciar titulación.");
+      } else {
+        lines.push(`Decisión final del profesional: Aceptada sin cambios (${doseText(data.professionalAm, data.professionalPm)}).`);
+      }
     } else if (data.professionalDecision === "modificada") {
       lines.push(`Decisión final del profesional: Modificada (${doseText(data.professionalAm, data.professionalPm)}).`);
       lines.push(`Motivo de modificación: ${String(data.professionalReason || "").trim()}`);
@@ -164,7 +171,10 @@
     const accept = byId("best-review-accept");
     const modify = byId("best-review-modify");
     const reassess = byId("best-review-reassess");
-    if (accept) accept.setAttribute("aria-pressed", String(decision === "aceptada"));
+    if (accept) {
+      accept.setAttribute("aria-pressed", String(decision === "aceptada"));
+      accept.textContent = caseType(baseClinicalNote || rawNote()) === "urgencia" ? "ACEPTAR CONDUCTA INSULOG" : "ACEPTAR";
+    }
     if (modify) modify.setAttribute("aria-pressed", String(decision === "modificada"));
     if (reassess) reassess.setAttribute("aria-pressed", String(decision === "reevaluar"));
 
@@ -174,6 +184,8 @@
         summary.innerHTML = '<strong>Decisión final:</strong> pendiente de revisión profesional.';
       } else if (decision === "reevaluar") {
         summary.innerHTML = '<strong>Decisión final:</strong> reevaluar antes de emitir pauta definitiva.';
+      } else if (decision === "aceptada" && caseType(baseClinicalNote || rawNote()) === "urgencia") {
+        summary.innerHTML = '<strong>Decisión final:</strong> conducta de urgencia de Insulog aceptada.<br><strong>Pauta final:</strong> no se emite una nueva pauta ambulatoria de NPH.';
       } else {
         const urgencyNotice = decision === "modificada" && caseType(baseClinicalNote || rawNote()) === "urgencia"
           ? '<br><strong>Alerta Clinical r2:</strong> se detectó un criterio de urgencia; la pauta continúa por decisión profesional documentada.'
@@ -205,7 +217,11 @@
     }
 
     if (!decision) setReviewStatus("Revisión profesional aún no registrada.", true);
-    if (decision === "aceptada") setReviewStatus("✓ Recomendación revisada y aceptada por el profesional.", true);
+    if (decision === "aceptada" && caseType(baseClinicalNote || rawNote()) === "urgencia") {
+      setReviewStatus("✓ Conducta de urgencia de Insulog aceptada. No se emitirá una nueva pauta automática de NPH.", "warning");
+    } else if (decision === "aceptada") {
+      setReviewStatus("✓ Recomendación revisada y aceptada por el profesional.", true);
+    }
     if (decision === "modificada" && caseType(baseClinicalNote || rawNote()) !== "urgencia") setReviewStatus("✓ Plan modificado y documentado como decisión profesional.", true);
     if (decision === "modificada" && caseType(baseClinicalNote || rawNote()) === "urgencia") setReviewStatus("⚠ Clinical r2 detectó un criterio de urgencia. Se conserva la alerta, pero prevalece la pauta modificada por el profesional con justificación documentada.", "warning");
     if (decision === "reevaluar") setReviewStatus("Recomendación marcada para reevaluación clínica; no se emitirá documento con nueva pauta.", false);
@@ -284,12 +300,14 @@
     syncBaseClinicalNote();
     if (!baseClinicalNote) return undefined;
     const recommendation = currentRecommendation();
+    const urgencyAccepted = caseType(baseClinicalNote || rawNote()) === "urgencia";
     state.patch({
       professionalDecision: "aceptada",
-      professionalAm: recommendation.am,
-      professionalPm: recommendation.pm,
-      professionalReason: "",
-      professionalDosePerKg: safeNumber(state.get("dosisKg"))
+      professionalAm: urgencyAccepted ? null : recommendation.am,
+      professionalPm: urgencyAccepted ? null : recommendation.pm,
+      professionalReason: urgencyAccepted ? "Conducta de urgencia de Insulog aceptada; sin nueva pauta ambulatoria de NPH." : "",
+      professionalDosePerKg: urgencyAccepted ? null : safeNumber(state.get("dosisKg")),
+      professionalUrgencyAccepted: urgencyAccepted
     });
     hideModifyPanel();
     applyDecisionNote();
@@ -300,7 +318,7 @@
   function finalizeReassess() {
     syncBaseClinicalNote();
     if (!baseClinicalNote) return undefined;
-    state.patch({ professionalDecision: "reevaluar", professionalAm: null, professionalPm: null, professionalReason: "", professionalDosePerKg: null });
+    state.patch({ professionalDecision: "reevaluar", professionalAm: null, professionalPm: null, professionalReason: "", professionalDosePerKg: null, professionalUrgencyAccepted: false });
     hideModifyPanel();
     applyDecisionNote();
     renderDecisionUI();
@@ -334,7 +352,8 @@
         professionalAm: am,
         professionalPm: pm,
         professionalReason: reason,
-        professionalDosePerKg: weight ? (am + pm) / weight : null
+        professionalDosePerKg: weight ? (am + pm) / weight : null,
+        professionalUrgencyAccepted: false
       });
       hideModifyPanel();
       applyDecisionNote();
@@ -379,10 +398,6 @@
   function canGeneratePatientDocument() {
     syncBaseClinicalNote();
     const decision = state.get("professionalDecision");
-    if (caseType(baseClinicalNote || rawNote()) === "urgencia" && decision !== "modificada") {
-      alert("Clinical r2 mantiene una alerta de urgencia. Si el profesional decide emitir una pauta ambulatoria distinta, use MODIFICAR PLAN y registre la justificación clínica.");
-      return false;
-    }
     if (decision !== "aceptada" && decision !== "modificada") {
       alert("Registre primero la decisión final del profesional: ACEPTAR o MODIFICAR PLAN.");
       byId("best-professional-review")?.scrollIntoView({ behavior: "smooth", block: "center" });

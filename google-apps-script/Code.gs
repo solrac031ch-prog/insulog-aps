@@ -7,7 +7,7 @@ const INSULOG_DRIVE_CONFIG = Object.freeze({
   eventsSheet: "Eventos",
   allowedOrigins: ["https://solrac031ch-prog.github.io"],
   bridgeVersion: "2026.09.21-drive-v2",
-  schemaVersion: "2026.09.21-schema-v4"
+  schemaVersion: "2026.09.21-schema-v5"
 });
 
 function doGet() {
@@ -97,8 +97,15 @@ function validatePayload_(payload) {
     throw new Error("Decisión profesional inválida.");
   }
 
-  if (!isFiniteNumber_(payload.finalTotal) || Number(payload.finalTotal) <= 0 || Number(payload.finalTotal) > 300) {
+  const urgencyAccepted = Boolean(payload.urgencyRoute) && String(payload.professionalDecision || "") === "Aceptada";
+  if (!urgencyAccepted && (!isFiniteNumber_(payload.finalTotal) || Number(payload.finalTotal) <= 0 || Number(payload.finalTotal) > 300)) {
     throw new Error("Dosis final inválida.");
+  }
+  if (urgencyAccepted && isFiniteNumber_(payload.finalTotal) && Number(payload.finalTotal) > 300) {
+    throw new Error("Dosis final inválida.");
+  }
+  if (payload.hypoglycemiaLevel3 !== undefined && typeof payload.hypoglycemiaLevel3 !== "boolean") {
+    throw new Error("Indicador de hipoglicemia nivel 3 inválido.");
   }
 
   if (payload.concomitantMedications !== undefined && !Array.isArray(payload.concomitantMedications)) {
@@ -147,17 +154,22 @@ function ensureSchema_(patients, controls) {
     "iSGLT2",
     "DPP-4 / vildagliptina"
   ];
-  const requiredControlColumns = 24 + medicationHeaders.length;
+  const safetyHeaders = [
+    "Hipoglicemia nivel 3",
+    "Ruta de urgencia"
+  ];
+  const requiredControlColumns = 24 + medicationHeaders.length + safetyHeaders.length;
   if (controls.getMaxColumns() < requiredControlColumns) {
     controls.insertColumnsAfter(controls.getMaxColumns(), requiredControlColumns - controls.getMaxColumns());
   }
   controls.getRange(1, 25, 1, medicationHeaders.length).setValues([medicationHeaders]);
+  controls.getRange(1, 30, 1, safetyHeaders.length).setValues([safetyHeaders]);
 
   const medicationYesNoRule = SpreadsheetApp.newDataValidation()
     .requireValueInList(["Sí", "No"], true)
     .setAllowInvalid(false)
     .build();
-  controls.getRange(2, 27, Math.max(1, controls.getMaxRows() - 1), 3).setDataValidation(medicationYesNoRule);
+  controls.getRange(2, 27, Math.max(1, controls.getMaxRows() - 1), 5).setDataValidation(medicationYesNoRule);
 
   properties.setProperty("INSULOG_SCHEMA_VERSION", INSULOG_DRIVE_CONFIG.schemaVersion);
 }
@@ -221,7 +233,8 @@ function upsertPatient_(sheet, payload, timestamp) {
   const baselineAm = String(payload.documentType || "") === "inicio" ? 0 : nullableNumber_(payload.currentAm);
   const baselinePm = String(payload.documentType || "") === "inicio" ? 0 : nullableNumber_(payload.currentPm);
   const baselineNph = String(payload.documentType || "") === "inicio" ? 0 : nullableNumber_(payload.currentTotal);
-  const firstFinalNph = nullableNumber_(payload.finalTotal);
+  const urgencyAccepted = Boolean(payload.urgencyRoute) && String(payload.professionalDecision || "") === "Aceptada";
+  const firstFinalNph = urgencyAccepted ? null : nullableNumber_(payload.finalTotal);
   const cohortEntryType = cohortEntryType_(payload);
   const insulinBeforeEntry = String(payload.documentType || "") === "inicio" ? "No" : "Sí";
 
@@ -292,8 +305,9 @@ function appendControl_(sheet, patient, payload, timestamp) {
   const currentAm = numberOrBlank_(payload.currentAm);
   const currentPm = numberOrBlank_(payload.currentPm);
   const currentTotal = numberOrBlank_(payload.currentTotal);
-  const recommendedTotal = numberOrBlank_(payload.recommendedTotal);
-  const finalTotal = numberOrBlank_(payload.finalTotal);
+  const urgencyAccepted = Boolean(payload.urgencyRoute) && String(payload.professionalDecision || "") === "Aceptada";
+  const recommendedTotal = urgencyAccepted ? "" : numberOrBlank_(payload.recommendedTotal);
+  const finalTotal = urgencyAccepted ? "" : numberOrBlank_(payload.finalTotal);
   const hba1c = numberOrBlank_(payload.hba1c);
   const egfr = numberOrBlank_(payload.egfr);
   const weight = numberOrBlank_(payload.weightKg);
@@ -338,19 +352,26 @@ function appendControl_(sheet, patient, payload, timestamp) {
     medicationKeys,
     medicationFlags.metformin ? "Sí" : "No",
     medicationFlags.sglt2 ? "Sí" : "No",
-    medicationFlags.dpp4 ? "Sí" : "No"
+    medicationFlags.dpp4 ? "Sí" : "No",
+    payload.hypoglycemiaLevel3 ? "Sí" : "No",
+    payload.urgencyRoute ? "Sí" : "No"
   ]);
 }
 
 function appendAutomaticHypoglycemiaEvent_(sheet, patientId, payload, timestamp) {
-  if (!payload.hypoglycemia70) return;
+  if (!payload.hypoglycemia70 && !payload.hypoglycemiaLevel3) return;
 
   const lowest = nullableNumber_(payload.lowestGlucose);
-  const severity = payload.hypoglycemia54 ? "Moderado" : "Leve";
+  const level3 = Boolean(payload.hypoglycemiaLevel3);
+  const severity = level3 ? "Nivel 3" : (payload.hypoglycemia54 ? "Moderado" : "Leve");
   const thresholdText = payload.hypoglycemia54 ? "<54 mg/dL" : "<70 mg/dL";
-  const detail = lowest === null
-    ? "Hipoglicemia detectada en glicemias registradas en Insulog (" + thresholdText + ")."
-    : "Hipoglicemia detectada en glicemias registradas en Insulog. Menor valor: " + lowest + " mg/dL.";
+  const detail = level3
+    ? (lowest === null
+      ? "Hipoglicemia nivel 3 referida: requirió asistencia de otra persona."
+      : "Hipoglicemia nivel 3 referida: requirió asistencia de otra persona. Menor valor registrado: " + lowest + " mg/dL.")
+    : (lowest === null
+      ? "Hipoglicemia detectada en glicemias registradas en Insulog (" + thresholdText + ")."
+      : "Hipoglicemia detectada en glicemias registradas en Insulog. Menor valor: " + lowest + " mg/dL.");
 
   sheet.appendRow([
     Utilities.getUuid(),
