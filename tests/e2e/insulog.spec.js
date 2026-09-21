@@ -59,7 +59,7 @@ test("arranca sin errores JavaScript y monta las APIs explícitas", async ({ pag
     shell: Boolean(window.InsulogShell),
     version: window.InsulogApp?.version
   }));
-  expect(architecture).toEqual({ runtime: true, engine: true, app: true, shell: true, version: "2026.09.14-clinical-r2" });
+  expect(architecture).toEqual({ runtime: true, engine: true, app: true, shell: true, version: "2026.09.21-clinical-r3" });
   expect(pageErrors).toEqual([]);
 });
 
@@ -193,9 +193,14 @@ test("nivel 3 se pregunta solo después de detectar un HGT <70", async ({ page }
   await expect(page.locator("#alerta-hipoglicemia-ada")).toBeVisible();
   await expect(page.locator(".aps-hypo-question")).toContainText("nivel 3");
   await page.locator("#hipo-con-ayuda").click();
+  await expect(page.locator("#hipo3-review-panel")).toBeVisible();
+  await page.locator("#hipo3-momento").selectOption("fasting");
+  await page.locator("#hipo3-causa").selectOption("none");
+  await page.locator("#hipo3-neuro").selectOption("no");
+  await page.locator("#hipo3-continuar").click();
   await expectActivePage(page, "p5");
   await expect(page.locator("#nota-clinica")).toContainText("HIPOGLICEMIA NIVEL 3");
-  await expect(page.locator("#nota-clinica")).toContainText("No se realiza ajuste automático de NPH");
+  await expect(page.locator("#nota-clinica")).toContainText("PROPUESTA INSULOG: reducir 20% la NPH PM");
 });
 
 test("confirmar asistencia en alerta de hipoglicemia también activa ruta nivel 3", async ({ page }) => {
@@ -207,8 +212,14 @@ test("confirmar asistencia en alerta de hipoglicemia también activa ruta nivel 
   await page.locator("#ajustar-seguimiento-btn").click();
   await expect(page.locator("#alerta-hipoglicemia-ada")).toBeVisible();
   await page.locator("#hipo-con-ayuda").click();
+  await expect(page.locator("#hipo3-review-panel")).toBeVisible();
+  await page.locator("#hipo3-momento").selectOption("fasting");
+  await page.locator("#hipo3-causa").selectOption("reduced_intake");
+  await page.locator("#hipo3-neuro").selectOption("no");
+  await page.locator("#hipo3-continuar").click();
   await expectActivePage(page, "p5");
   await expect(page.locator("#nota-clinica")).toContainText("HIPOGLICEMIA NIVEL 3");
+  await expect(page.locator("#nota-clinica")).toContainText("AJUSTE MÉDICO REQUERIDO");
 });
 
 test("no escala automáticamente cuando la titulación proyectada supera 0,5 UI/kg/día", async ({ page }) => {
