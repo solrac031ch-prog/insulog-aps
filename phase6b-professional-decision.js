@@ -523,6 +523,6 @@
     renderDecisionUI();
   }
 
-  window.InsulogPhase6B = Object.freeze({ version: "2026.09.15-phase6b-clinician-override", qualitySnapshot, canGeneratePatientDocument });
+  window.InsulogPhase6B = Object.freeze({ version: "2026.09.21-phase6b-level3-proposal", qualitySnapshot, canGeneratePatientDocument });
   document.addEventListener("DOMContentLoaded", init, { once: true });
 })();
