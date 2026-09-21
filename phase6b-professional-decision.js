@@ -3,6 +3,7 @@
 (() => {
   const runtime = window.InsulogRuntime;
   const notePresenter = window.InsulogNotePresenter;
+  const clinicalEngine = window.InsulogClinicalEngine;
 
   if (!runtime) throw new Error("InsulogRuntime debe cargarse antes de phase6b-professional-decision.js");
   if (!notePresenter) throw new Error("InsulogNotePresenter debe cargarse antes de phase6b-professional-decision.js");
@@ -33,6 +34,12 @@
 
   function totalDose(am, pm) {
     return (safeNumber(am) || 0) + (safeNumber(pm) || 0);
+  }
+
+  function clinicalEngineLabel() {
+    const version = String(clinicalEngine?.version || "");
+    const match = version.match(/-(r\d+)$/i);
+    return match ? `Insulog Clinical ${match[1]}` : "Insulog Clinical";
   }
 
   function rawNote() {
@@ -112,7 +119,7 @@
       String(baseClinicalNote || rawNote()).trim(),
       "",
       "DECISIÓN PROFESIONAL",
-      `Recomendación Insulog Clinical r2: ${doseText(recommendation.am, recommendation.pm)}`
+      `${clinicalEngineLabel()}: ${doseText(recommendation.am, recommendation.pm)}`
     ];
 
     if (data.professionalDecision === "aceptada") {
