@@ -290,6 +290,52 @@
           <button id="hipo-con-ayuda" type="button" class="btn btn-danger">SÍ, FUE NIVEL 3</button>
         </div>
         <p class="aps-context-helper aps-hypo-footnote">Nivel 3 significa que el episodio requirió asistencia de otra persona para su recuperación.</p>
+
+        <div id="hipo3-review-panel" class="card compact-card text-left is-hidden" aria-hidden="true">
+          <p class="card-title">Antes de generar la propuesta de Insulog</p>
+          <p class="helper-text">La reducción automática solo se propone cuando el momento del episodio permite identificar la dosis probablemente implicada y no hay una causa reversible clara.</p>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="hipo3-momento">Momento predominante del episodio</label>
+              <select id="hipo3-momento">
+                <option value="">Seleccione…</option>
+                <option value="fasting">Nocturno / madrugada / al despertar / ayuno</option>
+                <option value="daytime">Mañana / antes de almuerzo / período diurno</option>
+                <option value="unclear">Otro momento o no está claro</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="hipo3-causa">Causa precipitante principal</label>
+              <select id="hipo3-causa">
+                <option value="">Seleccione…</option>
+                <option value="none">No se identifica una causa reversible clara</option>
+                <option value="reduced_intake">Comida omitida, ayuno o ingesta reducida</option>
+                <option value="exercise_alcohol">Ejercicio o alcohol mayor a lo habitual</option>
+                <option value="dose_error">Error de dosis, horario o administración</option>
+                <option value="illness_renal">Intercurrencia, deterioro renal o cambio clínico relevante</option>
+                <option value="other">Otra causa reversible o incierta</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="hipo3-neuro">¿Hubo pérdida de conciencia o convulsión?</label>
+              <select id="hipo3-neuro">
+                <option value="">Seleccione…</option>
+                <option value="no">No</option>
+                <option value="yes">Sí</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="alert alert-warning compact-warning">
+            <strong>Regla de seguridad Insulog</strong>
+            <p>Si el patrón es claro y no hay causa reversible identificada, Insulog puede proponer reducir 20% la dosis de NPH probablemente implicada. En situaciones ambiguas o de mayor gravedad, el ajuste queda a criterio médico.</p>
+          </div>
+
+          <button id="hipo3-continuar" type="button" class="btn btn-main btn-narrow">GENERAR RECOMENDACIÓN INSULOG</button>
+        </div>
       </div>
 
       <div id="resumen-promedios" class="card compact-card is-hidden"></div>
