@@ -347,6 +347,16 @@
         <input type="text" id="nombre-paciente" placeholder="Escriba o pegue nombre completo" autocomplete="off">
       </div>
 
+      <div class="field patient-field no-print">
+        <label for="fecha-nacimiento-paciente">Fecha de nacimiento</label>
+        <input type="date" id="fecha-nacimiento-paciente" autocomplete="off" required>
+        <p class="helper-text">Se usa junto con el nombre para vincular correctamente los controles longitudinales.</p>
+      </div>
+
+      <div id="drive-sync-status" class="alert alert-warning compact-warning no-print" role="status" aria-live="polite">
+        Verificando configuración de Drive…
+      </div>
+
       <div class="date-row no-print">Fecha: <span id="fecha-hoy"></span></div>
 
       <div class="document-actions no-print">
