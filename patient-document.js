@@ -122,6 +122,10 @@
     const subtituloDoc = subtitulos[tipo] || subtitulos.seguimiento;
     const am = Number(data.am) || 0;
     const pm = Number(data.pm) || 0;
+    const clinicalNote = byId("nota-clinica")?.dataset.rawText || byId("nota-clinica")?.innerText || "";
+    const level3Urgency = /HIPOGLICEMIA NIVEL 3/i.test(clinicalNote);
+    const urgencyAccepted = level3Urgency && data.professionalDecision === "aceptada";
+    const urgencyModified = level3Urgency && data.professionalDecision === "modificada";
 
     const header = `
       <header class="pdf-doc-header">
@@ -158,15 +162,34 @@
           .map((accion) => escapeHTML(accion.replace("- ", "")))
         : [];
 
-      cuerpo = `
-        ${dosis}
-        ${bloqueIndicaciones("Indicaciones de continuidad", [
-          "Mantener rotación de sitios de punción (abdomen, muslos, brazos).",
-          "<strong>Registro:</strong> glicemias capilares en ayunas y pre-almuerzo, anotando hora y valor de cada medición.",
-          ...acciones
-        ])}
-        ${tablaRegistro()}
-        ${bloqueControlFirma()}`;
+      if (urgencyAccepted) {
+        cuerpo = `
+          ${dosis}
+          <section class="pdf-alert-important">
+            <div class="pdf-section-title">Hipoglicemia nivel 3 · conducta de urgencia aceptada</div>
+            <p><strong>Insulog no emite una nueva pauta ambulatoria de NPH en este documento.</strong></p>
+            <p>Se mantiene la alerta de hipoglicemia nivel 3 y la ruta de urgencia indicada en la evaluación clínica. El esquema de insulina debe reevaluarse antes de reiniciar una titulación ambulatoria.</p>
+          </section>
+          ${bloqueControlFirma()}`;
+      } else {
+        const overrideWarning = urgencyModified
+          ? `<section class="pdf-alert-important">
+              <div class="pdf-section-title">Hipoglicemia nivel 3 · pauta modificada por el profesional</div>
+              <p>Insulog detectó una ruta de urgencia. La pauta consignada a continuación corresponde a una decisión profesional explícita y documentada.</p>
+            </section>`
+          : "";
+
+        cuerpo = `
+          ${overrideWarning}
+          ${dosis}
+          ${bloqueIndicaciones("Indicaciones de continuidad", [
+            "Mantener rotación de sitios de punción (abdomen, muslos, brazos).",
+            "<strong>Registro:</strong> glicemias capilares en ayunas y pre-almuerzo, anotando hora y valor de cada medición.",
+            ...acciones
+          ])}
+          ${tablaRegistro()}
+          ${bloqueControlFirma()}`;
+      }
     } else {
       cuerpo = `
         ${dosis}
@@ -204,7 +227,7 @@
   }
 
   window.InsulogDocuments = Object.freeze({
-    version: "2026.09.16-phase8c-pdf-isolated",
+    version: "2026.09.21-phase8d-level3-decision",
     generate: generarDocumento,
     useEnhancer
   });
