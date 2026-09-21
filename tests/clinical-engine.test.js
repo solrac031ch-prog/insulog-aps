@@ -93,4 +93,38 @@ assert.equal(engine.classifyHypoglycemia([53], false).nivel, 2);
 assert.equal(engine.classifyHypoglycemia([], true).nivel, 3, "nivel 3 no depende de una cifra registrada");
 assert.equal(engine.classifyHypoglycemia([], true).urgent, true);
 
-console.log("Clinical engine r2 checks passed");
+const level3Pm = engine.suggestLevel3NphReduction({
+  regimenType: "pm",
+  amDose: 0,
+  pmDose: 24,
+  fastingValues: [58, 92, 105],
+  causeStatus: "none"
+});
+assert.equal(level3Pm.eligible, true);
+assert.deepEqual({ am: level3Pm.am, pm: level3Pm.pm }, { am: 0, pm: 19 });
+assert.deepEqual(level3Pm.implicated, ["PM"]);
+
+const level3Both = engine.suggestLevel3NphReduction({
+  regimenType: "2",
+  amDose: 20,
+  pmDose: 20,
+  fastingValues: [60, 90, 100],
+  preLunchValues: [65, 100, 110],
+  causeStatus: "none"
+});
+assert.equal(level3Both.eligible, true);
+assert.deepEqual({ am: level3Both.am, pm: level3Both.pm }, { am: 16, pm: 16 });
+assert.deepEqual(level3Both.implicated.sort(), ["AM", "PM"]);
+
+const level3Cause = engine.suggestLevel3NphReduction({
+  regimenType: "pm",
+  amDose: 0,
+  pmDose: 24,
+  fastingValues: [58, 92, 105],
+  causeStatus: "clear"
+});
+assert.equal(level3Cause.eligible, false);
+assert.equal(level3Cause.pm, 24);
+assert.match(level3Cause.reason, /causa reversible/i);
+
+console.log("Clinical engine r3 checks passed");
