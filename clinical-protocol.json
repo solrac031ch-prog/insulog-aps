@@ -1,7 +1,7 @@
 {
   "protocolId": "insulog-aps-nph",
-  "version": "APS-NPH-2026.09.14-r2",
-  "status": "baseline",
+  "version": "APS-NPH-2026.09.21-r3",
+  "status": "active",
   "scope": "Insulinización con NPH en APS chilena: inicio, seguimiento, hipoglicemia, metas individualizadas y seguridad de dosis basal.",
   "engine": "clinical-engine.js",
   "sources": [
@@ -12,7 +12,9 @@
   "intentionalLocalRules": [
     "Seguimiento práctico APS cada 15 días cuando la disponibilidad local no permite titulación semanal.",
     "Los valores altos discordantes se señalan para revisión, pero nunca se excluyen automáticamente.",
-    "No se autoriza autotitulación por el paciente; la dosis sugerida requiere revisión clínica."
+    "No se autoriza autotitulación por el paciente; la dosis sugerida requiere revisión clínica.",
+    "Hipoglicemia nivel 3: si el momento identifica una dosis NPH probablemente implicada, no hay causa reversible clara y no hubo pérdida de conciencia/convulsión, Insulog propone reducir 20% esa dosis; es una regla local de seguridad y no un porcentaje prescrito por ADA.",
+    "Hipoglicemia nivel 3 con causa reversible, patrón temporal ambiguo o pérdida de conciencia/convulsión no recibe reducción porcentual automática y requiere ajuste médico o reevaluación."
   ],
   "regressionMatrix": [
     "tests/clinical-engine.test.js",
@@ -21,12 +23,15 @@
     "tests/clinical-engine-hardening.test.js"
   ],
   "changePolicy": "Todo cambio intencional de dosis, umbral, criterio o conducta clínica en clinical-engine.js debe cambiar esta versión y mantener verde la matriz de regresión clínica.",
-  "hardeningRevision": "2026.09.14-safety1",
+  "hardeningRevision": "2026.09.21-level3-dose-safety",
   "safetyGuards": [
     "El motor no titula con menos de 3 glicemias válidas del perfil requerido.",
     "Valores de glicemia inválidos bloquean la titulación automática en vez de ser ignorados silenciosamente.",
     "Cualquier hipoglicemia registrada bloquea todos los aumentos automáticos de NPH durante esa evaluación.",
     "Peso, esquema o dosis actuales inconsistentes fallan cerrados y mantienen la dosis sin cambios.",
-    "Un autotest de versión e invariantes clínicos bloquea acciones críticas si detecta una carga incoherente."
+    "Un autotest de versión e invariantes clínicos bloquea acciones críticas si detecta una carga incoherente.",
+    "Hipoglicemia nivel 3 nunca genera aumento de NPH.",
+    "La propuesta numérica de nivel 3 solo se habilita con patrón temporal atribuible y sin causa reversible clara.",
+    "Pérdida de conciencia/convulsión, causa reversible o patrón ambiguo obligan a ajuste médico o reevaluación."
   ]
 }
