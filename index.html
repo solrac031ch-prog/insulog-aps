@@ -290,6 +290,45 @@
           <button id="hipo-con-ayuda" type="button" class="btn btn-danger">SÍ, FUE NIVEL 3</button>
         </div>
         <p class="aps-context-helper aps-hypo-footnote">Nivel 3 significa que el episodio requirió asistencia de otra persona para su recuperación.</p>
+
+        <div id="nivel3-context-panel" class="card compact-card text-left is-hidden" aria-hidden="true">
+          <p class="card-title">Antes de proponer el ajuste de NPH</p>
+          <p class="helper-text">Insulog solo aplica su regla de reducción del 20% cuando puede identificar la dosis probablemente implicada y no hay una causa reversible clara ni factores adicionales que obliguen a individualizar.</p>
+          <div class="form-grid">
+            <div class="field">
+              <label for="nivel3-momento">Momento del episodio nivel 3</label>
+              <select id="nivel3-momento">
+                <option value="">Seleccione…</option>
+                <option value="nocturnal_fasting">Nocturno / al despertar / ayunas</option>
+                <option value="morning_prelunch">Mañana / antes de almuerzo</option>
+                <option value="both">Episodios en ambos periodos</option>
+                <option value="uncertain">Otro horario o no está claro</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="nivel3-causa">¿Se identifica una causa reversible clara?</label>
+              <select id="nivel3-causa">
+                <option value="">Seleccione…</option>
+                <option value="none">No se identifica causa reversible clara</option>
+                <option value="meal">Comida omitida o ingesta claramente menor</option>
+                <option value="exercise_alcohol">Ejercicio no habitual o alcohol</option>
+                <option value="administration_error">Error de dosis, horario o técnica</option>
+                <option value="illness_renal">Intercurrencia o posible deterioro renal</option>
+                <option value="unknown">No está claro</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="nivel3-alto-riesgo">¿Hay factores de alto riesgo adicionales?</label>
+              <select id="nivel3-alto-riesgo">
+                <option value="">Seleccione…</option>
+                <option value="no">No</option>
+                <option value="yes">Sí: episodio repetido, pérdida de conciencia/convulsión, deterioro renal o intercurrencia importante</option>
+              </select>
+            </div>
+          </div>
+          <button id="nivel3-context-continue" type="button" class="btn btn-danger btn-narrow section-action">CALCULAR PROPUESTA INSULOG</button>
+          <p class="aps-context-helper">La reducción del 20% es una regla de seguridad propia de Insulog y no debe interpretarse como una recomendación porcentual específica de ADA.</p>
+        </div>
       </div>
 
       <div id="resumen-promedios" class="card compact-card is-hidden"></div>
