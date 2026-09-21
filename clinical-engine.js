@@ -12,7 +12,7 @@
     8.5: Object.freeze({ hba1c: 8.5, lower: 100, upper: 160, high10: 220 })
   });
 
-  const CLINICAL_ENGINE_VERSION = "APS-NPH-2026.09.14-r2";
+  const CLINICAL_ENGINE_VERSION = "APS-NPH-2026.09.21-r3";
   const MIN_REQUIRED_READINGS = 3;
   const GLUCOSE_MIN_MGDL = 1;
   const GLUCOSE_MAX_MGDL = 700;
@@ -207,6 +207,99 @@
     });
   }
 
+  function recommendLevel3HypoglycemiaAdjustment({
+    regimenType,
+    amDose,
+    pmDose,
+    timing,
+    reversibleCause = "unknown",
+    severeNeurologic = false
+  } = {}) {
+    const regimen = String(regimenType || "");
+    const allowedRegimens = new Set(["pm", "am", "2"]);
+    const am = Math.max(0, roundUnits(Number(amDose)));
+    const pm = Math.max(0, roundUnits(Number(pmDose)));
+    const eventTiming = String(timing || "unclear");
+    const cause = String(reversibleCause || "unknown");
+
+    const base = {
+      level: 3,
+      urgent: true,
+      currentAm: am,
+      currentPm: pm,
+      am,
+      pm,
+      automaticRecommendation: false,
+      requiresMedicalAdjustment: true,
+      implicatedDose: "",
+      reductionPercent: 0,
+      timing: eventTiming,
+      reversibleCause: cause,
+      severeNeurologic: Boolean(severeNeurologic),
+      reason: ""
+    };
+
+    if (!allowedRegimens.has(regimen)) {
+      return Object.freeze({ ...base, reason: "Esquema de NPH no reconocido: se requiere ajuste médico." });
+    }
+
+    if (base.severeNeurologic) {
+      return Object.freeze({
+        ...base,
+        reason: "Hipoglicemia nivel 3 con pérdida de conciencia o convulsión: no se propone una reducción porcentual automática; requiere evaluación clínica urgente y ajuste médico."
+      });
+    }
+
+    if (cause !== "none") {
+      return Object.freeze({
+        ...base,
+        reason: "Existe una causa precipitante reversible o incierta: Insulog no aplica una reducción porcentual automática y deja el ajuste de NPH al profesional tras corregir la causa."
+      });
+    }
+
+    let implicatedDose = "";
+    if (regimen === "2") {
+      if (eventTiming === "fasting") implicatedDose = "pm";
+      if (eventTiming === "daytime") implicatedDose = "am";
+    } else if (regimen === "pm" && eventTiming === "fasting") {
+      implicatedDose = "pm";
+    } else if (regimen === "am" && eventTiming === "daytime") {
+      implicatedDose = "am";
+    }
+
+    if (!implicatedDose) {
+      return Object.freeze({
+        ...base,
+        reason: "El momento del episodio no permite atribuir con suficiente seguridad la hipoglicemia a una dosis específica de NPH; se requiere ajuste médico."
+      });
+    }
+
+    const implicatedCurrent = implicatedDose === "pm" ? pm : am;
+    if (implicatedCurrent <= 0) {
+      return Object.freeze({
+        ...base,
+        implicatedDose,
+        reason: "La dosis probablemente implicada no está activa en el esquema registrado; se requiere ajuste médico."
+      });
+    }
+
+    const reduced = Math.max(1, roundUnits(implicatedCurrent * 0.8));
+    const nextAm = implicatedDose === "am" ? reduced : am;
+    const nextPm = implicatedDose === "pm" ? reduced : pm;
+    const doseLabel = implicatedDose === "pm" ? "PM" : "AM";
+
+    return Object.freeze({
+      ...base,
+      am: nextAm,
+      pm: nextPm,
+      automaticRecommendation: true,
+      requiresMedicalAdjustment: false,
+      implicatedDose,
+      reductionPercent: 20,
+      reason: `Insulog propone reducir 20% la NPH ${doseLabel} probablemente implicada en el episodio nivel 3, manteniendo sin cambios la otra dosis. Esta es una regla de seguridad de Insulog y requiere revisión profesional.`
+    });
+  }
+
   function calculateSecondDose(weightKg) { return Math.max(4, roundUnits(Number(weightKg) * 0.1)); }
 
   function assessDoseSafety(dosePerKg) {
@@ -348,6 +441,6 @@
   return Object.freeze({
     version: CLINICAL_ENGINE_VERSION, TARGET_PROFILES, MIN_REQUIRED_READINGS, GLUCOSE_MIN_MGDL, GLUCOSE_MAX_MGDL, normalizeGlucoseValues, roundUnits, roundEven, normalizeTargetA1c, targetProfile, assessInsulinSensitivity,
     suggestInitialScheme, calculateInitialDose, detectDiscordantHighs, analyzeGlucose, classifyHypoglycemia,
-    calculateAdjustment, calculateSecondDose, assessDoseSafety, calculateFollowup, regimenLabel
+    recommendLevel3HypoglycemiaAdjustment, calculateAdjustment, calculateSecondDose, assessDoseSafety, calculateFollowup, regimenLabel
   });
 });
