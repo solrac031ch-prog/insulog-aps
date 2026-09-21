@@ -104,6 +104,10 @@
     state.patch({ tipoDocumento: tipo });
     const data = state.snapshot();
     const nombre = byId("nombre-paciente").value.trim() || "_________________________________";
+    const fechaNacimientoISO = String(byId("fecha-nacimiento-paciente")?.value || "").trim();
+    const fechaNacimiento = /^\d{4}-\d{2}-\d{2}$/.test(fechaNacimientoISO)
+      ? fechaNacimientoISO.split("-").reverse().join("/")
+      : "No registrada";
     const fecha = new Date().toLocaleDateString("es-CL");
 
     const titulos = {
@@ -135,6 +139,10 @@
       <div class="pdf-patient-row">
         <span class="pdf-patient-label">Paciente</span>
         <span class="pdf-patient-name">${escapeHTML(nombre)}</span>
+      </div>
+      <div class="pdf-patient-row">
+        <span class="pdf-patient-label">Fecha de nacimiento</span>
+        <span class="pdf-patient-name">${escapeHTML(fechaNacimiento)}</span>
       </div>`;
 
     const dosis = bloqueDosis(am, pm);
@@ -204,7 +212,7 @@
   }
 
   window.InsulogDocuments = Object.freeze({
-    version: "2026.09.16-phase8c-pdf-isolated",
+    version: "2026.09.21-phase8d-dob",
     generate: generarDocumento,
     useEnhancer
   });
