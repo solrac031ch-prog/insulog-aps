@@ -6,8 +6,8 @@ const INSULOG_DRIVE_CONFIG = Object.freeze({
   controlsSheet: "Controles",
   eventsSheet: "Eventos",
   allowedOrigins: ["https://solrac031ch-prog.github.io"],
-  bridgeVersion: "2026.09.15-drive-v1",
-  schemaVersion: "2026.09.15-schema-v2"
+  bridgeVersion: "2026.09.21-drive-v2",
+  schemaVersion: "2026.09.21-schema-v3"
 });
 
 function doGet() {
@@ -84,6 +84,9 @@ function validatePayload_(payload) {
   const patientName = cleanName_(payload.patientName);
   if (patientName.length < 3 || patientName.length > 160) throw new Error("Nombre de paciente inválido.");
 
+  const patientBirthDate = normalizeBirthDate_(payload.patientBirthDate);
+  if (!patientBirthDate) throw new Error("Fecha de nacimiento inválida.");
+
   const documentType = String(payload.documentType || "").trim();
   if (["inicio", "seguimiento"].indexOf(documentType) === -1) {
     throw new Error("Tipo de documento inválido.");
@@ -151,18 +154,40 @@ function cohortEntryType_(payload) {
 function upsertPatient_(sheet, payload, timestamp) {
   const patientName = cleanName_(payload.patientName);
   const normalized = normalizeName_(patientName);
+  const patientBirthDate = normalizeBirthDate_(payload.patientBirthDate);
   const lastRow = sheet.getLastRow();
   let patientRow = 0;
   let patientId = "";
+  let legacyBlankBirthDateRow = 0;
+  let legacyBlankBirthDateCount = 0;
 
   if (lastRow >= 2) {
     const rows = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
     for (let index = 0; index < rows.length; index += 1) {
-      if (normalizeName_(rows[index][1]) === normalized) {
+      if (normalizeName_(rows[index][1]) !== normalized) continue;
+
+      const storedBirthDate = normalizeBirthDate_(rows[index][2]);
+      if (storedBirthDate === patientBirthDate) {
         patientRow = index + 2;
         patientId = String(rows[index][0] || "").trim();
         break;
       }
+
+      if (!storedBirthDate) {
+        legacyBlankBirthDateRow = index + 2;
+        legacyBlankBirthDateCount += 1;
+      }
+    }
+
+    if (!patientRow && legacyBlankBirthDateCount === 1) {
+      patientRow = legacyBlankBirthDateRow;
+      patientId = String(sheet.getRange(patientRow, 1).getValue() || "").trim();
+      sheet.getRange(patientRow, 3).setValue(birthDateCellValue_(patientBirthDate));
+      sheet.getRange(patientRow, 3).setNumberFormat("dd/mm/yyyy");
+    }
+
+    if (!patientRow && legacyBlankBirthDateCount > 1) {
+      throw new Error("Coincidencia ambigua: existen varios pacientes con el mismo nombre y sin fecha de nacimiento.");
     }
   }
 
@@ -179,7 +204,7 @@ function upsertPatient_(sheet, payload, timestamp) {
     sheet.appendRow([
       patientId,
       patientName,
-      "",
+      birthDateCellValue_(patientBirthDate),
       "",
       timestamp,
       timestamp,
@@ -207,6 +232,10 @@ function upsertPatient_(sheet, payload, timestamp) {
   }
 
   sheet.getRange(patientRow, 2).setValue(patientName);
+  if (sheet.getRange(patientRow, 3).isBlank()) {
+    sheet.getRange(patientRow, 3).setValue(birthDateCellValue_(patientBirthDate));
+    sheet.getRange(patientRow, 3).setNumberFormat("dd/mm/yyyy");
+  }
   sheet.getRange(patientRow, 6).setValue(timestamp);
   sheet.getRange(patientRow, 7).setValue("Activo");
 
@@ -325,6 +354,49 @@ function normalizeName_(value) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("es-CL");
+}
+
+function normalizeBirthDate_(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone() || "America/Santiago", "yyyy-MM-dd");
+  }
+
+  const text = String(value || "").trim();
+  let match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    match = text.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+    if (match) {
+      const day = String(match[1]).padStart(2, "0");
+      const month = String(match[2]).padStart(2, "0");
+      return validBirthDateParts_(match[3], month, day) ? match[3] + "-" + month + "-" + day : "";
+    }
+    return "";
+  }
+
+  return validBirthDateParts_(match[1], match[2], match[3])
+    ? match[1] + "-" + match[2] + "-" + match[3]
+    : "";
+}
+
+function validBirthDateParts_(yearText, monthText, dayText) {
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return false;
+  if (year < 1900 || month < 1 || month > 12 || day < 1 || day > 31) return false;
+
+  const date = new Date(year, month - 1, day, 12, 0, 0);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return false;
+
+  const today = new Date();
+  const todayKey = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0);
+  return date <= todayKey;
+}
+
+function birthDateCellValue_(isoDate) {
+  const match = String(isoDate || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return "";
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12, 0, 0);
 }
 
 function safeDate_(value) {
