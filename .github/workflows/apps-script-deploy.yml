@@ -1,0 +1,106 @@
+name: Deploy Apps Script bridge
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "google-apps-script/**"
+      - ".github/workflows/apps-script-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: insulog-apps-script-production
+  cancel-in-progress: false
+
+jobs:
+  configuration-required:
+    if: ${{ secrets.CLASPRC_JSON == '' || secrets.APPS_SCRIPT_ID == '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain one-time setup
+        run: |
+          echo "::notice::Apps Script auto-deploy is ready but requires repository secrets CLASPRC_JSON and APPS_SCRIPT_ID."
+          echo "::notice::Do not commit Google OAuth credentials to the repository."
+
+  deploy:
+    if: ${{ secrets.CLASPRC_JSON != '' && secrets.APPS_SCRIPT_ID != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install clasp
+        run: npm install --global @google/clasp@3.4.1
+
+      - name: Configure clasp securely
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          APPS_SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
+        run: |
+          set -euo pipefail
+          AUTH_FILE="$RUNNER_TEMP/.clasprc.json"
+          printf '%s' "$CLASPRC_JSON" > "$AUTH_FILE"
+          chmod 600 "$AUTH_FILE"
+
+          cat > .clasp.json <<EOF
+          {
+            "scriptId": "$APPS_SCRIPT_ID",
+            "rootDir": "google-apps-script"
+          }
+          EOF
+
+          echo "clasp_config_auth=$AUTH_FILE" >> "$GITHUB_ENV"
+
+      - name: Push source to Apps Script
+        run: |
+          set -euo pipefail
+          clasp show-file-status
+          clasp push --force
+
+      - name: Update existing web app deployment
+        env:
+          APPS_SCRIPT_DEPLOYMENT_ID: "AKfycbx203QzIWqGmeTh_p1XjjmADWBuu_L3RJmUoV9A1fk12_OEtnhkSLq62bgup0ERe3IlBw"
+        run: |
+          set -euo pipefail
+          clasp update-deployment "$APPS_SCRIPT_DEPLOYMENT_ID" --description "Insulog GitHub $GITHUB_SHA"
+
+      - name: Verify deployed bridge version
+        env:
+          WEB_APP_URL: "https://script.google.com/macros/s/AKfycbx203QzIWqGmeTh_p1XjjmADWBuu_L3RJmUoV9A1fk12_OEtnhkSLq62bgup0ERe3IlBw/exec"
+        run: |
+          set -euo pipefail
+          HEALTH_FILE="$RUNNER_TEMP/apps-script-health.json"
+          curl -fsSL --retry 3 --retry-delay 2 "$WEB_APP_URL" > "$HEALTH_FILE"
+
+          python - "$HEALTH_FILE" <<'PY'
+          import json
+          import pathlib
+          import re
+          import sys
+
+          code = pathlib.Path("google-apps-script/Code.gs").read_text(encoding="utf-8")
+          expected_bridge = re.search(r'bridgeVersion:\s*"([^"]+)"', code).group(1)
+          expected_schema = re.search(r'schemaVersion:\s*"([^"]+)"', code).group(1)
+
+          payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+          if payload.get("ok") is not True:
+              raise SystemExit(f"Bridge health check failed: {payload}")
+          if payload.get("version") != expected_bridge:
+              raise SystemExit(
+                  f"Bridge version mismatch: expected {expected_bridge}, got {payload.get('version')}"
+              )
+          if payload.get("schemaVersion") != expected_schema:
+              raise SystemExit(
+                  f"Schema version mismatch: expected {expected_schema}, got {payload.get('schemaVersion')}"
+              )
+
+          print(f"Apps Script bridge deployed: {expected_bridge} / {expected_schema}")
+          PY
