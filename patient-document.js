@@ -124,7 +124,9 @@
     const pm = Number(data.pm) || 0;
     const clinicalNote = byId("nota-clinica")?.dataset.rawText || byId("nota-clinica")?.innerText || "";
     const level3Urgency = /HIPOGLICEMIA NIVEL 3/i.test(clinicalNote);
-    const urgencyAccepted = level3Urgency && data.professionalDecision === "aceptada";
+    const level3DoseProposal = level3Urgency && data.level3AutoDoseAvailable === true;
+    const level3ProposalAccepted = level3DoseProposal && data.professionalDecision === "aceptada";
+    const urgencyAccepted = level3Urgency && data.professionalDecision === "aceptada" && !level3DoseProposal;
     const urgencyModified = level3Urgency && data.professionalDecision === "modificada";
 
     const header = `
@@ -170,6 +172,21 @@
             <p><strong>Insulog no emite una nueva pauta ambulatoria de NPH en este documento.</strong></p>
             <p>Se mantiene la alerta de hipoglicemia nivel 3 y la ruta de urgencia indicada en la evaluación clínica. El esquema de insulina debe reevaluarse antes de reiniciar una titulación ambulatoria.</p>
           </section>
+          ${bloqueControlFirma()}`;
+      } else if (level3ProposalAccepted) {
+        cuerpo = `
+          <section class="pdf-alert-important">
+            <div class="pdf-section-title">Hipoglicemia nivel 3 · propuesta Insulog aceptada</div>
+            <p><strong>Se mantiene la alerta de hipoglicemia nivel 3.</strong></p>
+            <p>El profesional aceptó la propuesta de Insulog de reducir en 20% la dosis de NPH probablemente responsable (${escapeHTML(String(data.level3ImplicatedDose || "dosis implicada"))}). Esta regla es una ayuda clínica y no sustituye la reevaluación de causas precipitantes.</p>
+          </section>
+          ${dosis}
+          ${bloqueIndicaciones("Indicaciones de seguridad y seguimiento", [
+            "Revisar técnica y horario de administración, ingesta, ejercicio, alcohol y función renal.",
+            "Reforzar educación para prevención y tratamiento de hipoglicemia y acceso a glucagón cuando corresponda.",
+            "<strong>Registro:</strong> continuar glicemias capilares según indicación del equipo tratante y reevaluar antes de nuevas titulaciones."
+          ])}
+          ${tablaRegistro()}
           ${bloqueControlFirma()}`;
       } else {
         const overrideWarning = urgencyModified
@@ -227,7 +244,7 @@
   }
 
   window.InsulogDocuments = Object.freeze({
-    version: "2026.09.21-phase8d-level3-decision",
+    version: "2026.09.21-phase8e-level3-dose-proposal",
     generate: generarDocumento,
     useEnhancer
   });
