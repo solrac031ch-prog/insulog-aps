@@ -415,27 +415,63 @@
       .map((input) => parseInt(input.value, 10))
       .filter((value) => Number.isFinite(value));
 
+    const propuesta = clinicalEngine.proposeLevel3NphReduction({
+      regimenType: tipo,
+      amDose: am,
+      pmDose: pm,
+      fastingValues: ayunas,
+      preLunchValues: preonce
+    });
+
+    const accionesNivel3 = [
+      "- Reevaluación clínica prioritaria del episodio y del esquema de insulina.",
+      "- Buscar causas reversibles: error de dosis/horario, menor ingesta, ejercicio, alcohol, intercurrencia y deterioro de función renal.",
+      "- Reforzar educación estructurada para prevención y tratamiento de hipoglicemia.",
+      "- Verificar disponibilidad de glucagón y entrenamiento de familiares/cuidadores."
+    ].join("\n");
+
     state.patch({
       amActual: am,
       pmActual: pm,
-      am,
-      pm,
+      am: propuesta.available ? propuesta.am : am,
+      pm: propuesta.available ? propuesta.pm : pm,
       promAy: promedio(ayunas),
       promPre: promedio(preonce),
       promedioGlobal: promedio([...ayunas, ...preonce]),
-      dosisKg: (am + pm) / peso,
-      acciones: "",
-      tratamientoConcomitante: tratamientoTexto("seguimiento")
+      dosisKg: propuesta.available ? (propuesta.am + propuesta.pm) / peso : (am + pm) / peso,
+      acciones: accionesNivel3,
+      tratamientoConcomitante: tratamientoTexto("seguimiento"),
+      level3ProposalAvailable: propuesta.available,
+      level3ReductionPercent: propuesta.reductionPercent,
+      level3Rule: propuesta.rule,
+      level3ImplicatedDoses: propuesta.implicated.join(" + "),
+      level3CurrentAm: propuesta.currentAm,
+      level3CurrentPm: propuesta.currentPm
     });
 
     const data = state.snapshot();
-    const nota = `SEGUIMIENTO APS\nALERTA: HIPOGLICEMIA NIVEL 3 REFERIDA (requirió asistencia de otra persona).\nNo se realiza ajuste automático de NPH.\nPromedios descriptivos sin excluir valores: Ayunas ${data.promAy} mg/dL | Preonce ${data.promPre} mg/dL\nPromedio capilar global del registro: ${data.promedioGlobal} mg/dL\nEsquema actual: AM ${am} UI | PM ${pm} UI\nTratamiento concomitante: ${data.tratamientoConcomitante}\nConducta: reevaluación clínica prioritaria del esquema de insulina y de las causas del evento. Revisar técnica de administración, horario, ingesta, ejercicio, función renal, fragilidad y apoyo del paciente.\nReforzar educación para prevención y tratamiento de hipoglicemia.`;
+    const propuestaTexto = propuesta.available
+      ? "Propuesta Insulog (Regla Insulog, no regla ADA): reducir 20% la dosis NPH temporalmente implicada por el patrón de HGT, redondeada a unidades enteras. Propuesta: AM " + propuesta.am + " UI | PM " + propuesta.pm + " UI. Dosis implicada(s): " + propuesta.implicated.join(" + ") + "."
+      : "Insulog no puede asignar con suficiente seguridad una dosis NPH responsable a partir del patrón registrado; no se genera propuesta automática y se requiere ajuste médico individual.";
+
+    const nota = [
+      "SEGUIMIENTO APS",
+      "ALERTA: HIPOGLICEMIA NIVEL 3 REFERIDA (requirió asistencia de otra persona).",
+      "ADA 2026: un episodio nivel 3 obliga a reevaluar el plan y considerar deintensificación del tratamiento.",
+      propuestaTexto,
+      "La reducción del 20% es una regla propia de Insulog para apoyo a la decisión y requiere revisión profesional; no sustituye la identificación de una causa reversible.",
+      "Promedios descriptivos sin excluir valores: Ayunas " + data.promAy + " mg/dL | Preonce " + data.promPre + " mg/dL",
+      "Promedio capilar global del registro: " + data.promedioGlobal + " mg/dL",
+      "Esquema actual: AM " + am + " UI | PM " + pm + " UI",
+      "Tratamiento concomitante: " + data.tratamientoConcomitante,
+      "Conducta: reevaluación clínica prioritaria del esquema y de las causas del evento. Revisar técnica de administración, horario, ingesta, ejercicio, alcohol, función renal, fragilidad y apoyo del paciente.",
+      "Reforzar educación para prevención y tratamiento de hipoglicemia y verificar disponibilidad de glucagón."
+    ].join("\n");
 
     renderNotaClinica(nota);
     go(5);
     return true;
   }
-
   actions.decorate("define-initial-scheme", (next) => (context) => {
     const resultado = next(context);
     const paginaDosisActiva = document.getElementById("p3")?.classList.contains("active");
