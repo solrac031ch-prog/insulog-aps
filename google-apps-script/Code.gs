@@ -1,3 +1,4 @@
+// Managed by GitHub Actions deployment.
 "use strict";
 
 const INSULOG_DRIVE_CONFIG = Object.freeze({
