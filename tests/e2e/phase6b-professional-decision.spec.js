@@ -66,6 +66,7 @@ test("6B pide nombre sólo al generar documento y no lo almacena en el estado", 
 
   const frame = page.frameLocator("#pdf-preview-frame");
   await expect(frame.locator("#pdf")).toContainText("Paciente prueba");
+  await expect(frame.locator("#pdf")).toContainText("12/05/1960");
   await expect(frame.locator("#pdf")).toContainText("21 UI");
   await expect(frame.locator("#pdf")).not.toContainText("22 UI");
 
@@ -145,4 +146,41 @@ test("6B bloquea documento cuando la decisión es reevaluar", async ({ page }) =
   await page.locator("#p5").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
   await expectActivePage(page, "p5");
   expect(message).toContain("ACEPTAR o MODIFICAR PLAN");
+});
+
+
+test("6B envía tratamiento concomitante al registro longitudinal", async ({ page }) => {
+  await page.goto("/?driveEndpoint=https%3A%2F%2Fscript.google.com%2Fmacros%2Fs%2FTEST-ENDPOINT-123456%2Fexec");
+  await page.locator("#p0").getByRole("button", { name: "INICIAR ALGORITMO", exact: true }).click();
+  await page.locator("#p1").getByRole("button", { name: "NO", exact: true }).click();
+  await page.locator("#p2").getByRole("button", { name: "SEGUIMIENTO DE INSULINA", exact: true }).click();
+
+  const firstMedication = page.locator('input[data-aps-med="seguimiento"]').first();
+  await firstMedication.check();
+  await page.locator("#p35").getByRole("button", { name: "CONTINUAR AL REGISTRO DE GLICEMIAS", exact: true }).click();
+
+  await page.locator("#peso-seguimiento").fill("70");
+  await page.locator("#tipo-esquema").selectOption("pm");
+  await page.locator("#pm-actual").fill("20");
+  const fasting = page.locator("#tabla-seguimiento .ay");
+  await fasting.nth(0).fill("160");
+  await fasting.nth(1).fill("170");
+  await fasting.nth(2).fill("180");
+  await page.locator("#ajustar-seguimiento-btn").click();
+  await page.locator("#best-review-accept").click();
+  await page.locator("#p5").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
+
+  await page.locator("#nombre-paciente").fill("Paciente medicamentos");
+  await page.locator("#fecha-nacimiento-paciente").fill("1965-08-20");
+
+  const requestPromise = page.waitForRequest((request) =>
+    request.method() === "POST" &&
+    request.url().includes("script.google.com/macros/s/TEST-ENDPOINT-123456/exec")
+  );
+  await page.locator("#p6").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
+  const request = await requestPromise;
+  const payload = JSON.parse(request.postData() || "{}");
+
+  expect(payload.patientBirthDate).toBe("1965-08-20");
+  expect(payload.coMedications).toContain("Metformina");
 });

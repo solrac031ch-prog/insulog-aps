@@ -7,7 +7,7 @@ const INSULOG_DRIVE_CONFIG = Object.freeze({
   eventsSheet: "Eventos",
   allowedOrigins: ["https://solrac031ch-prog.github.io"],
   bridgeVersion: "2026.09.21-drive-v2",
-  schemaVersion: "2026.09.21-schema-v3"
+  schemaVersion: "2026.09.21-schema-v4"
 });
 
 function doGet() {
@@ -87,6 +87,11 @@ function validatePayload_(payload) {
   const patientBirthDate = normalizeBirthDate_(payload.patientBirthDate);
   if (!patientBirthDate) throw new Error("Fecha de nacimiento inválida.");
 
+  const coMedications = cleanText_(payload.coMedications, 3000);
+  if (String(payload.coMedications || "").length > 3000) {
+    throw new Error("Tratamiento concomitante demasiado extenso.");
+  }
+
   const documentType = String(payload.documentType || "").trim();
   if (["inicio", "seguimiento"].indexOf(documentType) === -1) {
     throw new Error("Tipo de documento inválido.");
@@ -117,9 +122,11 @@ function ensureSchema_(patients, controls) {
     "Usaba insulina antes del primer registro",
     "NPH AM basal (UI)",
     "NPH PM basal (UI)",
-    "NPH final tras primer registro (UI/día)"
+    "NPH final tras primer registro (UI/día)",
+    "Tratamiento coadyuvante basal"
   ];
   patients.getRange(1, 11, 1, patientHeaders.length).setValues([patientHeaders]);
+  controls.getRange(1, 25).setValue("Medicamentos coadyuvantes");
 
   const yesNoRule = SpreadsheetApp.newDataValidation()
     .requireValueInList(["Sí", "No"], true)
@@ -198,6 +205,7 @@ function upsertPatient_(sheet, payload, timestamp) {
   const firstFinalNph = nullableNumber_(payload.finalTotal);
   const cohortEntryType = cohortEntryType_(payload);
   const insulinBeforeEntry = String(payload.documentType || "") === "inicio" ? "No" : "Sí";
+  const baselineCoMedications = cleanText_(payload.coMedications, 3000);
 
   if (!patientRow) {
     patientId = Utilities.getUuid();
@@ -216,7 +224,8 @@ function upsertPatient_(sheet, payload, timestamp) {
       insulinBeforeEntry,
       baselineAm === null ? "" : baselineAm,
       baselinePm === null ? "" : baselinePm,
-      firstFinalNph === null ? "" : firstFinalNph
+      firstFinalNph === null ? "" : firstFinalNph,
+      baselineCoMedications
     ]);
     return {
       patientId: patientId,
@@ -303,7 +312,8 @@ function appendControl_(sheet, patient, payload, timestamp) {
     String(payload.professionalReason || "").trim(),
     "",
     version || INSULOG_DRIVE_CONFIG.bridgeVersion,
-    timestamp
+    timestamp,
+    cleanText_(payload.coMedications, 3000)
   ]);
 }
 
@@ -347,6 +357,11 @@ function normalizeDecision_(value) {
 
 function cleanName_(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function cleanText_(value, maxLength) {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  return typeof maxLength === "number" ? text.slice(0, maxLength) : text;
 }
 
 function normalizeName_(value) {
