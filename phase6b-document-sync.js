@@ -288,6 +288,7 @@
       timestamp: new Date().toISOString(),
       patientName,
       patientBirthDate: birthDate,
+      coMedications: String(data.tratamientoConcomitante || "").trim(),
       documentType: tipo,
       controlKind: controlKind(tipo, data),
       weightKg: weight,
