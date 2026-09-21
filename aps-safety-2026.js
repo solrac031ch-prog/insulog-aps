@@ -102,7 +102,8 @@
 
   const safetyState = {
     clasificacionHipo: "",
-    revisionHipo: null
+    revisionHipo: null,
+    nivel3Assessment: null
   };
 
   function buscarMedicamento(input) {
@@ -310,6 +311,7 @@
     if (!alerta) return;
     alerta.classList.add("is-hidden");
     alerta.setAttribute("aria-hidden", "true");
+    document.getElementById("nivel3-evaluacion")?.remove();
   }
 
   function mostrarRevisionHipoglicemia(evento) {
@@ -337,11 +339,59 @@
     ocultarRevisionHipoglicemia();
   }
 
+  function mostrarEvaluacionNivel3() {
+    const alerta = document.getElementById("alerta-hipoglicemia-ada");
+    if (!alerta) return;
+
+    document.getElementById("nivel3-evaluacion")?.remove();
+    const panel = document.createElement("div");
+    panel.id = "nivel3-evaluacion";
+    panel.className = "card compact-card text-left";
+    panel.style.marginTop = "14px";
+    panel.innerHTML = `
+      <strong>Evaluación antes de proponer ajuste</strong>
+      <p class="aps-context-helper">Insulog solo propondrá una reducción numérica si el evento puede vincularse a una dosis de NPH y no hay una causa reversible clara ni factores que obliguen a reevaluación individual.</p>
+      <div class="field">
+        <label for="nivel3-causa">Causa del episodio</label>
+        <select id="nivel3-causa">
+          <option value="">Seleccione…</option>
+          <option value="no_clara">No se identifica una causa reversible clara</option>
+          <option value="reversible_clara">Se identifica una causa reversible clara (p. ej., omisión de ingesta, ejercicio no habitual, alcohol o error de administración)</option>
+          <option value="incierta">La causa es incierta o no está suficientemente aclarada</option>
+        </select>
+      </div>
+      <label class="aps-med-option" style="margin-top:10px;">
+        <input id="nivel3-alto-riesgo" type="checkbox">
+        <span class="aps-med-copy">
+          <span class="aps-med-name">Existe un factor de mayor complejidad</span>
+          <small class="aps-med-safety">Episodio repetido, pérdida de conciencia/convulsión, deterioro renal importante, imposibilidad de seguimiento seguro u otra condición que haga inadecuada una reducción automática.</small>
+        </span>
+      </label>
+      <button id="nivel3-continuar" type="button" class="btn btn-danger btn-narrow section-action">CONTINUAR EVALUACIÓN NIVEL 3</button>
+      <p id="nivel3-error" class="aps-context-helper" style="color:var(--danger);font-weight:700;"></p>
+    `;
+
+    alerta.appendChild(panel);
+    panel.querySelector("#nivel3-continuar")?.addEventListener("click", () => {
+      const causa = String(panel.querySelector("#nivel3-causa")?.value || "");
+      if (!causa) {
+        panel.querySelector("#nivel3-error").textContent = "Seleccione cómo se interpreta la causa del episodio antes de continuar.";
+        return;
+      }
+      const altoRiesgo = Boolean(panel.querySelector("#nivel3-alto-riesgo")?.checked);
+      safetyState.nivel3Assessment = { causa, altoRiesgo };
+      if (safetyState.revisionHipo) safetyState.revisionHipo.nivel3Assessment = safetyState.nivel3Assessment;
+      actions.invoke("calculate-followup");
+    });
+    panel.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
   function resolverRevisionHipoglicemia(requirioAyuda) {
     const evento = evaluarHipoglicemiaADA();
 
     if (!evento) {
       safetyState.revisionHipo = null;
+      safetyState.nivel3Assessment = null;
       ocultarRevisionHipoglicemia();
       actions.invoke("calculate-followup");
       return;
@@ -352,6 +402,13 @@
       requirioAyuda
     };
 
+    if (requirioAyuda) {
+      safetyState.nivel3Assessment = null;
+      mostrarEvaluacionNivel3();
+      return;
+    }
+
+    safetyState.nivel3Assessment = null;
     actions.invoke("calculate-followup");
   }
 
@@ -389,6 +446,11 @@
     return valores.length ? Math.round(valores.reduce((a, b) => a + b, 0) / valores.length) : "N/A";
   }
 
+  function reducirVeintePorCiento(dosis) {
+    if (!Number.isFinite(dosis) || dosis <= 0) return 0;
+    return Math.max(1, Math.round(dosis * 0.8));
+  }
+
   function manejarHipoglicemiaNivel3() {
     const peso = parseFloat(document.getElementById("peso-seguimiento")?.value);
     const tipo = document.getElementById("tipo-esquema")?.value;
@@ -415,21 +477,71 @@
       .map((input) => parseInt(input.value, 10))
       .filter((value) => Number.isFinite(value));
 
+    const assessment = safetyState.revisionHipo?.nivel3Assessment || safetyState.nivel3Assessment || {};
+    const causa = String(assessment.causa || "incierta");
+    const altoRiesgo = Boolean(assessment.altoRiesgo);
+    const ayunoBajo = ayunas.some((value) => value < 70);
+    const preAlmuerzoBajo = preonce.some((value) => value < 70);
+    const dosisImplicadas = [];
+    let propuestaAm = am;
+    let propuestaPm = pm;
+
+    if (preAlmuerzoBajo && am > 0) {
+      propuestaAm = reducirVeintePorCiento(am);
+      dosisImplicadas.push("AM");
+    }
+    if (ayunoBajo && pm > 0) {
+      propuestaPm = reducirVeintePorCiento(pm);
+      dosisImplicadas.push("PM");
+    }
+
+    const puedeProponer = causa === "no_clara"
+      && !altoRiesgo
+      && dosisImplicadas.length > 0
+      && (propuestaAm !== am || propuestaPm !== pm);
+
+    const causaTexto = causa === "reversible_clara"
+      ? "Se identificó una causa reversible clara."
+      : causa === "no_clara"
+        ? "No se identificó una causa reversible clara."
+        : "La causa del episodio es incierta o no está suficientemente aclarada.";
+
+    const motivoSinPropuesta = altoRiesgo
+      ? "Existen factores de mayor complejidad; Insulog no calcula una reducción porcentual y deja el ajuste a reevaluación médica."
+      : causa === "reversible_clara"
+        ? "Al existir una causa reversible clara, Insulog no atribuye automáticamente el evento a la dosis de NPH; corresponde corregir la causa y definir la pauta por criterio médico."
+        : causa === "incierta"
+          ? "La causa no está suficientemente aclarada; Insulog no calcula una reducción porcentual y deja la pauta a reevaluación médica."
+          : dosisImplicadas.length === 0
+            ? "El registro no permite localizar qué dosis de NPH se relaciona con el evento; el ajuste queda a criterio médico."
+            : "No fue posible generar una reducción automática clínicamente útil.";
+
+    const recomendacionTexto = puedeProponer
+      ? `PROPUESTA INSULOG: reducir 20% la dosis de NPH probablemente responsable (${dosisImplicadas.join(" + ")}). Nueva propuesta: AM ${propuestaAm} UI | PM ${propuestaPm} UI. Esta reducción es una regla de apoyo clínico de Insulog y requiere aceptación o modificación por el profesional.`
+      : `PROPUESTA INSULOG: no emitir ajuste numérico automático. ${motivoSinPropuesta}`;
+
     state.patch({
       amActual: am,
       pmActual: pm,
-      am,
-      pm,
+      am: puedeProponer ? propuestaAm : am,
+      pm: puedeProponer ? propuestaPm : pm,
       promAy: promedio(ayunas),
       promPre: promedio(preonce),
       promedioGlobal: promedio([...ayunas, ...preonce]),
-      dosisKg: (am + pm) / peso,
+      dosisKg: ((puedeProponer ? propuestaAm : am) + (puedeProponer ? propuestaPm : pm)) / peso,
       acciones: "",
-      tratamientoConcomitante: tratamientoTexto("seguimiento")
+      tratamientoConcomitante: tratamientoTexto("seguimiento"),
+      level3AutoDoseAvailable: puedeProponer,
+      level3CauseAssessment: causa,
+      level3HighRiskFeatures: altoRiesgo,
+      level3ImplicatedDose: dosisImplicadas.length ? dosisImplicadas.join(" + ") : "No localizada",
+      level3ReductionPercent: puedeProponer ? 20 : null,
+      level3ProposedAm: puedeProponer ? propuestaAm : null,
+      level3ProposedPm: puedeProponer ? propuestaPm : null
     });
 
     const data = state.snapshot();
-    const nota = `SEGUIMIENTO APS\nALERTA: HIPOGLICEMIA NIVEL 3 REFERIDA (requirió asistencia de otra persona).\nNo se realiza ajuste automático de NPH.\nPromedios descriptivos sin excluir valores: Ayunas ${data.promAy} mg/dL | Preonce ${data.promPre} mg/dL\nPromedio capilar global del registro: ${data.promedioGlobal} mg/dL\nEsquema actual: AM ${am} UI | PM ${pm} UI\nTratamiento concomitante: ${data.tratamientoConcomitante}\nConducta: reevaluación clínica prioritaria del esquema de insulina y de las causas del evento. Revisar técnica de administración, horario, ingesta, ejercicio, función renal, fragilidad y apoyo del paciente.\nReforzar educación para prevención y tratamiento de hipoglicemia.`;
+    const nota = `SEGUIMIENTO APS\nALERTA: HIPOGLICEMIA NIVEL 3 REFERIDA (requirió asistencia de otra persona).\n${causaTexto}\n${altoRiesgo ? "Factor de mayor complejidad: presente." : "Factor de mayor complejidad: no referido."}\nPromedios descriptivos sin excluir valores: Ayunas ${data.promAy} mg/dL | Preonce ${data.promPre} mg/dL\nPromedio capilar global del registro: ${data.promedioGlobal} mg/dL\nEsquema actual: AM ${am} UI | PM ${pm} UI\nTratamiento concomitante: ${data.tratamientoConcomitante}\n${recomendacionTexto}\nConducta de seguridad: revisar técnica y horario de administración, ingesta, ejercicio, alcohol, función renal, recurrencia del evento y capacidad de seguimiento seguro. Reforzar educación estructurada para prevención/tratamiento de hipoglicemia y disponibilidad de glucagón cuando corresponda.\nLa alerta de nivel 3 se mantiene aunque el profesional acepte o modifique la pauta.`;
 
     renderNotaClinica(nota);
     go(5);
@@ -459,6 +571,16 @@
   actions.decorate("prepare-followup", (next) => (context) => {
     safetyState.revisionHipo = null;
     safetyState.clasificacionHipo = "";
+    safetyState.nivel3Assessment = null;
+    state.patch({
+      level3AutoDoseAvailable: false,
+      level3CauseAssessment: "",
+      level3HighRiskFeatures: false,
+      level3ImplicatedDose: "",
+      level3ReductionPercent: null,
+      level3ProposedAm: null,
+      level3ProposedPm: null
+    });
     ocultarRevisionHipoglicemia();
     return next(context);
   });
