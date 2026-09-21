@@ -256,7 +256,10 @@
 
   function controlKind(tipo, data) {
     if (tipo === "inicio") return "Inicio";
-    if (isUrgencyRoute() && data.professionalDecision === "aceptada") return "Seguimiento";
+    const urgencyWithoutDose = isUrgencyRoute()
+      && data.professionalDecision === "aceptada"
+      && data.level3AutoDoseAvailable !== true;
+    if (urgencyWithoutDose) return "Seguimiento";
     const current = totalDose(data.amActual, data.pmActual);
     const final = totalDose(data.professionalAm, data.professionalPm);
     return current !== final ? "Ajuste" : "Seguimiento";
@@ -294,14 +297,17 @@
     const currentPm = tipo === "inicio" ? 0 : numberOrZero(data.pmActual);
     const note = rawClinicalNote();
     const urgencyRoute = isUrgencyRoute();
-    const urgencyAccepted = urgencyRoute && data.professionalDecision === "aceptada";
-    const recommendedAm = urgencyAccepted ? null : numberOrZero(data.am);
-    const recommendedPm = urgencyAccepted ? null : numberOrZero(data.pm);
-    const finalAm = urgencyAccepted ? null : numberOrZero(data.professionalAm);
-    const finalPm = urgencyAccepted ? null : numberOrZero(data.professionalPm);
+    const level3DoseProposal = /HIPOGLICEMIA NIVEL 3/i.test(note) && data.level3AutoDoseAvailable === true;
+    const urgencyAcceptedWithoutDose = urgencyRoute
+      && data.professionalDecision === "aceptada"
+      && !level3DoseProposal;
+    const recommendedAm = urgencyAcceptedWithoutDose ? null : numberOrZero(data.am);
+    const recommendedPm = urgencyAcceptedWithoutDose ? null : numberOrZero(data.pm);
+    const finalAm = urgencyAcceptedWithoutDose ? null : numberOrZero(data.professionalAm);
+    const finalPm = urgencyAcceptedWithoutDose ? null : numberOrZero(data.professionalPm);
     const decision = data.professionalDecision === "modificada" ? "Modificada" : "Aceptada";
     const medication = concomitantMedicationSnapshot(tipo, data);
-    const fingerprint = [patientName, birthDate, tipo, note, decision, urgencyAccepted ? "urgency-accepted" : "", finalAm ?? "", finalPm ?? "", hba1c ?? "", medication.text].join("|");
+    const fingerprint = [patientName, birthDate, tipo, note, decision, urgencyAcceptedWithoutDose ? "urgency-accepted-no-dose" : "", level3DoseProposal ? "level3-dose-proposal" : "", finalAm ?? "", finalPm ?? "", hba1c ?? "", medication.text].join("|");
 
     return {
       bridgeVersion: DRIVE_BRIDGE_VERSION,
@@ -328,19 +334,26 @@
       lowestGlucose,
       recommendedAm,
       recommendedPm,
-      recommendedTotal: urgencyAccepted ? null : totalDose(recommendedAm, recommendedPm),
-      recommendationText: urgencyAccepted ? "Ruta de urgencia: sin titulación automática de NPH" : doseLabel(recommendedAm, recommendedPm),
+      recommendedTotal: urgencyAcceptedWithoutDose ? null : totalDose(recommendedAm, recommendedPm),
+      recommendationText: urgencyAcceptedWithoutDose
+        ? "Ruta de urgencia: sin titulación automática de NPH"
+        : (level3DoseProposal ? "Hipoglicemia nivel 3: propuesta Insulog de reducción del 20% de la dosis probablemente responsable" : doseLabel(recommendedAm, recommendedPm)),
       finalAm,
       finalPm,
-      finalTotal: urgencyAccepted ? null : totalDose(finalAm, finalPm),
+      finalTotal: urgencyAcceptedWithoutDose ? null : totalDose(finalAm, finalPm),
       professionalDecision: decision,
-      professionalReason: urgencyAccepted
+      professionalReason: urgencyAcceptedWithoutDose
         ? "Conducta de urgencia de Insulog aceptada; sin nueva pauta ambulatoria de NPH."
         : String(data.professionalReason || "").trim(),
-      professionalDosePerKg: urgencyAccepted ? null : safeNumber(data.professionalDosePerKg),
+      professionalDosePerKg: urgencyAcceptedWithoutDose ? null : safeNumber(data.professionalDosePerKg),
       concomitantTreatment: medication.text,
       concomitantMedications: medication.medications,
       urgencyRoute,
+      level3DoseProposal,
+      level3CauseAssessment: String(data.level3CauseAssessment || ""),
+      level3HighRiskFeatures: Boolean(data.level3HighRiskFeatures),
+      level3ImplicatedDose: String(data.level3ImplicatedDose || ""),
+      level3ReductionPercent: safeNumber(data.level3ReductionPercent),
       clinicalEngineVersion: window.InsulogClinicalEngine?.version || "",
       documentModuleVersion: window.InsulogDocuments?.version || "",
       appRuntimeVersion: runtime.version || ""
@@ -409,13 +422,16 @@
       }
 
       const original = { am: data.am, pm: data.pm, dosisKg: data.dosisKg };
-      const urgencyAccepted = isUrgencyRoute() && data.professionalDecision === "aceptada";
-      const am = urgencyAccepted ? 0 : numberOrZero(data.professionalAm);
-      const pm = urgencyAccepted ? 0 : numberOrZero(data.professionalPm);
+      const level3DoseProposal = data.level3AutoDoseAvailable === true;
+      const urgencyAcceptedWithoutDose = isUrgencyRoute()
+        && data.professionalDecision === "aceptada"
+        && !level3DoseProposal;
+      const am = urgencyAcceptedWithoutDose ? 0 : numberOrZero(data.professionalAm);
+      const pm = urgencyAcceptedWithoutDose ? 0 : numberOrZero(data.professionalPm);
       const tipo = clinicalFlowType();
       const driveRecord = buildDriveRecord(tipo, data);
 
-      state.patch({ am, pm, dosisKg: urgencyAccepted ? null : (data.professionalDosePerKg ?? data.dosisKg) });
+      state.patch({ am, pm, dosisKg: urgencyAcceptedWithoutDose ? null : (data.professionalDosePerKg ?? data.dosisKg) });
       const result = next(context);
       requestAnimationFrame(() => state.patch(original));
 
@@ -437,7 +453,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.21-phase6b-document-sync-level3",
+    version: "2026.09.21-phase6b-document-sync-level3-dose-proposal",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),
