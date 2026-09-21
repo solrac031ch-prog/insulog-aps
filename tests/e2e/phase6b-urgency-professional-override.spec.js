@@ -72,3 +72,31 @@ test("criterio profesional prevalece ante alerta de urgencia y llega al PDF con 
   await expect(frame.locator("#pdf")).toContainText("14 UI");
   await expect(frame.locator("#pdf")).toContainText("12 UI");
 });
+
+
+test("aceptar la conducta de urgencia de Insulog permite documentar nivel 3 sin emitir nueva pauta NPH", async ({ page }) => {
+  await openFollowupResult(page);
+
+  await page.locator("#best-review-accept").click();
+  await expect(page.locator("#best-review-status")).toContainText("Conducta de urgencia de Insulog aceptada");
+  await expect(page.locator("#best-final-decision-summary")).toContainText("no se emite una nueva pauta ambulatoria de NPH");
+
+  const state = await page.evaluate(() => window.InsulogRuntime.state.snapshot());
+  expect(state.professionalDecision).toBe("aceptada");
+  expect(state.professionalAm).toBeNull();
+  expect(state.professionalPm).toBeNull();
+  expect(state.professionalUrgencyAccepted).toBe(true);
+
+  await page.locator("#p5").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
+  await expectActivePage(page, "p6");
+
+  await page.locator("#nombre-paciente").fill("Paciente urgencia aceptada");
+  await page.locator("#fecha-nacimiento-paciente").fill("1958-11-02");
+  await page.locator("#p6").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
+  await expectActivePage(page, "p7");
+
+  const frame = page.frameLocator("#pdf-preview-frame");
+  await expect(frame.locator("#pdf")).toContainText("Hipoglicemia nivel 3");
+  await expect(frame.locator("#pdf")).toContainText("Sin dosis de NPH indicada en este documento");
+  await expect(frame.locator("#pdf")).toContainText("no emite una nueva pauta ambulatoria de NPH");
+});
