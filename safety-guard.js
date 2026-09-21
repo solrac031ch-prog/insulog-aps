@@ -1,7 +1,7 @@
 "use strict";
 
 (() => {
-  const EXPECTED_CLINICAL_VERSION = "APS-NPH-2026.09.14-r2";
+  const EXPECTED_CLINICAL_VERSION = "APS-NPH-2026.09.21-r3";
   const CRITICAL_ACTIONS = new Set([
     "define-initial-scheme", "calculate-initial", "calculate-followup", "generate-high-dose-note",
     "best-review-accept", "best-review-modify-save", "best-review-reassess",
@@ -55,6 +55,14 @@
       if (insufficient.dataSufficient !== false || insufficient.pm !== 20) throw new Error("Falló el autotest de bloqueo por datos insuficientes.");
       const hypoGate = engine.calculateFollowup({ weightKg: 100, regimenType: "2", amDose: 20, pmDose: 20, fastingValues: [69, 90, 100], preLunchValues: [250, 250, 250], targetA1c: 7 });
       if (hypoGate.am > 20 || hypoGate.pm > 20) throw new Error("Falló el autotest de bloqueo de aumentos ante hipoglicemia.");
+      const level3 = engine.recommendLevel3HypoglycemiaAdjustment({ regimenType: "2", amDose: 12, pmDose: 20, timing: "fasting", reversibleCause: "none", severeNeurologic: false });
+      if (!level3.automaticRecommendation || level3.am !== 12 || level3.pm !== 16 || level3.reductionPercent !== 20) {
+        throw new Error("Falló el autotest de reducción segura ante hipoglicemia nivel 3.");
+      }
+      const level3Blocked = engine.recommendLevel3HypoglycemiaAdjustment({ regimenType: "2", amDose: 12, pmDose: 20, timing: "fasting", reversibleCause: "reduced_intake", severeNeurologic: false });
+      if (level3Blocked.automaticRecommendation || !level3Blocked.requiresMedicalAdjustment) {
+        throw new Error("Falló el autotest de bloqueo de reducción automática ante causa reversible.");
+      }
       return true;
     } catch (error) {
       lock(error?.message || "Falló la verificación interna de seguridad.");
@@ -68,7 +76,7 @@
   }
 
   window.InsulogSafetyGuard = Object.freeze({
-    version: "2026.09.14-safety1",
+    version: "2026.09.21-safety2",
     expectedClinicalVersion: EXPECTED_CLINICAL_VERSION,
     selfTest, reportActionError,
     isLocked: () => locked,
