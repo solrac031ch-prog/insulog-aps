@@ -279,8 +279,8 @@
   actions.register("finish", finalizar);
 
   window.InsulogApp = Object.freeze({
-    version: "2026.09.14-clinical-r2",
-    clinicalVersion: "APS-NPH-2026.09.14-r2",
+    version: "2026.09.21-clinical-r3",
+    clinicalVersion: "APS-NPH-2026.09.21-r3",
     notes: Object.freeze({ render: renderNotaClinica }),
     inputs: Object.freeze({ handle: handleInput }),
     text: Object.freeze({ escapeHTML: notePresenter.escapeHTML })
