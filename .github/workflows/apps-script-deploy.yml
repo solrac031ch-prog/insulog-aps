@@ -80,7 +80,21 @@ jobs:
         run: |
           set -euo pipefail
           HEALTH_FILE="$RUNNER_TEMP/apps-script-health.json"
-          curl -fsSL --retry 3 --retry-delay 2 "$WEB_APP_URL" > "$HEALTH_FILE"
+
+          status=""
+          for attempt in {1..18}; do
+            status="$(curl -sS -L -o "$HEALTH_FILE" -w "%{http_code}" "$WEB_APP_URL" || true)"
+            if [ "$status" = "200" ]; then
+              break
+            fi
+            echo "Waiting for Apps Script deployment propagation (attempt $attempt/18, HTTP $status)..."
+            sleep 5
+          done
+
+          if [ "$status" != "200" ]; then
+            echo "::error::Apps Script endpoint did not become healthy after deployment (last HTTP $status)."
+            exit 1
+          fi
 
           python - "$HEALTH_FILE" <<'PY'
           import json
