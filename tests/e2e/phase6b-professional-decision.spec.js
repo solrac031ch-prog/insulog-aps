@@ -58,7 +58,9 @@ test("6B pide nombre sólo al generar documento y no lo almacena en el estado", 
   await page.locator("#p5").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
   await expectActivePage(page, "p6");
   await expect(page.locator("label[for='nombre-paciente']")).toHaveText("Nombre del paciente");
+  await expect(page.locator("label[for='fecha-nacimiento-paciente']")).toHaveText("Fecha de nacimiento");
   await page.locator("#nombre-paciente").fill("Paciente prueba");
+  await page.locator("#fecha-nacimiento-paciente").fill("1960-05-12");
   await page.locator("#p6").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
   await expectActivePage(page, "p7");
 
@@ -71,6 +73,48 @@ test("6B pide nombre sólo al generar documento y no lo almacena en el estado", 
   expect(state.pm).toBe(22);
   expect(state.professionalPm).toBe(21);
   expect(JSON.stringify(state)).not.toContain("Paciente prueba");
+  expect(JSON.stringify(state)).not.toContain("1960-05-12");
+});
+
+test("6B exige fecha de nacimiento antes de generar el documento", async ({ page }) => {
+  await openFollowupResult(page);
+  await modifyTo21(page, "Ajuste clínico deliberado por contexto del paciente");
+
+  await page.locator("#p5").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
+  await expectActivePage(page, "p6");
+  await page.locator("#nombre-paciente").fill("Paciente sin fecha");
+
+  let message = "";
+  page.once("dialog", async (dialog) => {
+    message = dialog.message();
+    await dialog.accept();
+  });
+  await page.locator("#p6").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
+
+  await expectActivePage(page, "p6");
+  expect(message).toContain("fecha de nacimiento");
+});
+
+test("6B informa si Drive está configurado en este dispositivo", async ({ page }) => {
+  await page.goto("/?driveEndpoint=https%3A%2F%2Fscript.google.com%2Fmacros%2Fs%2FTEST-ENDPOINT-123456%2Fexec");
+  await page.locator("#p0").getByRole("button", { name: "INICIAR ALGORITMO", exact: true }).click();
+  await page.locator("#p1").getByRole("button", { name: "NO", exact: true }).click();
+  await page.locator("#p2").getByRole("button", { name: "SEGUIMIENTO DE INSULINA", exact: true }).click();
+  await page.locator("#p35").getByRole("button", { name: "CONTINUAR AL REGISTRO DE GLICEMIAS", exact: true }).click();
+  await page.locator("#peso-seguimiento").fill("70");
+  await page.locator("#tipo-esquema").selectOption("pm");
+  await page.locator("#pm-actual").fill("20");
+  const fasting = page.locator("#tabla-seguimiento .ay");
+  await fasting.nth(0).fill("160");
+  await fasting.nth(1).fill("170");
+  await fasting.nth(2).fill("180");
+  await page.locator("#ajustar-seguimiento-btn").click();
+  await page.locator("#best-review-accept").click();
+  await page.locator("#p5").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
+
+  await expectActivePage(page, "p6");
+  await expect(page.locator("#drive-sync-status")).toContainText("Drive configurado en este dispositivo");
+  expect(page.url()).not.toContain("driveEndpoint");
 });
 
 test("6B no muestra historial local y declara almacenamiento identificatorio sólo en Drive", async ({ page }) => {
