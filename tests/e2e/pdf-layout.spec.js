@@ -22,6 +22,7 @@ test("PDF 8C mantiene jerarquía legible, aislamiento visual y tabla HGT usable"
   });
 
   await page.locator("#nombre-paciente").fill("María Fernanda González Pérez");
+  await page.locator("#fecha-nacimiento-paciente").fill("1965-03-14");
   await page.locator("#p6").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
   await expectActivePage(page, "p7");
 

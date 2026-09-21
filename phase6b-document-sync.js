@@ -11,7 +11,7 @@
   const state = runtime.state;
   const DRIVE_ENDPOINT_STORAGE_KEY = "insulog.drive.bridge.endpoint.v1";
   const DRIVE_ENDPOINT_PARAM = "driveEndpoint";
-  const DRIVE_BRIDGE_VERSION = "2026.09.15-drive-v1";
+  const DRIVE_BRIDGE_VERSION = "2026.09.21-drive-v2";
   const EXPECTED_DRIVE_HOST = /(^|\.)script\.google\.com$/i;
   const transientRetryQueue = [];
   let lastDriveFingerprint = "";
@@ -175,10 +175,23 @@
     return validDriveEndpoint(stored) ? stored : "";
   }
 
+  function renderDriveStatus() {
+    const node = document.getElementById("drive-sync-status");
+    if (!node) return;
+    const configured = Boolean(configuredDriveEndpoint());
+    node.className = configured
+      ? "alert alert-success compact-warning no-print"
+      : "alert alert-warning compact-warning no-print";
+    node.textContent = configured
+      ? "✓ Drive configurado en este dispositivo."
+      : "⚠ Drive no configurado en este dispositivo. El documento puede generarse, pero el control no se guardará en la base longitudinal.";
+  }
+
   function configureDriveEndpoint(endpoint) {
     const value = String(endpoint || "").trim();
     if (!validDriveEndpoint(value)) throw new Error("URL de Apps Script no válida. Debe terminar en /exec.");
     localStorage.setItem(DRIVE_ENDPOINT_STORAGE_KEY, value);
+    renderDriveStatus();
     return value;
   }
 
@@ -193,6 +206,11 @@
     configureDriveEndpoint(endpoint);
     url.searchParams.delete(DRIVE_ENDPOINT_PARAM);
     window.history.replaceState({}, document.title, url.toString());
+  }
+
+  function patientBirthDate() {
+    const value = String(document.getElementById("fecha-nacimiento-paciente")?.value || "").trim();
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : "";
   }
 
   function numericInputValues(selector) {
@@ -239,7 +257,8 @@
 
   function buildDriveRecord(tipo, data) {
     const patientName = String(document.getElementById("nombre-paciente")?.value || "").trim();
-    if (!patientName) return null;
+    const birthDate = patientBirthDate();
+    if (!patientName || !birthDate) return null;
 
     const fastingValues = numericInputValues("#tabla-seguimiento .ay");
     const preLunchValues = numericInputValues("#tabla-seguimiento .pre");
@@ -260,7 +279,7 @@
     const finalPm = numberOrZero(data.professionalPm);
     const decision = data.professionalDecision === "modificada" ? "Modificada" : "Aceptada";
     const note = rawClinicalNote();
-    const fingerprint = [patientName, tipo, note, decision, finalAm, finalPm, hba1c ?? ""].join("|");
+    const fingerprint = [patientName, birthDate, tipo, note, decision, finalAm, finalPm, hba1c ?? ""].join("|");
 
     return {
       bridgeVersion: DRIVE_BRIDGE_VERSION,
@@ -268,6 +287,7 @@
       sourceOrigin: window.location.origin,
       timestamp: new Date().toISOString(),
       patientName,
+      patientBirthDate: birthDate,
       documentType: tipo,
       controlKind: controlKind(tipo, data),
       weightKg: weight,
@@ -343,6 +363,10 @@
     }
   }
 
+  function clinicalFlowType() {
+    return /^INICIO\b/i.test(String(rawClinicalNote()).trim()) ? "inicio" : "seguimiento";
+  }
+
   function registerDocumentSync() {
     actions.decorate("show-document", (next) => (context) => {
       const data = state.snapshot();
@@ -350,10 +374,17 @@
         return next(context);
       }
 
+      const birthDateInput = document.getElementById("fecha-nacimiento-paciente");
+      if (!patientBirthDate()) {
+        alert("Ingrese la fecha de nacimiento del paciente para identificar correctamente el seguimiento longitudinal.");
+        birthDateInput?.focus();
+        return undefined;
+      }
+
       const original = { am: data.am, pm: data.pm, dosisKg: data.dosisKg };
       const am = numberOrZero(data.professionalAm);
       const pm = numberOrZero(data.professionalPm);
-      const tipo = context?.element?.dataset.documentType || state.get("tipoDocumento") || "seguimiento";
+      const tipo = clinicalFlowType();
       const driveRecord = buildDriveRecord(tipo, data);
 
       state.patch({ am, pm, dosisKg: data.professionalDosePerKg ?? data.dosisKg });
@@ -367,6 +398,7 @@
 
   function init() {
     configureDriveEndpointFromQuery();
+    renderDriveStatus();
     injectFollowupHbA1cField();
     registerProfessionalOverbasalizationOverride();
     registerDocumentSync();
@@ -377,7 +409,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.15-phase6b-document-sync-drive-followup",
+    version: "2026.09.21-phase6b-document-sync-drive-identity",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),
