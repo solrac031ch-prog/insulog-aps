@@ -63,6 +63,7 @@ test("criterio profesional prevalece ante alerta de urgencia y llega al PDF con 
   await expectActivePage(page, "p6");
 
   await page.locator("#nombre-paciente").fill("Paciente criterio médico");
+  await page.locator("#fecha-nacimiento-paciente").fill("1958-11-02");
   await page.locator("#p6").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
   await expectActivePage(page, "p7");
 
