@@ -16,19 +16,20 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  configuration-required:
-    if: ${{ secrets.CLASPRC_JSON == '' || secrets.APPS_SCRIPT_ID == '' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Explain one-time setup
-        run: |
-          echo "::notice::Apps Script auto-deploy is ready but requires repository secrets CLASPRC_JSON and APPS_SCRIPT_ID."
-          echo "::notice::Do not commit Google OAuth credentials to the repository."
-
   deploy:
-    if: ${{ secrets.CLASPRC_JSON != '' && secrets.APPS_SCRIPT_ID != '' }}
     runs-on: ubuntu-latest
+    env:
+      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+      APPS_SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
+
     steps:
+      - name: Validate deployment secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLASPRC_JSON" || { echo "::error::Missing CLASPRC_JSON repository secret."; exit 1; }
+          test -n "$APPS_SCRIPT_ID" || { echo "::error::Missing APPS_SCRIPT_ID repository secret."; exit 1; }
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -41,9 +42,7 @@ jobs:
         run: npm install --global @google/clasp@3.4.1
 
       - name: Configure clasp securely
-        env:
-          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
-          APPS_SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
+        shell: bash
         run: |
           set -euo pipefail
           AUTH_FILE="$RUNNER_TEMP/.clasprc.json"
@@ -60,6 +59,7 @@ jobs:
           echo "clasp_config_auth=$AUTH_FILE" >> "$GITHUB_ENV"
 
       - name: Push source to Apps Script
+        shell: bash
         run: |
           set -euo pipefail
           clasp show-file-status
@@ -68,6 +68,7 @@ jobs:
       - name: Update existing web app deployment
         env:
           APPS_SCRIPT_DEPLOYMENT_ID: "AKfycbx203QzIWqGmeTh_p1XjjmADWBuu_L3RJmUoV9A1fk12_OEtnhkSLq62bgup0ERe3IlBw"
+        shell: bash
         run: |
           set -euo pipefail
           clasp update-deployment "$APPS_SCRIPT_DEPLOYMENT_ID" --description "Insulog GitHub $GITHUB_SHA"
@@ -75,6 +76,7 @@ jobs:
       - name: Verify deployed bridge version
         env:
           WEB_APP_URL: "https://script.google.com/macros/s/AKfycbx203QzIWqGmeTh_p1XjjmADWBuu_L3RJmUoV9A1fk12_OEtnhkSLq62bgup0ERe3IlBw/exec"
+        shell: bash
         run: |
           set -euo pipefail
           HEALTH_FILE="$RUNNER_TEMP/apps-script-health.json"
