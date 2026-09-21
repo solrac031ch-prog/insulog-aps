@@ -159,6 +159,34 @@
       </div>`);
   }
 
+  function injectPatientIdentityFields() {
+    const nameField = document.getElementById("nombre-paciente")?.closest(".patient-field");
+    if (!nameField || document.getElementById("fecha-nacimiento-paciente")) return;
+
+    nameField.insertAdjacentHTML("afterend", `
+      <div class="field patient-field no-print" id="fecha-nacimiento-paciente-field">
+        <label for="fecha-nacimiento-paciente">Fecha de nacimiento</label>
+        <input type="date" id="fecha-nacimiento-paciente" autocomplete="bday">
+        <p class="helper-text">Se usa junto con el nombre para vincular correctamente los controles longitudinales.</p>
+      </div>
+      <div id="drive-sync-status" class="alert no-print" role="status" aria-live="polite"></div>`);
+  }
+
+  function currentPatientBirthDate() {
+    const value = String(document.getElementById("fecha-nacimiento-paciente")?.value || "").trim();
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : "";
+  }
+
+  function renderDriveStatus() {
+    const node = document.getElementById("drive-sync-status");
+    if (!node) return;
+    const configured = Boolean(configuredDriveEndpoint());
+    node.className = `alert ${configured ? "alert-success" : "alert-warning"} no-print`;
+    node.innerHTML = configured
+      ? "<strong>✓ Drive conectado</strong><p>Este control se enviará a la base longitudinal al generar el documento.</p>"
+      : "<strong>⚠ Drive no configurado</strong><p>El documento puede generarse, pero este control no se guardará en la base longitudinal.</p>";
+  }
+
   function validDriveEndpoint(value) {
     try {
       const url = new URL(String(value || "").trim());
@@ -179,6 +207,7 @@
     const value = String(endpoint || "").trim();
     if (!validDriveEndpoint(value)) throw new Error("URL de Apps Script no válida. Debe terminar en /exec.");
     localStorage.setItem(DRIVE_ENDPOINT_STORAGE_KEY, value);
+    renderDriveStatus();
     return value;
   }
 
@@ -239,6 +268,7 @@
 
   function buildDriveRecord(tipo, data) {
     const patientName = String(document.getElementById("nombre-paciente")?.value || "").trim();
+    const patientBirthDate = currentPatientBirthDate();
     if (!patientName) return null;
 
     const fastingValues = numericInputValues("#tabla-seguimiento .ay");
@@ -260,7 +290,7 @@
     const finalPm = numberOrZero(data.professionalPm);
     const decision = data.professionalDecision === "modificada" ? "Modificada" : "Aceptada";
     const note = rawClinicalNote();
-    const fingerprint = [patientName, tipo, note, decision, finalAm, finalPm, hba1c ?? ""].join("|");
+    const fingerprint = [patientName, patientBirthDate, tipo, note, decision, finalAm, finalPm, hba1c ?? ""].join("|");
 
     return {
       bridgeVersion: DRIVE_BRIDGE_VERSION,
@@ -268,6 +298,7 @@
       sourceOrigin: window.location.origin,
       timestamp: new Date().toISOString(),
       patientName,
+      patientBirthDate,
       documentType: tipo,
       controlKind: controlKind(tipo, data),
       weightKg: weight,
@@ -350,6 +381,12 @@
         return next(context);
       }
 
+      if (configuredDriveEndpoint() && !currentPatientBirthDate()) {
+        alert("Ingrese la fecha de nacimiento antes de generar el documento. Se utiliza junto con el nombre para identificar correctamente al paciente en el seguimiento longitudinal.");
+        document.getElementById("fecha-nacimiento-paciente")?.focus();
+        return undefined;
+      }
+
       const original = { am: data.am, pm: data.pm, dosisKg: data.dosisKg };
       const am = numberOrZero(data.professionalAm);
       const pm = numberOrZero(data.professionalPm);
@@ -368,6 +405,8 @@
   function init() {
     configureDriveEndpointFromQuery();
     injectFollowupHbA1cField();
+    injectPatientIdentityFields();
+    renderDriveStatus();
     registerProfessionalOverbasalizationOverride();
     registerDocumentSync();
     disableTemporaryHistoryActions();
@@ -377,7 +416,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.15-phase6b-document-sync-drive-followup",
+    version: "2026.09.21-phase6b-document-sync-drive-followup-dob-status",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),
