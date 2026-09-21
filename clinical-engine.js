@@ -167,7 +167,7 @@
 
     if (requiredAssistance) return Object.freeze({
       nivel: 3, minimo: minimum, urgent: true,
-      nota: "Hipoglicemia nivel 3 referida: requirió asistencia de otra persona. Requiere reevaluación clínica prioritaria del esquema, sin escalamiento automático de NPH y con revisión estructurada antes de emitir una pauta."
+      nota: "Hipoglicemia nivel 3 referida: requirió asistencia de otra persona. Derivación inmediata a Unidad de Emergencia Hospitalaria y sin titulación automática de NPH."
     });
     if (!hypoglycemicValues.length) return null;
     if (minimum < 54) return Object.freeze({ nivel: 2, minimo: minimum, urgent: false, nota: "Hipoglicemia nivel 2 detectada (<54 mg/dL): requiere tratamiento inmediato del episodio y reevaluación del esquema." });
