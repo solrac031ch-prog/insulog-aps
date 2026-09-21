@@ -213,6 +213,24 @@
     return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : "";
   }
 
+  function concomitantMedicationSnapshot(tipo, data) {
+    const scope = tipo === "inicio" ? "inicio" : "seguimiento";
+    const medications = Array.from(document.querySelectorAll(`input[data-aps-med="${scope}"]:checked`))
+      .map((input) => {
+        const label = String(input.dataset.baseLabel || input.dataset.label || "").trim();
+        const dose = String(input.closest("label")?.querySelector(".aps-med-dose")?.value || "").trim();
+        const key = String(input.dataset.medKey || "").trim();
+        const text = String(input.dataset.label || label || "").trim();
+        return { key, label, dose, text };
+      })
+      .filter((item) => item.key || item.text);
+
+    const text = String(data.tratamientoConcomitante || "").trim()
+      || (medications.length ? medications.map((item) => item.text).join("; ") : "No registrado");
+
+    return { text, medications };
+  }
+
   function numericInputValues(selector) {
     return Array.from(document.querySelectorAll(selector))
       .map((input) => Number.parseInt(input.value, 10))
@@ -279,7 +297,8 @@
     const finalPm = numberOrZero(data.professionalPm);
     const decision = data.professionalDecision === "modificada" ? "Modificada" : "Aceptada";
     const note = rawClinicalNote();
-    const fingerprint = [patientName, birthDate, tipo, note, decision, finalAm, finalPm, hba1c ?? ""].join("|");
+    const medication = concomitantMedicationSnapshot(tipo, data);
+    const fingerprint = [patientName, birthDate, tipo, note, decision, finalAm, finalPm, hba1c ?? "", medication.text].join("|");
 
     return {
       bridgeVersion: DRIVE_BRIDGE_VERSION,
@@ -313,6 +332,8 @@
       professionalDecision: decision,
       professionalReason: String(data.professionalReason || "").trim(),
       professionalDosePerKg: safeNumber(data.professionalDosePerKg),
+      concomitantTreatment: medication.text,
+      concomitantMedications: medication.medications,
       urgencyRoute: isUrgencyRoute(),
       clinicalEngineVersion: window.InsulogClinicalEngine?.version || "",
       documentModuleVersion: window.InsulogDocuments?.version || "",
@@ -409,7 +430,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.21-phase6b-document-sync-drive-identity",
+    version: "2026.09.21-phase6b-document-sync-medications",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),
