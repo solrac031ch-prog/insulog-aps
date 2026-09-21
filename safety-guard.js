@@ -1,7 +1,7 @@
 "use strict";
 
 (() => {
-  const EXPECTED_CLINICAL_VERSION = "APS-NPH-2026.09.14-r2";
+  const EXPECTED_CLINICAL_VERSION = "APS-NPH-2026.09.21-r3";
   const CRITICAL_ACTIONS = new Set([
     "define-initial-scheme", "calculate-initial", "calculate-followup", "generate-high-dose-note",
     "best-review-accept", "best-review-modify-save", "best-review-reassess",
