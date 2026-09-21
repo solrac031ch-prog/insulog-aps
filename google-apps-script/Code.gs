@@ -7,7 +7,7 @@ const INSULOG_DRIVE_CONFIG = Object.freeze({
   eventsSheet: "Eventos",
   allowedOrigins: ["https://solrac031ch-prog.github.io"],
   bridgeVersion: "2026.09.15-drive-v1",
-  schemaVersion: "2026.09.15-schema-v2"
+  schemaVersion: "2026.09.21-schema-v3"
 });
 
 function doGet() {
@@ -84,6 +84,11 @@ function validatePayload_(payload) {
   const patientName = cleanName_(payload.patientName);
   if (patientName.length < 3 || patientName.length > 160) throw new Error("Nombre de paciente inválido.");
 
+  const rawBirthDate = String(payload.patientBirthDate || "").trim();
+  if (rawBirthDate && !normalizeBirthDate_(rawBirthDate)) {
+    throw new Error("Fecha de nacimiento inválida.");
+  }
+
   const documentType = String(payload.documentType || "").trim();
   if (["inicio", "seguimiento"].indexOf(documentType) === -1) {
     throw new Error("Tipo de documento inválido.");
@@ -151,18 +156,43 @@ function cohortEntryType_(payload) {
 function upsertPatient_(sheet, payload, timestamp) {
   const patientName = cleanName_(payload.patientName);
   const normalized = normalizeName_(patientName);
+  const birthDate = normalizeBirthDate_(payload.patientBirthDate);
   const lastRow = sheet.getLastRow();
   let patientRow = 0;
   let patientId = "";
 
   if (lastRow >= 2) {
     const rows = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
+    const nameMatches = [];
+
     for (let index = 0; index < rows.length; index += 1) {
-      if (normalizeName_(rows[index][1]) === normalized) {
-        patientRow = index + 2;
-        patientId = String(rows[index][0] || "").trim();
-        break;
+      if (normalizeName_(rows[index][1]) !== normalized) continue;
+      nameMatches.push({
+        row: index + 2,
+        patientId: String(rows[index][0] || "").trim(),
+        birthDate: normalizeBirthDate_(rows[index][2])
+      });
+    }
+
+    if (birthDate) {
+      const exactMatches = nameMatches.filter((candidate) => candidate.birthDate === birthDate);
+      if (exactMatches.length > 1) throw new Error("Identidad duplicada en Pacientes: mismo nombre y fecha de nacimiento.");
+      if (exactMatches.length === 1) {
+        patientRow = exactMatches[0].row;
+        patientId = exactMatches[0].patientId;
+      } else if (nameMatches.length === 1 && !nameMatches[0].birthDate) {
+        // Migración segura de registros históricos creados antes de capturar fecha de nacimiento.
+        patientRow = nameMatches[0].row;
+        patientId = nameMatches[0].patientId;
+      } else if (nameMatches.some((candidate) => !candidate.birthDate)) {
+        throw new Error("Identidad ambigua: existen pacientes homónimos sin fecha de nacimiento.");
       }
+    } else if (nameMatches.length === 1) {
+      // Compatibilidad temporal con clientes anteriores a 2026.09.21.
+      patientRow = nameMatches[0].row;
+      patientId = nameMatches[0].patientId;
+    } else if (nameMatches.length > 1) {
+      throw new Error("Identidad ambigua: se requiere fecha de nacimiento.");
     }
   }
 
@@ -179,7 +209,7 @@ function upsertPatient_(sheet, payload, timestamp) {
     sheet.appendRow([
       patientId,
       patientName,
-      "",
+      birthDate || "",
       "",
       timestamp,
       timestamp,
@@ -207,6 +237,9 @@ function upsertPatient_(sheet, payload, timestamp) {
   }
 
   sheet.getRange(patientRow, 2).setValue(patientName);
+  if (birthDate && sheet.getRange(patientRow, 3).isBlank()) {
+    sheet.getRange(patientRow, 3).setValue(birthDate);
+  }
   sheet.getRange(patientRow, 6).setValue(timestamp);
   sheet.getRange(patientRow, 7).setValue("Activo");
 
@@ -325,6 +358,28 @@ function normalizeName_(value) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("es-CL");
+}
+
+function normalizeBirthDate_(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone() || "America/Santiago", "yyyy-MM-dd");
+  }
+
+  const text = String(value || "").trim();
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+  if (!match) return "";
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) return "";
+
+  return text;
 }
 
 function safeDate_(value) {
