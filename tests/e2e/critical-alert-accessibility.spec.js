@@ -73,9 +73,15 @@ test("un HGT <70 pregunta por nivel 3 y la respuesta afirmativa bloquea titulaci
   await expect(page.locator(".aps-hypo-question")).toContainText("nivel 3");
   await page.locator("#hipo-con-ayuda").click();
 
+  await expect(page.locator("#hipo3-review-panel")).toBeVisible();
+  await page.locator("#hipo3-momento").selectOption("fasting");
+  await page.locator("#hipo3-causa").selectOption("none");
+  await page.locator("#hipo3-neuro").selectOption("no");
+  await page.locator("#hipo3-continuar").click();
+
   await expect(page.locator("#p5")).toHaveClass(/active/);
   await expect(page.locator("#nota-clinica")).toContainText("HIPOGLICEMIA NIVEL 3");
-  await expect(page.locator("#nota-clinica")).toContainText("No se realiza ajuste automático de NPH");
+  await expect(page.locator("#nota-clinica")).toContainText("PROPUESTA INSULOG: reducir 20% la NPH PM");
 });
 
 test("la revisión de dosis alta lleva el foco al encabezado clínico de P41", async ({ page }) => {

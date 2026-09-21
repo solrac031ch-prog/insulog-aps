@@ -10,13 +10,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Insulog APS">
-  <link rel="manifest" href="./manifest.webmanifest?v=eec27a9863703cca">
-  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/icon-32.png?v=eec27a9863703cca">
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/icon-180.png?v=eec27a9863703cca">
-  <link rel="stylesheet" href="./styles.css?v=eec27a9863703cca">
-  <link rel="stylesheet" href="./document-flow.css?v=eec27a9863703cca">
-  <link rel="stylesheet" href="./aps-safety-2026.css?v=eec27a9863703cca">
-  <link rel="stylesheet" href="./farmacia-popular.css?v=eec27a9863703cca">
+  <link rel="manifest" href="./manifest.webmanifest?v=1f01210d7ea3792e">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/icon-32.png?v=1f01210d7ea3792e">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/icon-180.png?v=1f01210d7ea3792e">
+  <link rel="stylesheet" href="./styles.css?v=1f01210d7ea3792e">
+  <link rel="stylesheet" href="./document-flow.css?v=1f01210d7ea3792e">
+  <link rel="stylesheet" href="./aps-safety-2026.css?v=1f01210d7ea3792e">
+  <link rel="stylesheet" href="./farmacia-popular.css?v=1f01210d7ea3792e">
   <title>Insulog APS | Insulinización en APS</title>
 </head>
 <body>
@@ -290,6 +290,52 @@
           <button id="hipo-con-ayuda" type="button" class="btn btn-danger">SÍ, FUE NIVEL 3</button>
         </div>
         <p class="aps-context-helper aps-hypo-footnote">Nivel 3 significa que el episodio requirió asistencia de otra persona para su recuperación.</p>
+
+        <div id="hipo3-review-panel" class="card compact-card text-left is-hidden" aria-hidden="true">
+          <p class="card-title">Antes de generar la propuesta de Insulog</p>
+          <p class="helper-text">La reducción automática solo se propone cuando el momento del episodio permite identificar la dosis probablemente implicada y no hay una causa reversible clara.</p>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="hipo3-momento">Momento predominante del episodio</label>
+              <select id="hipo3-momento">
+                <option value="">Seleccione…</option>
+                <option value="fasting">Nocturno / madrugada / al despertar / ayuno</option>
+                <option value="daytime">Mañana / antes de almuerzo / período diurno</option>
+                <option value="unclear">Otro momento o no está claro</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="hipo3-causa">Causa precipitante principal</label>
+              <select id="hipo3-causa">
+                <option value="">Seleccione…</option>
+                <option value="none">No se identifica una causa reversible clara</option>
+                <option value="reduced_intake">Comida omitida, ayuno o ingesta reducida</option>
+                <option value="exercise_alcohol">Ejercicio o alcohol mayor a lo habitual</option>
+                <option value="dose_error">Error de dosis, horario o administración</option>
+                <option value="illness_renal">Intercurrencia, deterioro renal o cambio clínico relevante</option>
+                <option value="other">Otra causa reversible o incierta</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="hipo3-neuro">¿Hubo pérdida de conciencia o convulsión?</label>
+              <select id="hipo3-neuro">
+                <option value="">Seleccione…</option>
+                <option value="no">No</option>
+                <option value="yes">Sí</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="alert alert-warning compact-warning">
+            <strong>Regla de seguridad Insulog</strong>
+            <p>Si el patrón es claro y no hay causa reversible identificada, Insulog puede proponer reducir 20% la dosis de NPH probablemente implicada. En situaciones ambiguas o de mayor gravedad, el ajuste queda a criterio médico.</p>
+          </div>
+
+          <button id="hipo3-continuar" type="button" class="btn btn-main btn-narrow">GENERAR RECOMENDACIÓN INSULOG</button>
+        </div>
       </div>
 
       <div id="resumen-promedios" class="card compact-card is-hidden"></div>
@@ -380,7 +426,7 @@
       </div>
 
       <div class="pdf-preview-frame-shell no-print">
-        <iframe id="pdf-preview-frame" class="pdf-preview-frame" src="./pdf-preview.html?v=eec27a9863703cca" title="Vista previa del documento del paciente" aria-busy="true"></iframe>
+        <iframe id="pdf-preview-frame" class="pdf-preview-frame" src="./pdf-preview.html?v=1f01210d7ea3792e" title="Vista previa del documento del paciente" aria-busy="true"></iframe>
       </div>
     </section>
   </main>
@@ -392,19 +438,19 @@
 
   <div id="pdf" class="imprimible-container pdf-render-staging" aria-hidden="true"></div>
 
-  <script src="./app-runtime.js?v=eec27a9863703cca"></script>
-  <script src="./clinical-engine.js?v=eec27a9863703cca"></script>
-  <script src="./clinical-copy.js?v=eec27a9863703cca"></script>
-  <script src="./note-presenter.js?v=eec27a9863703cca"></script>
-  <script src="./app.js?v=eec27a9863703cca"></script>
-  <script src="./safety-guard.js?v=eec27a9863703cca"></script>
-  <script src="./patient-document.js?v=eec27a9863703cca"></script>
-  <script src="./pdf-enhancements.js?v=eec27a9863703cca"></script>
-  <script src="./aps-safety-2026.js?v=eec27a9863703cca"></script>
-  <script src="./farmacia-popular.js?v=eec27a9863703cca"></script>
-  <script src="./document-flow.js?v=eec27a9863703cca"></script>
-  <script src="./app-shell.js?v=eec27a9863703cca"></script>
-  <script src="./phase6b-professional-decision.js?v=eec27a9863703cca"></script>
-  <script src="./phase6b-document-sync.js?v=eec27a9863703cca"></script>
+  <script src="./app-runtime.js?v=1f01210d7ea3792e"></script>
+  <script src="./clinical-engine.js?v=1f01210d7ea3792e"></script>
+  <script src="./clinical-copy.js?v=1f01210d7ea3792e"></script>
+  <script src="./note-presenter.js?v=1f01210d7ea3792e"></script>
+  <script src="./app.js?v=1f01210d7ea3792e"></script>
+  <script src="./safety-guard.js?v=1f01210d7ea3792e"></script>
+  <script src="./patient-document.js?v=1f01210d7ea3792e"></script>
+  <script src="./pdf-enhancements.js?v=1f01210d7ea3792e"></script>
+  <script src="./aps-safety-2026.js?v=1f01210d7ea3792e"></script>
+  <script src="./farmacia-popular.js?v=1f01210d7ea3792e"></script>
+  <script src="./document-flow.js?v=1f01210d7ea3792e"></script>
+  <script src="./app-shell.js?v=1f01210d7ea3792e"></script>
+  <script src="./phase6b-professional-decision.js?v=1f01210d7ea3792e"></script>
+  <script src="./phase6b-document-sync.js?v=1f01210d7ea3792e"></script>
 </body>
 </html>

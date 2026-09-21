@@ -124,7 +124,12 @@
     const pm = Number(data.pm) || 0;
     const clinicalNote = byId("nota-clinica")?.dataset.rawText || byId("nota-clinica")?.innerText || "";
     const level3Urgency = /HIPOGLICEMIA NIVEL 3/i.test(clinicalNote);
-    const urgencyAccepted = level3Urgency && data.professionalDecision === "aceptada";
+    const level3AutomaticAccepted = level3Urgency
+      && data.professionalDecision === "aceptada"
+      && data.level3AutomaticRecommendation === true;
+    const urgencyAcceptedWithoutDose = level3Urgency
+      && data.professionalDecision === "aceptada"
+      && data.level3AutomaticRecommendation !== true;
     const urgencyModified = level3Urgency && data.professionalDecision === "modificada";
 
     const header = `
@@ -162,16 +167,23 @@
           .map((accion) => escapeHTML(accion.replace("- ", "")))
         : [];
 
-      if (urgencyAccepted) {
+      if (urgencyAcceptedWithoutDose) {
         cuerpo = `
           ${dosis}
           <section class="pdf-alert-important">
-            <div class="pdf-section-title">Hipoglicemia nivel 3 · conducta de urgencia aceptada</div>
-            <p><strong>Insulog no emite una nueva pauta ambulatoria de NPH en este documento.</strong></p>
-            <p>Se mantiene la alerta de hipoglicemia nivel 3 y la ruta de urgencia indicada en la evaluación clínica. El esquema de insulina debe reevaluarse antes de reiniciar una titulación ambulatoria.</p>
+            <div class="pdf-section-title">Hipoglicemia nivel 3 · ajuste médico requerido</div>
+            <p><strong>Insulog no identificó un patrón suficientemente seguro para proponer una reducción porcentual automática.</strong></p>
+            <p>Se mantiene la alerta de hipoglicemia nivel 3 y el esquema de insulina debe reevaluarse clínicamente antes de reiniciar una titulación ambulatoria.</p>
           </section>
           ${bloqueControlFirma()}`;
       } else {
+        const automaticWarning = level3AutomaticAccepted
+          ? `<section class="pdf-alert-important">
+              <div class="pdf-section-title">Hipoglicemia nivel 3 · propuesta Insulog aceptada</div>
+              <p><strong>Se aceptó reducir ${escapeHTML(String(data.level3ReductionPercent || 20))}% la NPH ${escapeHTML(String(data.level3ImplicatedDose || "").toUpperCase())} probablemente implicada.</strong></p>
+              <p>Esta reducción porcentual corresponde a una regla de seguridad de Insulog para un patrón claro y sin causa reversible identificada. Se mantiene la necesidad de reevaluación clínica, educación en hipoglicemia y revisión de glucagón.</p>
+            </section>`
+          : "";
         const overrideWarning = urgencyModified
           ? `<section class="pdf-alert-important">
               <div class="pdf-section-title">Hipoglicemia nivel 3 · pauta modificada por el profesional</div>
@@ -180,6 +192,7 @@
           : "";
 
         cuerpo = `
+          ${automaticWarning}
           ${overrideWarning}
           ${dosis}
           ${bloqueIndicaciones("Indicaciones de continuidad", [
@@ -227,7 +240,7 @@
   }
 
   window.InsulogDocuments = Object.freeze({
-    version: "2026.09.21-phase8d-level3-decision",
+    version: "2026.09.21-phase8e-level3-dose-decision",
     generate: generarDocumento,
     useEnhancer
   });

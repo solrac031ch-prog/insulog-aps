@@ -305,11 +305,35 @@
     return clinicalEngine.classifyHypoglycemia(valoresGlicemiaSeguimiento(), requirioAyuda);
   }
 
+  function ocultarRevisionNivel3() {
+    const panel = document.getElementById("hipo3-review-panel");
+    if (!panel) return;
+    panel.classList.add("is-hidden");
+    panel.setAttribute("aria-hidden", "true");
+  }
+
+  function mostrarRevisionNivel3() {
+    const panel = document.getElementById("hipo3-review-panel");
+    if (!panel) return;
+    panel.classList.remove("is-hidden");
+    panel.setAttribute("aria-hidden", "false");
+    panel.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function limpiarRevisionNivel3() {
+    ["hipo3-momento", "hipo3-causa", "hipo3-neuro"].forEach((id) => {
+      const field = document.getElementById(id);
+      if (field) field.value = "";
+    });
+    ocultarRevisionNivel3();
+  }
+
   function ocultarRevisionHipoglicemia() {
     const alerta = document.getElementById("alerta-hipoglicemia-ada");
     if (!alerta) return;
     alerta.classList.add("is-hidden");
     alerta.setAttribute("aria-hidden", "true");
+    ocultarRevisionNivel3();
   }
 
   function mostrarRevisionHipoglicemia(evento) {
@@ -318,6 +342,7 @@
     const descripcion = document.getElementById("hipo-ada-descripcion");
     if (!alerta || !titulo || !descripcion) return;
 
+    ocultarRevisionNivel3();
     titulo.textContent = "⚠️ Hipoglicemia detectada";
     descripcion.textContent = evento.nivel === 2
       ? `Se registró al menos un HGT <54 mg/dL (mínimo ${evento.minimo} mg/dL). Antes de ajustar la NPH, confirme si alguno de los episodios fue nivel 3.`
@@ -328,12 +353,36 @@
     alerta.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
+  function confirmarRevisionNivel3() {
+    const timing = document.getElementById("hipo3-momento")?.value || "";
+    const reversibleCause = document.getElementById("hipo3-causa")?.value || "";
+    const neuro = document.getElementById("hipo3-neuro")?.value || "";
+
+    if (!timing || !reversibleCause || !neuro) {
+      alert("Complete momento del episodio, causa precipitante y presencia de pérdida de conciencia/convulsión.");
+      return;
+    }
+
+    safetyState.revisionHipo = {
+      firma: firmaRegistroGlicemias(),
+      requirioAyuda: true,
+      timing,
+      reversibleCause,
+      severeNeurologic: neuro === "yes"
+    };
+
+    actions.invoke("calculate-followup");
+  }
+
   function configurarRevisionHipoglicemia() {
     const sinAyuda = document.getElementById("hipo-sin-ayuda");
     const conAyuda = document.getElementById("hipo-con-ayuda");
+    const continuarNivel3 = document.getElementById("hipo3-continuar");
 
     sinAyuda?.addEventListener("click", () => resolverRevisionHipoglicemia(false));
     conAyuda?.addEventListener("click", () => resolverRevisionHipoglicemia(true));
+    continuarNivel3?.addEventListener("click", confirmarRevisionNivel3);
+    limpiarRevisionNivel3();
     ocultarRevisionHipoglicemia();
   }
 
@@ -342,16 +391,24 @@
 
     if (!evento) {
       safetyState.revisionHipo = null;
+      limpiarRevisionNivel3();
       ocultarRevisionHipoglicemia();
       actions.invoke("calculate-followup");
       return;
     }
 
+    if (requirioAyuda) {
+      safetyState.revisionHipo = null;
+      mostrarRevisionNivel3();
+      return;
+    }
+
     safetyState.revisionHipo = {
       firma: firmaRegistroGlicemias(),
-      requirioAyuda
+      requirioAyuda: false
     };
 
+    limpiarRevisionNivel3();
     actions.invoke("calculate-followup");
   }
 
@@ -389,6 +446,24 @@
     return valores.length ? Math.round(valores.reduce((a, b) => a + b, 0) / valores.length) : "N/A";
   }
 
+  function etiquetaMomentoNivel3(value) {
+    if (value === "fasting") return "Nocturno / madrugada / ayuno";
+    if (value === "daytime") return "Mañana / período diurno / pre-almuerzo";
+    return "Otro o incierto";
+  }
+
+  function etiquetaCausaNivel3(value) {
+    const labels = {
+      none: "Sin causa reversible clara identificada",
+      reduced_intake: "Comida omitida, ayuno o ingesta reducida",
+      exercise_alcohol: "Ejercicio o alcohol mayor a lo habitual",
+      dose_error: "Error de dosis, horario o administración",
+      illness_renal: "Intercurrencia, deterioro renal o cambio clínico relevante",
+      other: "Otra causa reversible o incierta"
+    };
+    return labels[value] || "Causa incierta";
+  }
+
   function manejarHipoglicemiaNivel3() {
     const peso = parseFloat(document.getElementById("peso-seguimiento")?.value);
     const tipo = document.getElementById("tipo-esquema")?.value;
@@ -408,6 +483,16 @@
       return true;
     }
 
+    const revision = safetyState.revisionHipo || {};
+    const recommendation = clinicalEngine.recommendLevel3HypoglycemiaAdjustment({
+      regimenType: tipo,
+      amDose: am,
+      pmDose: pm,
+      timing: revision.timing,
+      reversibleCause: revision.reversibleCause,
+      severeNeurologic: revision.severeNeurologic
+    });
+
     const ayunas = Array.from(document.querySelectorAll(".ay"))
       .map((input) => parseInt(input.value, 10))
       .filter((value) => Number.isFinite(value));
@@ -415,21 +500,55 @@
       .map((input) => parseInt(input.value, 10))
       .filter((value) => Number.isFinite(value));
 
+    const proposedAm = recommendation.automaticRecommendation ? recommendation.am : am;
+    const proposedPm = recommendation.automaticRecommendation ? recommendation.pm : pm;
+    const doseLabel = recommendation.implicatedDose === "pm" ? "PM" : (recommendation.implicatedDose === "am" ? "AM" : "");
+    const proposedText = recommendation.automaticRecommendation
+      ? `PROPUESTA INSULOG: reducir 20% la NPH ${doseLabel} probablemente implicada. Esquema propuesto: AM ${proposedAm} UI | PM ${proposedPm} UI.`
+      : `PROPUESTA INSULOG: AJUSTE MÉDICO REQUERIDO. ${recommendation.reason}`;
+
+    const acciones = [
+      "Reevaluación clínica prioritaria del esquema de insulina y de las causas del evento.",
+      "Reforzar educación estructurada para prevención y tratamiento de hipoglicemia.",
+      "Verificar disponibilidad de glucagón y entrenamiento de familiares/cuidadores.",
+      "Evitar nuevos aumentos de NPH hasta completar la reevaluación."
+    ].map((item) => `- ${item}`).join("\n");
+
     state.patch({
       amActual: am,
       pmActual: pm,
-      am,
-      pm,
+      am: proposedAm,
+      pm: proposedPm,
       promAy: promedio(ayunas),
       promPre: promedio(preonce),
       promedioGlobal: promedio([...ayunas, ...preonce]),
-      dosisKg: (am + pm) / peso,
-      acciones: "",
-      tratamientoConcomitante: tratamientoTexto("seguimiento")
+      dosisKg: (proposedAm + proposedPm) / peso,
+      acciones,
+      tratamientoConcomitante: tratamientoTexto("seguimiento"),
+      level3Hypoglycemia: true,
+      level3Timing: recommendation.timing,
+      level3ReversibleCause: recommendation.reversibleCause,
+      level3SevereNeurologic: recommendation.severeNeurologic,
+      level3AutomaticRecommendation: recommendation.automaticRecommendation,
+      level3RequiresMedicalAdjustment: recommendation.requiresMedicalAdjustment,
+      level3ImplicatedDose: recommendation.implicatedDose,
+      level3ReductionPercent: recommendation.reductionPercent,
+      level3RecommendationReason: recommendation.reason
     });
 
     const data = state.snapshot();
-    const nota = `SEGUIMIENTO APS\nALERTA: HIPOGLICEMIA NIVEL 3 REFERIDA (requirió asistencia de otra persona).\nNo se realiza ajuste automático de NPH.\nPromedios descriptivos sin excluir valores: Ayunas ${data.promAy} mg/dL | Preonce ${data.promPre} mg/dL\nPromedio capilar global del registro: ${data.promedioGlobal} mg/dL\nEsquema actual: AM ${am} UI | PM ${pm} UI\nTratamiento concomitante: ${data.tratamientoConcomitante}\nConducta: reevaluación clínica prioritaria del esquema de insulina y de las causas del evento. Revisar técnica de administración, horario, ingesta, ejercicio, función renal, fragilidad y apoyo del paciente.\nReforzar educación para prevención y tratamiento de hipoglicemia.`;
+    const nota = `SEGUIMIENTO APS
+ALERTA: HIPOGLICEMIA NIVEL 3 REFERIDA (requirió asistencia de otra persona).
+Promedios descriptivos sin excluir valores: Ayunas ${data.promAy} mg/dL | Preonce ${data.promPre} mg/dL
+Promedio capilar global del registro: ${data.promedioGlobal} mg/dL
+Esquema actual: AM ${am} UI | PM ${pm} UI
+Tratamiento concomitante: ${data.tratamientoConcomitante}
+Momento del episodio: ${etiquetaMomentoNivel3(recommendation.timing)}
+Causa precipitante: ${etiquetaCausaNivel3(recommendation.reversibleCause)}
+Pérdida de conciencia / convulsión: ${recommendation.severeNeurologic ? "Sí" : "No"}
+${proposedText}
+Fundamento de seguridad: ADA 2026 recomienda reevaluar y considerar deintensificación tras hipoglicemia nivel 2 o 3. El 20% es una regla propia de Insulog para un patrón claro y sin causa reversible, no un porcentaje prescrito por ADA.
+Conducta complementaria: reevaluación clínica prioritaria, educación estructurada en hipoglicemia y verificación de glucagón en pacientes tratados con insulina.`;
 
     renderNotaClinica(nota);
     go(5);
@@ -459,6 +578,18 @@
   actions.decorate("prepare-followup", (next) => (context) => {
     safetyState.revisionHipo = null;
     safetyState.clasificacionHipo = "";
+    limpiarRevisionNivel3();
+    state.patch({
+      level3Hypoglycemia: false,
+      level3Timing: "",
+      level3ReversibleCause: "",
+      level3SevereNeurologic: false,
+      level3AutomaticRecommendation: false,
+      level3RequiresMedicalAdjustment: false,
+      level3ImplicatedDose: "",
+      level3ReductionPercent: 0,
+      level3RecommendationReason: ""
+    });
     ocultarRevisionHipoglicemia();
     return next(context);
   });
