@@ -89,6 +89,7 @@ test("vista previa del documento se renderiza dentro del iframe móvil", async (
   });
   await expectActivePage(page, "p6");
   await page.locator("#nombre-paciente").fill("Paciente compatibilidad móvil");
+  await page.locator("#fecha-nacimiento-paciente").fill("1960-05-12");
   await page.locator("#p6").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
   await expectActivePage(page, "p7");
 
