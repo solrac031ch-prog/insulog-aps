@@ -12,7 +12,8 @@
     8.5: Object.freeze({ hba1c: 8.5, lower: 100, upper: 160, high10: 220 })
   });
 
-  const CLINICAL_ENGINE_VERSION = "APS-NPH-2026.09.14-r2";
+  const CLINICAL_ENGINE_VERSION = "APS-NPH-2026.09.21-r3";
+  const LEVEL3_NPH_REDUCTION_PERCENT = 20;
   const MIN_REQUIRED_READINGS = 3;
   const GLUCOSE_MIN_MGDL = 1;
   const GLUCOSE_MAX_MGDL = 700;
@@ -157,6 +158,64 @@
       promedio: data.length ? data.reduce((a, b) => a + b, 0) / data.length : null,
       min: minimum, hypoglycemiaLevel2: minimum !== null && minimum < 54, hipo: minimum !== null && minimum < 70,
       excluidos: [], discordantes: detectDiscordantHighs(data, name)
+    });
+  }
+
+  function reduceNphDoseByPercent(dose, percent = LEVEL3_NPH_REDUCTION_PERCENT) {
+    const current = roundUnits(Number(dose));
+    if (current <= 0) return 0;
+    const boundedPercent = Math.min(100, Math.max(0, Number(percent) || 0));
+    let next = roundUnits(current * (1 - boundedPercent / 100));
+    if (boundedPercent > 0 && next >= current) next = Math.max(0, current - 1);
+    return next;
+  }
+
+  function proposeLevel3NphReduction({
+    regimenType = "pm",
+    amDose = 0,
+    pmDose = 0,
+    fastingValues = [],
+    preLunchValues = []
+  } = {}) {
+    const regimen = String(regimenType || "pm");
+    const currentAm = regimen === "pm" ? 0 : roundUnits(Number(amDose));
+    const currentPm = regimen === "am" ? 0 : roundUnits(Number(pmDose));
+    const fasting = normalizeGlucoseValues(fastingValues).valid;
+    const preLunch = normalizeGlucoseValues(preLunchValues).valid;
+    const fastingHypoglycemia = fasting.some((value) => value < 70);
+    const preLunchHypoglycemia = preLunch.some((value) => value < 70);
+
+    let am = currentAm;
+    let pm = currentPm;
+    const implicated = [];
+
+    if (fastingHypoglycemia && currentPm > 0) {
+      pm = reduceNphDoseByPercent(currentPm);
+      implicated.push("PM");
+    }
+    if (preLunchHypoglycemia && currentAm > 0) {
+      am = reduceNphDoseByPercent(currentAm);
+      implicated.push("AM");
+    }
+
+    const available = implicated.length > 0;
+    const reason = available
+      ? `Regla Insulog: reducir 20% la dosis NPH temporalmente implicada por el patrón de hipoglicemia (${implicated.join(" + ")}), redondeada a unidades enteras. La regla requiere revisión clínica y no sustituye la búsqueda de causas reversibles.`
+      : "No se puede identificar con suficiente seguridad una dosis NPH temporalmente implicada a partir de los HGT registrados; se requiere ajuste médico individual.";
+
+    return Object.freeze({
+      available,
+      rule: "INSULOG_LEVEL3_NPH_REDUCTION_20",
+      reductionPercent: LEVEL3_NPH_REDUCTION_PERCENT,
+      currentAm,
+      currentPm,
+      am,
+      pm,
+      fastingHypoglycemia,
+      preLunchHypoglycemia,
+      implicated: Object.freeze([...implicated]),
+      requiresProfessionalReview: true,
+      reason
     });
   }
 
@@ -346,8 +405,8 @@
   }
 
   return Object.freeze({
-    version: CLINICAL_ENGINE_VERSION, TARGET_PROFILES, MIN_REQUIRED_READINGS, GLUCOSE_MIN_MGDL, GLUCOSE_MAX_MGDL, normalizeGlucoseValues, roundUnits, roundEven, normalizeTargetA1c, targetProfile, assessInsulinSensitivity,
-    suggestInitialScheme, calculateInitialDose, detectDiscordantHighs, analyzeGlucose, classifyHypoglycemia,
+    version: CLINICAL_ENGINE_VERSION, TARGET_PROFILES, MIN_REQUIRED_READINGS, GLUCOSE_MIN_MGDL, GLUCOSE_MAX_MGDL, LEVEL3_NPH_REDUCTION_PERCENT, normalizeGlucoseValues, roundUnits, roundEven, normalizeTargetA1c, targetProfile, assessInsulinSensitivity,
+    suggestInitialScheme, calculateInitialDose, detectDiscordantHighs, analyzeGlucose, classifyHypoglycemia, proposeLevel3NphReduction,
     calculateAdjustment, calculateSecondDose, assessDoseSafety, calculateFollowup, regimenLabel
   });
 });
