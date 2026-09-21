@@ -124,7 +124,8 @@
     const pm = Number(data.pm) || 0;
     const clinicalNote = byId("nota-clinica")?.dataset.rawText || byId("nota-clinica")?.innerText || "";
     const level3Urgency = /HIPOGLICEMIA NIVEL 3/i.test(clinicalNote);
-    const urgencyAccepted = level3Urgency && data.professionalDecision === "aceptada";
+    const level3ProposalAccepted = level3Urgency && data.professionalDecision === "aceptada" && data.professionalLevel3ProposalAccepted === true;
+    const urgencyAccepted = level3Urgency && data.professionalDecision === "aceptada" && data.professionalUrgencyAccepted === true;
     const urgencyModified = level3Urgency && data.professionalDecision === "modificada";
 
     const header = `
@@ -162,7 +163,24 @@
           .map((accion) => escapeHTML(accion.replace("- ", "")))
         : [];
 
-      if (urgencyAccepted) {
+      if (level3ProposalAccepted) {
+        cuerpo = `
+          <section class="pdf-alert-important">
+            <div class="pdf-section-title">Hipoglicemia nivel 3 · propuesta Insulog aceptada</div>
+            <p><strong>Se mantiene la alerta de nivel 3.</strong> La pauta indicada corresponde a una reducción del 20% de la dosis NPH temporalmente implicada por el patrón de HGT, como regla propia de Insulog y con revisión profesional.</p>
+            <p>ADA 2026 recomienda reevaluar y considerar deintensificación tras hipoglicemia nivel 2 o 3; no establece un porcentaje fijo de reducción.</p>
+          </section>
+          ${dosis}
+          ${bloqueIndicaciones("Indicaciones de seguridad", [
+            "<strong>Reevaluación:</strong> revisar causas reversibles del episodio y el esquema completo de insulina.",
+            "<strong>Hipoglicemia:</strong> reforzar educación estructurada para prevención y tratamiento.",
+            "<strong>Glucagón:</strong> verificar disponibilidad y entrenamiento de familiares/cuidadores.",
+            "<strong>Registro:</strong> continuar HGT en ayunas y pre-almuerzo hasta nueva evaluación clínica.",
+            ...acciones
+          ])}
+          ${tablaRegistro()}
+          ${bloqueControlFirma()}`;
+      } else if (urgencyAccepted) {
         cuerpo = `
           ${dosis}
           <section class="pdf-alert-important">
@@ -227,7 +245,7 @@
   }
 
   window.InsulogDocuments = Object.freeze({
-    version: "2026.09.21-phase8d-level3-decision",
+    version: "2026.09.21-phase8e-level3-proposal",
     generate: generarDocumento,
     useEnhancer
   });

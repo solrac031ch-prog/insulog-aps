@@ -256,7 +256,7 @@
 
   function controlKind(tipo, data) {
     if (tipo === "inicio") return "Inicio";
-    if (isUrgencyRoute() && data.professionalDecision === "aceptada") return "Seguimiento";
+    if (data.professionalUrgencyAccepted === true) return "Seguimiento";
     const current = totalDose(data.amActual, data.pmActual);
     const final = totalDose(data.professionalAm, data.professionalPm);
     return current !== final ? "Ajuste" : "Seguimiento";
@@ -294,7 +294,7 @@
     const currentPm = tipo === "inicio" ? 0 : numberOrZero(data.pmActual);
     const note = rawClinicalNote();
     const urgencyRoute = isUrgencyRoute();
-    const urgencyAccepted = urgencyRoute && data.professionalDecision === "aceptada";
+    const urgencyAccepted = data.professionalUrgencyAccepted === true;
     const recommendedAm = urgencyAccepted ? null : numberOrZero(data.am);
     const recommendedPm = urgencyAccepted ? null : numberOrZero(data.pm);
     const finalAm = urgencyAccepted ? null : numberOrZero(data.professionalAm);
@@ -325,6 +325,9 @@
       hypoglycemia70: lowestGlucose !== null && lowestGlucose < 70,
       hypoglycemia54: lowestGlucose !== null && lowestGlucose < 54,
       hypoglycemiaLevel3: /HIPOGLICEMIA NIVEL 3/i.test(note),
+      level3ProposalAccepted: data.professionalLevel3ProposalAccepted === true,
+      level3ReductionPercent: data.professionalLevel3ProposalAccepted === true ? safeNumber(data.level3ReductionPercent) : null,
+      level3ImplicatedDoses: data.professionalLevel3ProposalAccepted === true ? String(data.level3ImplicatedDoses || "") : "",
       lowestGlucose,
       recommendedAm,
       recommendedPm,
@@ -409,7 +412,7 @@
       }
 
       const original = { am: data.am, pm: data.pm, dosisKg: data.dosisKg };
-      const urgencyAccepted = isUrgencyRoute() && data.professionalDecision === "aceptada";
+      const urgencyAccepted = data.professionalUrgencyAccepted === true;
       const am = urgencyAccepted ? 0 : numberOrZero(data.professionalAm);
       const pm = urgencyAccepted ? 0 : numberOrZero(data.professionalPm);
       const tipo = clinicalFlowType();
@@ -437,7 +440,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.21-phase6b-document-sync-level3",
+    version: "2026.09.21-phase6b-document-sync-level3-proposal",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),

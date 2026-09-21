@@ -93,4 +93,35 @@ assert.equal(engine.classifyHypoglycemia([53], false).nivel, 2);
 assert.equal(engine.classifyHypoglycemia([], true).nivel, 3, "nivel 3 no depende de una cifra registrada");
 assert.equal(engine.classifyHypoglycemia([], true).urgent, true);
 
-console.log("Clinical engine r2 checks passed");
+let level3Proposal = engine.proposeLevel3NphReduction({
+  regimenType: "pm",
+  pmDose: 24,
+  fastingValues: [58, 92, 105],
+  preLunchValues: []
+});
+assert.equal(level3Proposal.available, true);
+assert.equal(level3Proposal.pm, 19);
+assert.equal(level3Proposal.am, 0);
+assert.deepEqual([...level3Proposal.implicated], ["PM"]);
+assert.equal(level3Proposal.reductionPercent, 20);
+
+level3Proposal = engine.proposeLevel3NphReduction({
+  regimenType: "2",
+  amDose: 20,
+  pmDose: 20,
+  fastingValues: [60, 100, 110],
+  preLunchValues: [65, 120, 130]
+});
+assert.deepEqual({ am: level3Proposal.am, pm: level3Proposal.pm }, { am: 16, pm: 16 });
+assert.deepEqual([...level3Proposal.implicated], ["PM", "AM"]);
+
+level3Proposal = engine.proposeLevel3NphReduction({
+  regimenType: "pm",
+  pmDose: 24,
+  fastingValues: [100, 110, 120],
+  preLunchValues: [65, 100, 110]
+});
+assert.equal(level3Proposal.available, false, "no debe atribuir una hipoglicemia prealmuerzo a una NPH PM sin una dosis AM");
+assert.equal(level3Proposal.pm, 24);
+
+console.log("Clinical engine r3 checks passed");

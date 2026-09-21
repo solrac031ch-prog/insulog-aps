@@ -46,6 +46,10 @@
     return "seguimiento";
   }
 
+  function isLevel3Hypoglycemia(note = baseClinicalNote || rawNote()) {
+    return /HIPOGLICEMIA NIVEL 3/i.test(String(note || ""));
+  }
+
   function clearProfessionalDecision({ keepNote = true } = {}) {
     state.patch({
       professionalDecision: "",
@@ -53,7 +57,8 @@
       professionalPm: null,
       professionalReason: "",
       professionalDosePerKg: null,
-      professionalUrgencyAccepted: false
+      professionalUrgencyAccepted: false,
+      professionalLevel3ProposalAccepted: false
     });
     if (!keepNote) lastComposedNote = "";
   }
@@ -89,6 +94,7 @@
   }
 
   function decisionLabel(decision = state.get("professionalDecision")) {
+    if (decision === "aceptada" && isLevel3Hypoglycemia()) return "Propuesta Insulog aceptada";
     if (decision === "aceptada" && caseType(baseClinicalNote || rawNote()) === "urgencia") return "Conducta de urgencia de Insulog aceptada";
     if (decision === "aceptada") return "Aceptada sin cambios";
     if (decision === "modificada") return "Modificada por el profesional";
@@ -107,7 +113,11 @@
     ];
 
     if (data.professionalDecision === "aceptada") {
-      if (caseType(baseClinicalNote || rawNote()) === "urgencia") {
+      if (isLevel3Hypoglycemia()) {
+        lines.push(`Decisión final del profesional: Aceptada la propuesta de reducción de Insulog (${doseText(data.professionalAm, data.professionalPm)}).`);
+        lines.push("Regla Insulog: reducción del 20% de la dosis NPH temporalmente implicada por el patrón de HGT, redondeada a unidades enteras. Esta regla es apoyo a la decisión y no corresponde a un porcentaje impuesto por ADA.");
+        lines.push("Se mantiene la alerta de hipoglicemia nivel 3 y la necesidad de reevaluar causas reversibles, educación y disponibilidad de glucagón.");
+      } else if (caseType(baseClinicalNote || rawNote()) === "urgencia") {
         lines.push("Decisión final del profesional: Aceptada la conducta de urgencia de Insulog.");
         lines.push("No se emite una nueva pauta ambulatoria de NPH; se mantiene la alerta original y se requiere reevaluación clínica antes de reiniciar titulación.");
       } else {
@@ -173,7 +183,11 @@
     const reassess = byId("best-review-reassess");
     if (accept) {
       accept.setAttribute("aria-pressed", String(decision === "aceptada"));
-      accept.textContent = caseType(baseClinicalNote || rawNote()) === "urgencia" ? "ACEPTAR CONDUCTA INSULOG" : "ACEPTAR";
+      accept.textContent = isLevel3Hypoglycemia()
+        ? "ACEPTAR PROPUESTA INSULOG"
+        : (caseType(baseClinicalNote || rawNote()) === "urgencia" ? "ACEPTAR CONDUCTA INSULOG" : "ACEPTAR");
+      accept.disabled = isLevel3Hypoglycemia() && data.level3ProposalAvailable === false;
+      accept.setAttribute("aria-disabled", String(accept.disabled));
     }
     if (modify) modify.setAttribute("aria-pressed", String(decision === "modificada"));
     if (reassess) reassess.setAttribute("aria-pressed", String(decision === "reevaluar"));
@@ -184,6 +198,8 @@
         summary.innerHTML = '<strong>Decisión final:</strong> pendiente de revisión profesional.';
       } else if (decision === "reevaluar") {
         summary.innerHTML = '<strong>Decisión final:</strong> reevaluar antes de emitir pauta definitiva.';
+      } else if (decision === "aceptada" && isLevel3Hypoglycemia()) {
+        summary.innerHTML = `<strong>Decisión final:</strong> propuesta Insulog aceptada.<br><strong>Pauta final:</strong> ${notePresenter.escapeHTML(doseText(data.professionalAm, data.professionalPm))}<br><strong>Regla Insulog:</strong> reducción 20% de la dosis NPH implicada; requiere reevaluación clínica.`;
       } else if (decision === "aceptada" && caseType(baseClinicalNote || rawNote()) === "urgencia") {
         summary.innerHTML = '<strong>Decisión final:</strong> conducta de urgencia de Insulog aceptada.<br><strong>Pauta final:</strong> no se emite una nueva pauta ambulatoria de NPH.';
       } else {
@@ -216,8 +232,16 @@
       byId("best-professional-overbasal-warning")?.remove();
     }
 
-    if (!decision) setReviewStatus("Revisión profesional aún no registrada.", true);
-    if (decision === "aceptada" && caseType(baseClinicalNote || rawNote()) === "urgencia") {
+    if (!decision) {
+      if (isLevel3Hypoglycemia() && data.level3ProposalAvailable === false) {
+        setReviewStatus("⚠ No hay una propuesta automática segura para este patrón. Use MODIFICAR PLAN o REEVALUAR.", "warning");
+      } else {
+        setReviewStatus("Revisión profesional aún no registrada.", true);
+      }
+    }
+    if (decision === "aceptada" && isLevel3Hypoglycemia()) {
+      setReviewStatus("✓ Propuesta Insulog aceptada. Se mantiene la alerta de nivel 3 y la reevaluación clínica prioritaria.", "warning");
+    } else if (decision === "aceptada" && caseType(baseClinicalNote || rawNote()) === "urgencia") {
       setReviewStatus("✓ Conducta de urgencia de Insulog aceptada. No se emitirá una nueva pauta automática de NPH.", "warning");
     } else if (decision === "aceptada") {
       setReviewStatus("✓ Recomendación revisada y aceptada por el profesional.", true);
@@ -300,14 +324,23 @@
     syncBaseClinicalNote();
     if (!baseClinicalNote) return undefined;
     const recommendation = currentRecommendation();
-    const urgencyAccepted = caseType(baseClinicalNote || rawNote()) === "urgencia";
+    const level3 = isLevel3Hypoglycemia();
+    if (level3 && state.get("level3ProposalAvailable") === false) {
+      setReviewStatus("⚠ Insulog no puede proponer una dosis segura con este patrón. Use MODIFICAR PLAN o REEVALUAR.", "warning");
+      return undefined;
+    }
+    const urgencyAccepted = caseType(baseClinicalNote || rawNote()) === "urgencia" && !level3;
+    const weight = currentWeight();
     state.patch({
       professionalDecision: "aceptada",
       professionalAm: urgencyAccepted ? null : recommendation.am,
       professionalPm: urgencyAccepted ? null : recommendation.pm,
-      professionalReason: urgencyAccepted ? "Conducta de urgencia de Insulog aceptada; sin nueva pauta ambulatoria de NPH." : "",
-      professionalDosePerKg: urgencyAccepted ? null : safeNumber(state.get("dosisKg")),
-      professionalUrgencyAccepted: urgencyAccepted
+      professionalReason: level3
+        ? "Regla Insulog nivel 3: reducción del 20% de la dosis NPH temporalmente implicada por el patrón de HGT; propuesta revisada y aceptada por el profesional."
+        : (urgencyAccepted ? "Conducta de urgencia de Insulog aceptada; sin nueva pauta ambulatoria de NPH." : ""),
+      professionalDosePerKg: urgencyAccepted ? null : (weight ? (recommendation.am + recommendation.pm) / weight : safeNumber(state.get("dosisKg"))),
+      professionalUrgencyAccepted: urgencyAccepted,
+      professionalLevel3ProposalAccepted: level3
     });
     hideModifyPanel();
     applyDecisionNote();
@@ -318,7 +351,7 @@
   function finalizeReassess() {
     syncBaseClinicalNote();
     if (!baseClinicalNote) return undefined;
-    state.patch({ professionalDecision: "reevaluar", professionalAm: null, professionalPm: null, professionalReason: "", professionalDosePerKg: null, professionalUrgencyAccepted: false });
+    state.patch({ professionalDecision: "reevaluar", professionalAm: null, professionalPm: null, professionalReason: "", professionalDosePerKg: null, professionalUrgencyAccepted: false, professionalLevel3ProposalAccepted: false });
     hideModifyPanel();
     applyDecisionNote();
     renderDecisionUI();
@@ -353,7 +386,8 @@
         professionalPm: pm,
         professionalReason: reason,
         professionalDosePerKg: weight ? (am + pm) / weight : null,
-        professionalUrgencyAccepted: false
+        professionalUrgencyAccepted: false,
+        professionalLevel3ProposalAccepted: false
       });
       hideModifyPanel();
       applyDecisionNote();
@@ -489,6 +523,6 @@
     renderDecisionUI();
   }
 
-  window.InsulogPhase6B = Object.freeze({ version: "2026.09.15-phase6b-clinician-override", qualitySnapshot, canGeneratePatientDocument });
+  window.InsulogPhase6B = Object.freeze({ version: "2026.09.21-phase6b-level3-proposal", qualitySnapshot, canGeneratePatientDocument });
   document.addEventListener("DOMContentLoaded", init, { once: true });
 })();

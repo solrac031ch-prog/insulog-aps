@@ -1,6 +1,6 @@
 {
   "protocolId": "insulog-aps-nph",
-  "version": "APS-NPH-2026.09.14-r2",
+  "version": "APS-NPH-2026.09.21-r3",
   "status": "baseline",
   "scope": "Insulinización con NPH en APS chilena: inicio, seguimiento, hipoglicemia, metas individualizadas y seguridad de dosis basal.",
   "engine": "clinical-engine.js",
@@ -12,7 +12,9 @@
   "intentionalLocalRules": [
     "Seguimiento práctico APS cada 15 días cuando la disponibilidad local no permite titulación semanal.",
     "Los valores altos discordantes se señalan para revisión, pero nunca se excluyen automáticamente.",
-    "No se autoriza autotitulación por el paciente; la dosis sugerida requiere revisión clínica."
+    "No se autoriza autotitulación por el paciente; la dosis sugerida requiere revisión clínica.",
+    "Hipoglicemia nivel 3: Insulog propone reducir 20% la dosis NPH temporalmente implicada por el patrón de HGT (ayunas→PM; pre-almuerzo→AM), redondeada a unidades enteras. El 20% es una regla local de Insulog, no un porcentaje impuesto por ADA, y exige revisión profesional.",
+    "Si el patrón de HGT no permite atribuir con suficiente seguridad una dosis NPH responsable, Insulog no genera propuesta automática y exige modificación médica o reevaluación."
   ],
   "regressionMatrix": [
     "tests/clinical-engine.test.js",
@@ -21,11 +23,13 @@
     "tests/clinical-engine-hardening.test.js"
   ],
   "changePolicy": "Todo cambio intencional de dosis, umbral, criterio o conducta clínica en clinical-engine.js debe cambiar esta versión y mantener verde la matriz de regresión clínica.",
-  "hardeningRevision": "2026.09.14-safety1",
+  "hardeningRevision": "2026.09.21-level3-proposal",
   "safetyGuards": [
     "El motor no titula con menos de 3 glicemias válidas del perfil requerido.",
     "Valores de glicemia inválidos bloquean la titulación automática en vez de ser ignorados silenciosamente.",
     "Cualquier hipoglicemia registrada bloquea todos los aumentos automáticos de NPH durante esa evaluación.",
+    "Hipoglicemia nivel 3 mantiene una alerta clínica prioritaria aunque el profesional acepte una propuesta de reducción de NPH.",
+    "La propuesta de nivel 3 solo reduce una dosis temporalmente implicada por el patrón registrado; no atribuye una dosis cuando el patrón es incompatible o ambiguo.",
     "Peso, esquema o dosis actuales inconsistentes fallan cerrados y mantienen la dosis sin cambios.",
     "Un autotest de versión e invariantes clínicos bloquea acciones críticas si detecta una carga incoherente."
   ]

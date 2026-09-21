@@ -38,6 +38,31 @@ async function openFollowupResult(page) {
   });
 }
 
+
+
+async function openRealLevel3Proposal(page) {
+  await page.goto("/");
+  await page.locator("#p0").getByRole("button", { name: "INICIAR ALGORITMO", exact: true }).click();
+  await page.locator("#p1").getByRole("button", { name: "NO", exact: true }).click();
+  await page.locator("#p2").getByRole("button", { name: "SEGUIMIENTO DE INSULINA", exact: true }).click();
+  await page.locator("#p35").getByRole("button", { name: "CONTINUAR AL REGISTRO DE GLICEMIAS", exact: true }).click();
+  await expectActivePage(page, "p4");
+
+  await page.locator("#peso-seguimiento").fill("70");
+  await page.locator("#tipo-esquema").selectOption("pm");
+  await page.locator("#pm-actual").fill("24");
+
+  const fasting = page.locator("#tabla-seguimiento .ay");
+  await fasting.nth(0).fill("58");
+  await fasting.nth(1).fill("92");
+  await fasting.nth(2).fill("105");
+
+  await page.locator("#ajustar-seguimiento-btn").click();
+  await expect(page.locator("#alerta-hipoglicemia-ada")).toBeVisible();
+  await page.locator("#hipo-con-ayuda").click();
+  await expectActivePage(page, "p5");
+}
+
 test("criterio profesional prevalece ante alerta de urgencia y llega al PDF con la pauta documentada", async ({ page }) => {
   await openFollowupResult(page);
 
@@ -74,29 +99,41 @@ test("criterio profesional prevalece ante alerta de urgencia y llega al PDF con 
 });
 
 
-test("aceptar la conducta de urgencia de Insulog permite documentar nivel 3 sin emitir nueva pauta NPH", async ({ page }) => {
-  await openFollowupResult(page);
+test("aceptar la propuesta Insulog reduce 20% la NPH implicada y llega al PDF", async ({ page }) => {
+  await openRealLevel3Proposal(page);
+
+  await expect(page.locator("#best-review-accept")).toHaveText(/ACEPTAR PROPUESTA INSULOG/);
+
+  let state = await page.evaluate(() => window.InsulogRuntime.state.snapshot());
+  expect(state.level3ProposalAvailable).toBe(true);
+  expect(state.level3ReductionPercent).toBe(20);
+  expect(state.level3ImplicatedDoses).toBe("PM");
+  expect(state.am).toBe(0);
+  expect(state.pm).toBe(19);
 
   await page.locator("#best-review-accept").click();
-  await expect(page.locator("#best-review-status")).toContainText("Conducta de urgencia de Insulog aceptada");
-  await expect(page.locator("#best-final-decision-summary")).toContainText("no se emite una nueva pauta ambulatoria de NPH");
+  await expect(page.locator("#best-review-status")).toContainText("Propuesta Insulog aceptada");
+  await expect(page.locator("#best-final-decision-summary")).toContainText("PM 19 UI");
 
-  const state = await page.evaluate(() => window.InsulogRuntime.state.snapshot());
+  state = await page.evaluate(() => window.InsulogRuntime.state.snapshot());
   expect(state.professionalDecision).toBe("aceptada");
-  expect(state.professionalAm).toBeNull();
-  expect(state.professionalPm).toBeNull();
-  expect(state.professionalUrgencyAccepted).toBe(true);
+  expect(state.professionalAm).toBe(0);
+  expect(state.professionalPm).toBe(19);
+  expect(state.professionalUrgencyAccepted).toBe(false);
+  expect(state.professionalLevel3ProposalAccepted).toBe(true);
 
   await page.locator("#p5").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
   await expectActivePage(page, "p6");
 
-  await page.locator("#nombre-paciente").fill("Paciente urgencia aceptada");
+  await page.locator("#nombre-paciente").fill("Paciente nivel 3 propuesta");
   await page.locator("#fecha-nacimiento-paciente").fill("1958-11-02");
   await page.locator("#p6").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
   await expectActivePage(page, "p7");
 
   const frame = page.frameLocator("#pdf-preview-frame");
   await expect(frame.locator("#pdf")).toContainText("Hipoglicemia nivel 3");
-  await expect(frame.locator("#pdf")).toContainText("Sin dosis de NPH indicada en este documento");
-  await expect(frame.locator("#pdf")).toContainText("no emite una nueva pauta ambulatoria de NPH");
+  await expect(frame.locator("#pdf")).toContainText("propuesta Insulog aceptada");
+  await expect(frame.locator("#pdf")).toContainText("PM");
+  await expect(frame.locator("#pdf")).toContainText("19 UI");
+  await expect(frame.locator("#pdf")).toContainText("reducción del 20%");
 });
