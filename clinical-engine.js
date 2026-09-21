@@ -12,7 +12,7 @@
     8.5: Object.freeze({ hba1c: 8.5, lower: 100, upper: 160, high10: 220 })
   });
 
-  const CLINICAL_ENGINE_VERSION = "APS-NPH-2026.09.14-r2";
+  const CLINICAL_ENGINE_VERSION = "APS-NPH-2026.09.21-r3";
   const MIN_REQUIRED_READINGS = 3;
   const GLUCOSE_MIN_MGDL = 1;
   const GLUCOSE_MAX_MGDL = 700;
@@ -172,6 +172,104 @@
     if (!hypoglycemicValues.length) return null;
     if (minimum < 54) return Object.freeze({ nivel: 2, minimo: minimum, urgent: false, nota: "Hipoglicemia nivel 2 detectada (<54 mg/dL): requiere tratamiento inmediato del episodio y reevaluación del esquema." });
     return Object.freeze({ nivel: 1, minimo: minimum, urgent: false, nota: "Hipoglicemia nivel 1 detectada (<70 y ≥54 mg/dL): revisar causas y reforzar prevención." });
+  }
+
+  function suggestLevel3NphReduction({
+    regimenType,
+    amDose,
+    pmDose,
+    fastingValues = [],
+    preLunchValues = [],
+    causeStatus = "none"
+  } = {}) {
+    const allowedRegimens = new Set(["pm", "am", "2"]);
+    const allowedCauses = new Set(["none", "clear", "uncertain"]);
+    const rawAm = Number(amDose);
+    const rawPm = Number(pmDose);
+
+    if (!allowedRegimens.has(regimenType)) {
+      return Object.freeze({
+        eligible: false,
+        am: 0,
+        pm: 0,
+        reductionPercent: 20,
+        implicated: Object.freeze([]),
+        causeStatus: allowedCauses.has(causeStatus) ? causeStatus : "uncertain",
+        ruleId: "INSULOG-L3-NPH-20",
+        reason: "No se puede proponer una reducción automática: tipo de esquema no reconocido."
+      });
+    }
+
+    let am = Number.isInteger(rawAm) && rawAm >= 0 ? rawAm : 0;
+    let pm = Number.isInteger(rawPm) && rawPm >= 0 ? rawPm : 0;
+    if (regimenType === "am") pm = 0;
+    if (regimenType === "pm") am = 0;
+
+    const normalizedCause = allowedCauses.has(causeStatus) ? causeStatus : "uncertain";
+    if (normalizedCause !== "none") {
+      return Object.freeze({
+        eligible: false,
+        am,
+        pm,
+        reductionPercent: 20,
+        implicated: Object.freeze([]),
+        causeStatus: normalizedCause,
+        ruleId: "INSULOG-L3-NPH-20",
+        reason: normalizedCause === "clear"
+          ? "Se identificó una causa reversible clara; la pauta debe individualizarse por el profesional y no se aplica la reducción automática de Insulog."
+          : "La causa del episodio no está suficientemente clara; se requiere ajuste individualizado por el profesional."
+      });
+    }
+
+    const fasting = analyzeGlucose(fastingValues, "Ayunas");
+    const preLunch = analyzeGlucose(preLunchValues, "Pre-almuerzo");
+    const implicated = [];
+
+    if ((regimenType === "pm" || regimenType === "2") && fasting.hipo && pm > 0) implicated.push("PM");
+    if ((regimenType === "am" || regimenType === "2") && preLunch.hipo && am > 0) implicated.push("AM");
+
+    if (!implicated.length) {
+      return Object.freeze({
+        eligible: false,
+        am,
+        pm,
+        reductionPercent: 20,
+        implicated: Object.freeze([]),
+        causeStatus: normalizedCause,
+        ruleId: "INSULOG-L3-NPH-20",
+        reason: "No es posible localizar con seguridad qué dosis de NPH está implicada a partir del patrón registrado; se requiere ajuste médico."
+      });
+    }
+
+    let proposedAm = am;
+    let proposedPm = pm;
+    if (implicated.includes("AM")) proposedAm = roundUnits(am * 0.8);
+    if (implicated.includes("PM")) proposedPm = roundUnits(pm * 0.8);
+
+    const changed = proposedAm !== am || proposedPm !== pm;
+    if (!changed) {
+      return Object.freeze({
+        eligible: false,
+        am,
+        pm,
+        reductionPercent: 20,
+        implicated: Object.freeze([...implicated]),
+        causeStatus: normalizedCause,
+        ruleId: "INSULOG-L3-NPH-20",
+        reason: "El redondeo no produce una reducción efectiva de la dosis; se requiere ajuste médico."
+      });
+    }
+
+    return Object.freeze({
+      eligible: true,
+      am: proposedAm,
+      pm: proposedPm,
+      reductionPercent: 20,
+      implicated: Object.freeze([...implicated]),
+      causeStatus: normalizedCause,
+      ruleId: "INSULOG-L3-NPH-20",
+      reason: `Regla interna de seguridad Insulog: reducir 20% la NPH implicada por el patrón de hipoglicemia nivel 3 (${implicated.join(" + ")}), con redondeo a unidades enteras.`
+    });
   }
 
   function calculateAdjustment(analysis, doseName, currentDose = 0, targetA1c = 7) {
@@ -348,6 +446,6 @@
   return Object.freeze({
     version: CLINICAL_ENGINE_VERSION, TARGET_PROFILES, MIN_REQUIRED_READINGS, GLUCOSE_MIN_MGDL, GLUCOSE_MAX_MGDL, normalizeGlucoseValues, roundUnits, roundEven, normalizeTargetA1c, targetProfile, assessInsulinSensitivity,
     suggestInitialScheme, calculateInitialDose, detectDiscordantHighs, analyzeGlucose, classifyHypoglycemia,
-    calculateAdjustment, calculateSecondDose, assessDoseSafety, calculateFollowup, regimenLabel
+    suggestLevel3NphReduction, calculateAdjustment, calculateSecondDose, assessDoseSafety, calculateFollowup, regimenLabel
   });
 });
