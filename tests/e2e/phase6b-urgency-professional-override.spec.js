@@ -114,6 +114,7 @@ test("nivel 3 con patrón claro propone reducir 20% la dosis implicada y permite
 
   await page.locator("#best-review-accept").click();
   await expect(page.locator("#best-review-status")).toContainText("Propuesta de reducción de Insulog");
+  await expect(page.locator("#nota-clinica")).toContainText("Insulog Clinical r3");
 
   const state = await page.evaluate(() => window.InsulogRuntime.state.snapshot());
   expect(state.level3AutomaticRecommendation).toBe(true);
