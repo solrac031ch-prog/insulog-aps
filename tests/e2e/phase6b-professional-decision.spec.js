@@ -38,13 +38,13 @@ async function modifyTo21(page, reason = "Contexto clínico y patrón alimentari
   await page.getByRole("button", { name: "GUARDAR DECISIÓN", exact: true }).click();
 }
 
-test("6B separa recomendación Clinical r2 y pauta final modificada", async ({ page }) => {
+test("6B separa recomendación Clinical r3 y pauta final modificada", async ({ page }) => {
   await openFollowupResult(page);
   await modifyTo21(page);
 
   await expect(page.locator("#best-review-status")).toContainText("Plan modificado");
   await expect(page.locator("#best-final-decision-summary")).toContainText("PM 21 UI");
-  await expect(page.locator("#nota-clinica")).toContainText("Recomendación Insulog Clinical r2: PM 22 UI");
+  await expect(page.locator("#nota-clinica")).toContainText("Recomendación Insulog Clinical r3: PM 22 UI");
   await expect(page.locator("#nota-clinica")).toContainText("Modificada (PM 21 UI)");
 
   const state = await page.evaluate(() => window.InsulogRuntime.state.snapshot());

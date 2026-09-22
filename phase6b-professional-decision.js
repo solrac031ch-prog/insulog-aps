@@ -3,6 +3,7 @@
 (() => {
   const runtime = window.InsulogRuntime;
   const notePresenter = window.InsulogNotePresenter;
+  const clinicalEngine = window.InsulogClinicalEngine;
 
   if (!runtime) throw new Error("InsulogRuntime debe cargarse antes de phase6b-professional-decision.js");
   if (!notePresenter) throw new Error("InsulogNotePresenter debe cargarse antes de phase6b-professional-decision.js");
@@ -33,6 +34,12 @@
 
   function totalDose(am, pm) {
     return (safeNumber(am) || 0) + (safeNumber(pm) || 0);
+  }
+
+  function clinicalEngineLabel() {
+    const version = String(clinicalEngine?.version || "");
+    const match = version.match(/-(r\d+)$/i);
+    return match ? `Clinical ${match[1]}` : "Clinical";
   }
 
   function rawNote() {
@@ -112,7 +119,7 @@
       String(baseClinicalNote || rawNote()).trim(),
       "",
       "DECISIÓN PROFESIONAL",
-      `Recomendación Insulog Clinical r2: ${doseText(recommendation.am, recommendation.pm)}`
+      `Recomendación Insulog ${clinicalEngineLabel()}: ${doseText(recommendation.am, recommendation.pm)}`
     ];
 
     if (data.professionalDecision === "aceptada") {
@@ -129,7 +136,7 @@
       lines.push(`Decisión final del profesional: Modificada (${doseText(data.professionalAm, data.professionalPm)}).`);
       lines.push(`Motivo de modificación: ${String(data.professionalReason || "").trim()}`);
       if (caseType(baseClinicalNote || rawNote()) === "urgencia") {
-        lines.push("Advertencia Insulog: Clinical r2 había activado una ruta de urgencia; el profesional decide una pauta alternativa con justificación clínica documentada.");
+        lines.push(`Advertencia Insulog: ${clinicalEngineLabel()} había activado una ruta de urgencia; el profesional decide una pauta alternativa con justificación clínica documentada.`);
       }
     } else if (data.professionalDecision === "reevaluar") {
       lines.push("Decisión final del profesional: Reevaluar antes de emitir una pauta definitiva de insulina.");
@@ -208,7 +215,7 @@
         summary.innerHTML = '<strong>Decisión final:</strong> conducta de urgencia de Insulog aceptada.<br><strong>Pauta final:</strong> no se emite una nueva pauta ambulatoria de NPH.';
       } else {
         const urgencyNotice = decision === "modificada" && caseType(baseClinicalNote || rawNote()) === "urgencia"
-          ? '<br><strong>Alerta Clinical r2:</strong> se detectó un criterio de urgencia; la pauta continúa por decisión profesional documentada.'
+          ? `<br><strong>Alerta ${notePresenter.escapeHTML(clinicalEngineLabel())}:</strong> se detectó un criterio de urgencia; la pauta continúa por decisión profesional documentada.`
           : "";
         summary.innerHTML = `<strong>Decisión final:</strong> ${notePresenter.escapeHTML(decisionLabel(decision))}<br><strong>Pauta final:</strong> ${notePresenter.escapeHTML(doseText(data.professionalAm, data.professionalPm))}` +
           (decision === "modificada" ? `<br><strong>Motivo:</strong> ${notePresenter.escapeHTML(data.professionalReason || "")}` : "") + urgencyNotice;
@@ -247,7 +254,7 @@
       setReviewStatus("✓ Recomendación revisada y aceptada por el profesional.", true);
     }
     if (decision === "modificada" && caseType(baseClinicalNote || rawNote()) !== "urgencia") setReviewStatus("✓ Plan modificado y documentado como decisión profesional.", true);
-    if (decision === "modificada" && caseType(baseClinicalNote || rawNote()) === "urgencia") setReviewStatus("⚠ Clinical r2 detectó un criterio de urgencia. Se conserva la alerta, pero prevalece la pauta modificada por el profesional con justificación documentada.", "warning");
+    if (decision === "modificada" && caseType(baseClinicalNote || rawNote()) === "urgencia") setReviewStatus(`⚠ ${clinicalEngineLabel()} detectó un criterio de urgencia. Se conserva la alerta, pero prevalece la pauta modificada por el profesional con justificación documentada.`, "warning");
     if (decision === "reevaluar") setReviewStatus("Recomendación marcada para reevaluación clínica; no se emitirá documento con nueva pauta.", false);
   }
 
@@ -279,7 +286,7 @@
     const review = byId("best-professional-review");
     if (!review || byId("best-review-modify")) return;
     const helper = review.querySelector(".helper-text");
-    if (helper) helper.textContent = "Clinical r2 mantiene su recomendación original y sus alertas de seguridad. El profesional puede aceptarla, modificar la pauta dejando un motivo, o indicar reevaluación. Una alerta del algoritmo nunca sustituye el criterio clínico documentado del profesional.";
+    if (helper) helper.textContent = `${clinicalEngineLabel()} mantiene su recomendación original y sus alertas de seguridad. El profesional puede aceptarla, modificar la pauta dejando un motivo, o indicar reevaluación. Una alerta del algoritmo nunca sustituye el criterio clínico documentado del profesional.`;
 
     const actionsHost = review.querySelector(".best-review-actions");
     if (actionsHost) {
@@ -315,7 +322,7 @@
     if (!Number.isInteger(am) || !Number.isInteger(pm) || am < 0 || pm < 0 || am > 150 || pm > 150) throw new Error("Ingrese dosis AM y PM enteras entre 0 y 150 UI.");
     if (am + pm <= 0) throw new Error("La pauta final debe contener al menos una dosis de NPH.");
     if (String(reason || "").trim().length < 5) throw new Error("Registre un motivo clínico breve para modificar la recomendación.");
-    // El umbral de 0,5 UI/kg/día limita la recomendación automática de Clinical r2.
+    // El umbral de 0,5 UI/kg/día limita la recomendación automática del motor clínico.
     // Una pauta manual modificada por el profesional puede superarlo si queda justificada;
     // se conserva como advertencia visible y no como bloqueo de la decisión clínica.
   }
@@ -363,7 +370,7 @@
     syncBaseClinicalNote();
     if (!baseClinicalNote) return;
     if (caseType(baseClinicalNote) === "urgencia") {
-      setReviewStatus("⚠ Clinical r2 detectó un criterio de urgencia. Puede modificar la pauta por criterio profesional; la justificación quedará registrada y la alerta original se conservará.", "warning");
+      setReviewStatus(`⚠ ${clinicalEngineLabel()} detectó un criterio de urgencia. Puede modificar la pauta por criterio profesional; la justificación quedará registrada y la alerta original se conservará.`, "warning");
     }
     const recommendation = currentRecommendation();
     byId("best-final-am").value = String(recommendation.am);
