@@ -397,7 +397,7 @@ require(pharmacy_css, [".farmacia-popular"], "Farmacia Popular styling")
 forbid(
     sw,
     [
-        "normalizarAsset", "respuestaTexto", "skipWaiting()", "clients.claim()",
+        "normalizarAsset", "respuestaTexto", "clients.claim()",
         "refreshNavigation", "refreshAsset", "event.waitUntil(refresh",
     ],
     "Service-worker runtime mutations",
@@ -408,7 +408,8 @@ require(
         f'const CACHE_NAME = "insulog-shell-{RELEASE}"',
         f'const DEPLOYMENT_REVISION = "release-{RELEASE}"',
         'new Request(asset, { cache: "reload" })', "precacheFreshShell",
-        'event.waitUntil(precacheFreshShell())', 'addEventListener("fetch"', 'caches.delete',
+        'await precacheFreshShell();', 'await self.skipWaiting();',
+        'addEventListener("fetch"', 'caches.delete',
         f'const PDF_PREVIEW_PATH = "./pdf-preview.html?v={RELEASE}"',
         'url.pathname.endsWith("/pdf-preview.html")', 'cache.match(navigationAsset)',
         "SHELL_ASSET_BY_PATH", "cache.match(shellAsset)",
