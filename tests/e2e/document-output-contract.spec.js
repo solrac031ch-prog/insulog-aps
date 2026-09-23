@@ -2,7 +2,7 @@ const { test, expect } = require("@playwright/test");
 
 async function expectActivePage(page, id) {
   const section = page.locator(`#${id}`);
-  await expect(section).toHaveClass(/(^|\\s)active(\\s|$)/);
+  await expect(section).toHaveClass(/(^|\s)active(\s|$)/);
   await expect(section).toHaveAttribute("aria-hidden", "false");
 }
 
