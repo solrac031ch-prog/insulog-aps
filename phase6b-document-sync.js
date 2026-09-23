@@ -485,6 +485,25 @@
       : null;
     const currentAm = tipo === "inicio" ? 0 : numberOrZero(data.amActual);
     const currentPm = tipo === "inicio" ? 0 : numberOrZero(data.pmActual);
+    const initiationSuggestedScheme = tipo === "inicio" ? String(data.esquemaInicioSugerido || "").trim() : "";
+    const initiationSuggestedFactor = tipo === "inicio" ? safeNumber(data.factorInicioSugerido) : null;
+    const initiationAppliedScheme = tipo === "inicio" ? String(data.esquemaInicio || "").trim() : "";
+    const initiationAppliedFactor = tipo === "inicio" ? safeNumber(data.factorInicioAplicado) : null;
+    const initiationSchemeModified = tipo === "inicio" && Boolean(data.esquemaInicioModificadoPorProfesional);
+    const initiationFactorModified = tipo === "inicio" && Boolean(data.factorInicioModificadoPorProfesional);
+    let initiationSuggestedAm = null;
+    let initiationSuggestedPm = null;
+    if (tipo === "inicio" && weight && initiationSuggestedScheme && initiationSuggestedFactor !== null) {
+      const suggestedDose = window.InsulogClinicalEngine?.calculateInitialDose?.({
+        weightKg: weight,
+        factor: initiationSuggestedFactor,
+        scheme: initiationSuggestedScheme
+      });
+      if (suggestedDose?.valid) {
+        initiationSuggestedAm = safeNumber(suggestedDose.am);
+        initiationSuggestedPm = safeNumber(suggestedDose.pm);
+      }
+    }
     const note = rawClinicalNote();
     const urgencyRoute = isUrgencyRoute();
     const urgencyAccepted = urgencyRoute && data.professionalDecision === "aceptada";
