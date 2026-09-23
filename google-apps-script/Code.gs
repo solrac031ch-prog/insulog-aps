@@ -7,8 +7,8 @@ const INSULOG_DRIVE_CONFIG = Object.freeze({
   controlsSheet: "Controles",
   eventsSheet: "Eventos",
   allowedOrigins: ["https://solrac031ch-prog.github.io"],
-  bridgeVersion: "2026.09.21-drive-v2",
-  schemaVersion: "2026.09.21-schema-v6"
+  bridgeVersion: "2026.09.23-drive-v3",
+  schemaVersion: "2026.09.23-schema-v7"
 });
 
 function doGet() {
@@ -33,7 +33,7 @@ function doPost(e) {
     const patients = requiredSheet_(spreadsheet, INSULOG_DRIVE_CONFIG.patientsSheet);
     const controls = requiredSheet_(spreadsheet, INSULOG_DRIVE_CONFIG.controlsSheet);
     const events = requiredSheet_(spreadsheet, INSULOG_DRIVE_CONFIG.eventsSheet);
-    ensureSchema_(patients, controls);
+    ensureSchema_(patients, controls, events);
 
     if (controlAlreadyExists_(controls, payload.recordId)) {
       return jsonResponse_({ ok: true, duplicate: true, recordId: payload.recordId });
@@ -70,7 +70,9 @@ function parsePayload_(e) {
 
 function validatePayload_(payload) {
   if (!payload || typeof payload !== "object") throw new Error("Payload inválido.");
-  if (String(payload.bridgeVersion || "") !== INSULOG_DRIVE_CONFIG.bridgeVersion) {
+  const bridgeVersion = String(payload.bridgeVersion || "");
+  const compatibleVersions = ["2026.09.21-drive-v2", INSULOG_DRIVE_CONFIG.bridgeVersion];
+  if (compatibleVersions.indexOf(bridgeVersion) === -1) {
     throw new Error("Versión del puente no compatible.");
   }
 
@@ -81,6 +83,10 @@ function validatePayload_(payload) {
 
   const recordId = String(payload.recordId || "").trim();
   if (recordId.length < 8 || recordId.length > 120) throw new Error("recordId inválido.");
+
+  if (bridgeVersion === INSULOG_DRIVE_CONFIG.bridgeVersion && !validRut_(payload.professionalRut)) {
+    throw new Error("RUT profesional inválido.");
+  }
 
   const patientName = cleanName_(payload.patientName);
   if (patientName.length < 3 || patientName.length > 160) throw new Error("Nombre de paciente inválido.");
@@ -133,7 +139,7 @@ function requiredSheet_(spreadsheet, name) {
   return sheet;
 }
 
-function ensureSchema_(patients, controls) {
+function ensureSchema_(patients, controls, events) {
   const properties = PropertiesService.getScriptProperties();
   if (properties.getProperty("INSULOG_SCHEMA_VERSION") === INSULOG_DRIVE_CONFIG.schemaVersion) return;
 
@@ -175,12 +181,19 @@ function ensureSchema_(patients, controls) {
     "Dosis NPH implicada",
     "Reducción propuesta (%)"
   ];
-  const requiredControlColumns = 24 + medicationHeaders.length + safetyHeaders.length;
+  const professionalHeaders = ["RUT profesional"];
+  const requiredControlColumns = 24 + medicationHeaders.length + safetyHeaders.length + professionalHeaders.length;
   if (controls.getMaxColumns() < requiredControlColumns) {
     controls.insertColumnsAfter(controls.getMaxColumns(), requiredControlColumns - controls.getMaxColumns());
   }
   controls.getRange(1, 25, 1, medicationHeaders.length).setValues([medicationHeaders]);
   controls.getRange(1, 30, 1, safetyHeaders.length).setValues([safetyHeaders]);
+  controls.getRange(1, 38, 1, professionalHeaders.length).setValues([professionalHeaders]);
+
+  if (events.getMaxColumns() < 13) {
+    events.insertColumnsAfter(events.getMaxColumns(), 13 - events.getMaxColumns());
+  }
+  events.getRange(1, 13).setValue("RUT profesional");
 
   const yesNoControlRule = SpreadsheetApp.newDataValidation()
     .requireValueInList(["Sí", "No"], true)
@@ -380,7 +393,8 @@ function appendControl_(sheet, patient, payload, timestamp) {
     payload.level3SevereNeurologic ? "Sí" : "No",
     payload.level3AutomaticRecommendation ? "Sí" : "No",
     String(payload.level3ImplicatedDose || "").trim().toUpperCase(),
-    numberOrBlank_(payload.level3ReductionPercent)
+    numberOrBlank_(payload.level3ReductionPercent),
+    normalizeRut_(payload.professionalRut)
   ]);
 }
 
@@ -417,7 +431,8 @@ function appendAutomaticHypoglycemiaEvent_(sheet, patientId, payload, timestamp)
     "Revisión de dosis y conducta clínica según Insulog y decisión profesional.",
     "",
     "No",
-    "Generado automáticamente desde el control " + String(payload.recordId)
+    "Generado automáticamente desde el control " + String(payload.recordId),
+    normalizeRut_(payload.professionalRut)
   ]);
 }
 
@@ -455,6 +470,32 @@ function medicationClassFlags_(medications) {
     sglt2: keys.some(function(key) { return sglt2Keys.indexOf(key) !== -1; }),
     dpp4: keys.some(function(key) { return dpp4Keys.indexOf(key) !== -1; })
   };
+}
+
+function normalizeRut_(value) {
+  const compact = String(value || "").toUpperCase().replace(/[^0-9K]/g, "");
+  if (!/^\d{7,8}[0-9K]$/.test(compact)) return "";
+  const body = compact.slice(0, -1);
+  const verifier = compact.slice(-1);
+  let sum = 0;
+  let multiplier = 2;
+  for (let index = body.length - 1; index >= 0; index -= 1) {
+    sum += Number(body[index]) * multiplier;
+    multiplier = multiplier === 7 ? 2 : multiplier + 1;
+  }
+  const remainder = 11 - (sum % 11);
+  const expected = remainder === 11 ? "0" : (remainder === 10 ? "K" : String(remainder));
+  if (verifier !== expected) return "";
+  const reversed = body.split("").reverse();
+  const grouped = [];
+  for (let index = 0; index < reversed.length; index += 3) {
+    grouped.push(reversed.slice(index, index + 3).reverse().join(""));
+  }
+  return grouped.reverse().join(".") + "-" + verifier;
+}
+
+function validRut_(value) {
+  return Boolean(normalizeRut_(value));
 }
 
 function normalizeControlKind_(value) {
