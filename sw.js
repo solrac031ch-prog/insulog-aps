@@ -1,37 +1,37 @@
 "use strict";
 
-const CACHE_NAME = "insulog-shell-71a1d8774a88755c";
-const DEPLOYMENT_REVISION = "release-71a1d8774a88755c";
-const PDF_PREVIEW_PATH = "./pdf-preview.html?v=71a1d8774a88755c";
+const CACHE_NAME = "insulog-shell-c7036c4cab814dae";
+const DEPLOYMENT_REVISION = "release-c7036c4cab814dae";
+const PDF_PREVIEW_PATH = "./pdf-preview.html?v=c7036c4cab814dae";
 
 const APP_SHELL = [
   "./index.html",
   PDF_PREVIEW_PATH,
-  "./styles.css?v=71a1d8774a88755c",
-  "./document-flow.css?v=71a1d8774a88755c",
-  "./pdf-enhancements.css?v=71a1d8774a88755c",
-  "./pdf-design-2026.css?v=71a1d8774a88755c",
-  "./aps-safety-2026.css?v=71a1d8774a88755c",
-  "./farmacia-popular.css?v=71a1d8774a88755c",
-  "./app-runtime.js?v=71a1d8774a88755c",
-  "./clinical-engine.js?v=71a1d8774a88755c",
-  "./clinical-copy.js?v=71a1d8774a88755c",
-  "./note-presenter.js?v=71a1d8774a88755c",
-  "./app.js?v=71a1d8774a88755c",
-  "./safety-guard.js?v=71a1d8774a88755c",
-  "./patient-document.js?v=71a1d8774a88755c",
-  "./pdf-enhancements.js?v=71a1d8774a88755c",
-  "./aps-safety-2026.js?v=71a1d8774a88755c",
-  "./farmacia-popular.js?v=71a1d8774a88755c",
-  "./document-flow.js?v=71a1d8774a88755c",
-  "./app-shell.js?v=71a1d8774a88755c",
-  "./phase6b-professional-decision.js?v=71a1d8774a88755c",
-  "./phase6b-document-sync.js?v=71a1d8774a88755c",
-  "./manifest.webmanifest?v=71a1d8774a88755c",
-  "./assets/icons/icon-32.png?v=71a1d8774a88755c",
-  "./assets/icons/icon-180.png?v=71a1d8774a88755c",
-  "./assets/icons/icon-192.png?v=71a1d8774a88755c",
-  "./assets/icons/icon-512.png?v=71a1d8774a88755c"
+  "./styles.css?v=c7036c4cab814dae",
+  "./document-flow.css?v=c7036c4cab814dae",
+  "./pdf-enhancements.css?v=c7036c4cab814dae",
+  "./pdf-design-2026.css?v=c7036c4cab814dae",
+  "./aps-safety-2026.css?v=c7036c4cab814dae",
+  "./farmacia-popular.css?v=c7036c4cab814dae",
+  "./app-runtime.js?v=c7036c4cab814dae",
+  "./clinical-engine.js?v=c7036c4cab814dae",
+  "./clinical-copy.js?v=c7036c4cab814dae",
+  "./note-presenter.js?v=c7036c4cab814dae",
+  "./app.js?v=c7036c4cab814dae",
+  "./safety-guard.js?v=c7036c4cab814dae",
+  "./patient-document.js?v=c7036c4cab814dae",
+  "./pdf-enhancements.js?v=c7036c4cab814dae",
+  "./aps-safety-2026.js?v=c7036c4cab814dae",
+  "./farmacia-popular.js?v=c7036c4cab814dae",
+  "./document-flow.js?v=c7036c4cab814dae",
+  "./app-shell.js?v=c7036c4cab814dae",
+  "./phase6b-professional-decision.js?v=c7036c4cab814dae",
+  "./phase6b-document-sync.js?v=c7036c4cab814dae",
+  "./manifest.webmanifest?v=c7036c4cab814dae",
+  "./assets/icons/icon-32.png?v=c7036c4cab814dae",
+  "./assets/icons/icon-180.png?v=c7036c4cab814dae",
+  "./assets/icons/icon-192.png?v=c7036c4cab814dae",
+  "./assets/icons/icon-512.png?v=c7036c4cab814dae"
 ];
 
 const SHELL_ASSET_BY_PATH = new Map(
