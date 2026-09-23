@@ -64,13 +64,20 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => Promise.all(
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
       keys
         .filter((key) => key.startsWith("insulog-shell-") && key !== CACHE_NAME)
         .map((key) => caches.delete(key))
-    ))
-  );
+    );
+
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    windows.forEach((client) => client.postMessage({
+      type: "INSULOG_UPDATE_READY",
+      release: DEPLOYMENT_REVISION
+    }));
+  })());
 });
 
 self.addEventListener("fetch", (event) => {
