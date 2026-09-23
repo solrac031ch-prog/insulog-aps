@@ -41,6 +41,7 @@ jobs:
           node --check tests/clinical-engine-hardening.test.js
           node --check tests/clinical-copy.test.js
           node --check tests/note-presenter.test.js
+          node --check tests/drive-schema-contract.test.js
 
       - name: Run clinical engine equivalence and hardening tests
         run: |
@@ -54,6 +55,9 @@ jobs:
 
       - name: Run exact note-presenter regression
         run: npm run test:note-presenter
+
+      - name: Validate Drive research schema contract
+        run: node tests/drive-schema-contract.test.js
 
       - name: Validate manifest JSON
         run: |
