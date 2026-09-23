@@ -14,7 +14,7 @@ test("la actualización PWA avisa sin reclamar una atención abierta", async () 
   expect(swSource).toContain('self.clients.matchAll({ type: "window", includeUncontrolled: true })');
   expect(swSource).toContain('type: "INSULOG_UPDATE_READY"');
   expect(swSource).not.toContain("clients.claim()");
-  expect(appShellSource).toContain("PWA_UPDATE_PENDING_KEY");
+  expect(appShellSource).toContain("pwaUpdatePendingRelease");
   expect(appShellSource).toContain("reloadPendingPwaUpdateIfSafe");
   expect(appShellSource).toContain('attributeFilter: ["class", "aria-hidden"]');
 });
