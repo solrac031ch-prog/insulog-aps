@@ -1,37 +1,37 @@
 "use strict";
 
-const CACHE_NAME = "insulog-shell-4eeb8b73143662e7";
-const DEPLOYMENT_REVISION = "release-4eeb8b73143662e7";
-const PDF_PREVIEW_PATH = "./pdf-preview.html?v=4eeb8b73143662e7";
+const CACHE_NAME = "insulog-shell-72890259fbfd4479";
+const DEPLOYMENT_REVISION = "release-72890259fbfd4479";
+const PDF_PREVIEW_PATH = "./pdf-preview.html?v=72890259fbfd4479";
 
 const APP_SHELL = [
   "./index.html",
   PDF_PREVIEW_PATH,
-  "./styles.css?v=4eeb8b73143662e7",
-  "./document-flow.css?v=4eeb8b73143662e7",
-  "./pdf-enhancements.css?v=4eeb8b73143662e7",
-  "./pdf-design-2026.css?v=4eeb8b73143662e7",
-  "./aps-safety-2026.css?v=4eeb8b73143662e7",
-  "./farmacia-popular.css?v=4eeb8b73143662e7",
-  "./app-runtime.js?v=4eeb8b73143662e7",
-  "./clinical-engine.js?v=4eeb8b73143662e7",
-  "./clinical-copy.js?v=4eeb8b73143662e7",
-  "./note-presenter.js?v=4eeb8b73143662e7",
-  "./app.js?v=4eeb8b73143662e7",
-  "./safety-guard.js?v=4eeb8b73143662e7",
-  "./patient-document.js?v=4eeb8b73143662e7",
-  "./pdf-enhancements.js?v=4eeb8b73143662e7",
-  "./aps-safety-2026.js?v=4eeb8b73143662e7",
-  "./farmacia-popular.js?v=4eeb8b73143662e7",
-  "./document-flow.js?v=4eeb8b73143662e7",
-  "./app-shell.js?v=4eeb8b73143662e7",
-  "./phase6b-professional-decision.js?v=4eeb8b73143662e7",
-  "./phase6b-document-sync.js?v=4eeb8b73143662e7",
-  "./manifest.webmanifest?v=4eeb8b73143662e7",
-  "./assets/icons/icon-32.png?v=4eeb8b73143662e7",
-  "./assets/icons/icon-180.png?v=4eeb8b73143662e7",
-  "./assets/icons/icon-192.png?v=4eeb8b73143662e7",
-  "./assets/icons/icon-512.png?v=4eeb8b73143662e7"
+  "./styles.css?v=72890259fbfd4479",
+  "./document-flow.css?v=72890259fbfd4479",
+  "./pdf-enhancements.css?v=72890259fbfd4479",
+  "./pdf-design-2026.css?v=72890259fbfd4479",
+  "./aps-safety-2026.css?v=72890259fbfd4479",
+  "./farmacia-popular.css?v=72890259fbfd4479",
+  "./app-runtime.js?v=72890259fbfd4479",
+  "./clinical-engine.js?v=72890259fbfd4479",
+  "./clinical-copy.js?v=72890259fbfd4479",
+  "./note-presenter.js?v=72890259fbfd4479",
+  "./app.js?v=72890259fbfd4479",
+  "./safety-guard.js?v=72890259fbfd4479",
+  "./patient-document.js?v=72890259fbfd4479",
+  "./pdf-enhancements.js?v=72890259fbfd4479",
+  "./aps-safety-2026.js?v=72890259fbfd4479",
+  "./farmacia-popular.js?v=72890259fbfd4479",
+  "./document-flow.js?v=72890259fbfd4479",
+  "./app-shell.js?v=72890259fbfd4479",
+  "./phase6b-professional-decision.js?v=72890259fbfd4479",
+  "./phase6b-document-sync.js?v=72890259fbfd4479",
+  "./manifest.webmanifest?v=72890259fbfd4479",
+  "./assets/icons/icon-32.png?v=72890259fbfd4479",
+  "./assets/icons/icon-180.png?v=72890259fbfd4479",
+  "./assets/icons/icon-192.png?v=72890259fbfd4479",
+  "./assets/icons/icon-512.png?v=72890259fbfd4479"
 ];
 
 const SHELL_ASSET_BY_PATH = new Map(
@@ -64,13 +64,20 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => Promise.all(
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
       keys
         .filter((key) => key.startsWith("insulog-shell-") && key !== CACHE_NAME)
         .map((key) => caches.delete(key))
-    ))
-  );
+    );
+
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    windows.forEach((client) => client.postMessage({
+      type: "INSULOG_UPDATE_READY",
+      release: DEPLOYMENT_REVISION
+    }));
+  })());
 });
 
 self.addEventListener("fetch", (event) => {

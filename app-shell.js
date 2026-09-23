@@ -465,6 +465,12 @@
 
   function registerServiceWorker() {
     if (!("serviceWorker" in navigator)) return;
+
+    navigator.serviceWorker.addEventListener("message", (event) => {
+      if (event.data?.type !== "INSULOG_UPDATE_READY") return;
+      if (runtime.navigation.activePageId() === "p0") window.location.reload();
+    });
+
     window.addEventListener("load", async () => {
       try {
         const registration = await navigator.serviceWorker.register("./sw.js", { scope: "./", updateViaCache: "none" });
