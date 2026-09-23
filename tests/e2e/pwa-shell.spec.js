@@ -9,6 +9,13 @@ const RELEASE = releaseMatch[1];
 
 test.use({ serviceWorkers: "allow" });
 
+test("la actualización PWA avisa sin reclamar una atención abierta", async () => {
+  expect(swSource).toContain('self.clients.matchAll({ type: "window", includeUncontrolled: true })');
+  expect(swSource).toContain('type: "INSULOG_UPDATE_READY"');
+  expect(swSource).not.toContain("clients.claim()");
+});
+
+
 test("el app shell se instala completo y sirve una sola versión offline", async ({ page, context }) => {
   await page.goto("/");
 
