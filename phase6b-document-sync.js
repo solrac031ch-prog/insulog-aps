@@ -480,6 +480,9 @@
       ? safeNumber(document.getElementById("hba1c-inicio")?.value)
       : safeNumber(document.getElementById("hba1c-control")?.value);
     const egfr = tipo === "inicio" ? safeNumber(document.getElementById("vfg-inicio")?.value) : null;
+    const targetA1c = tipo === "seguimiento"
+      ? safeNumber(document.getElementById("meta-hba1c-seguimiento")?.value) ?? safeNumber(data.targetA1c)
+      : null;
     const currentAm = tipo === "inicio" ? 0 : numberOrZero(data.amActual);
     const currentPm = tipo === "inicio" ? 0 : numberOrZero(data.pmActual);
     const note = rawClinicalNote();
@@ -493,7 +496,7 @@
     const finalPm = urgencyAcceptedWithoutDose ? null : numberOrZero(data.professionalPm);
     const decision = data.professionalDecision === "modificada" ? "Modificada" : "Aceptada";
     const medication = concomitantMedicationSnapshot(tipo, data);
-    const fingerprint = [patientName, birthDate, tipo, note, decision, urgencyAcceptedWithoutDose ? "urgency-no-dose" : "", data.level3Timing || "", data.level3ReversibleCause || "", finalAm ?? "", finalPm ?? "", hba1c ?? "", medication.text].join("|");
+    const fingerprint = [patientName, birthDate, tipo, note, decision, urgencyAcceptedWithoutDose ? "urgency-no-dose" : "", data.level3Timing || "", data.level3ReversibleCause || "", finalAm ?? "", finalPm ?? "", hba1c ?? "", targetA1c ?? "", fastingValues.join(","), preLunchValues.join(","), medication.text].join("|");
 
     const professionalRut = storedDailyProfessionalRut();
 
@@ -510,7 +513,7 @@
       weightKg: weight,
       hba1c,
       egfr,
-      targetA1c: tipo === "seguimiento" ? safeNumber(data.targetA1c) : null,
+      targetA1c,
       currentAm,
       currentPm,
       currentTotal: totalDose(currentAm, currentPm),
@@ -649,7 +652,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.23-phase6b-document-sync-validation-v2",
+    version: "2026.09.23-phase6b-document-sync-validation-v3",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),
