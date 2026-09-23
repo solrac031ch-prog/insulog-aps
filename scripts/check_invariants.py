@@ -188,7 +188,7 @@ require(
         "InsulogClinicalEngine", "TARGET_PROFILES", "function roundUnits", "Math.round(value)",
         "function suggestInitialScheme", "hba1cValue > 10", "containsAcuteEmergency", "Unidad de Emergencia Hospitalaria",
         "function assessInsulinSensitivity", "bmiValue < 20", "egfrValue < 60", "ageValue > 70", "bmiValue >= 30",
-        "function calculateInitialDose", 'scheme !== "doble_dosis" && safeFactor > 0.2',
+        "function calculateInitialDose", "const allowedFactors = new Set([0.1, 0.2, 0.3])",
         "function detectDiscordantHighs", "function analyzeGlucose", "hypoglycemiaLevel2", "minimum < 54", "minimum < 70",
         "function classifyHypoglycemia", "requiredAssistance", "urgent: true",
         "function calculateAdjustment", "analysis.min", "analysis.hipo ? -20 : -10", "percent = 10", "percent = 20",
@@ -204,6 +204,7 @@ forbid(
         "document", "querySelector", "runtimeState", "localStorage", "sessionStorage", "indexedDB", "InsulogRuntime",
         "hba1c > 9", "hba1c >= 11", "dosePerKg >= 0.7", "dosePerKg >= 1", "hipoSevera",
         "analysis.promedio < 80", "analysis.promedio <= 130", "analysis.promedio <= 180",
+        'scheme !== "doble_dosis" && safeFactor > 0.2',
     ],
     "Pure clinical engine browser coupling or retired clinical rules",
 )
