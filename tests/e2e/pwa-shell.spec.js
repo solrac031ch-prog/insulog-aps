@@ -19,16 +19,34 @@ test("la actualización PWA avisa sin reclamar una atención abierta", async () 
 test("el app shell se instala completo y sirve una sola versión offline", async ({ page, context }) => {
   await page.goto("/");
 
-  await page.evaluate(async () => {
-    await navigator.serviceWorker.ready;
-  });
+  await expect.poll(async () => {
+    try {
+      return await page.evaluate(async () => {
+        await navigator.serviceWorker.ready;
+        return true;
+      });
+    } catch {
+      return false;
+    }
+  }).toBe(true);
 
-  if (!(await page.evaluate(() => Boolean(navigator.serviceWorker.controller)))) {
-    await page.reload({ waitUntil: "domcontentloaded" });
+  let controlled = false;
+  try {
+    controlled = await page.evaluate(() => Boolean(navigator.serviceWorker.controller));
+  } catch {
+    await page.waitForLoadState("domcontentloaded");
   }
 
+  if (!controlled) await page.reload({ waitUntil: "domcontentloaded" });
+
   await expect.poll(
-    () => page.evaluate(() => Boolean(navigator.serviceWorker.controller)),
+    async () => {
+      try {
+        return await page.evaluate(() => Boolean(navigator.serviceWorker.controller));
+      } catch {
+        return false;
+      }
+    },
     { message: "La segunda navegación debe quedar controlada por el service worker" }
   ).toBe(true);
 
