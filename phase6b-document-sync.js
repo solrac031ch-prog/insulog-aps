@@ -185,11 +185,21 @@
     return `${year}-${month}-${day}`;
   }
 
-  function normalizeProfessionalRut(value) {
+  function professionalRutResult(value) {
     const compact = String(value || "")
+      .trim()
       .toUpperCase()
       .replace(/[^0-9K]/g, "");
-    if (!/^\d{7,8}[0-9K]$/.test(compact)) return "";
+
+    if (!/^\d{7,8}[0-9K]$/.test(compact)) {
+      return Object.freeze({
+        valid: false,
+        formatted: "",
+        reason: "length",
+        message: "RUT no válido. Ingrese 7 u 8 dígitos de RUT más su dígito verificador."
+      });
+    }
+
     const body = compact.slice(0, -1);
     const verifier = compact.slice(-1);
     let sum = 0;
@@ -198,15 +208,34 @@
       sum += Number(body[index]) * multiplier;
       multiplier = multiplier === 7 ? 2 : multiplier + 1;
     }
+
     const remainder = 11 - (sum % 11);
     const expected = remainder === 11 ? "0" : (remainder === 10 ? "K" : String(remainder));
-    if (verifier !== expected) return "";
+    if (verifier !== expected) {
+      return Object.freeze({
+        valid: false,
+        formatted: "",
+        reason: "verifier",
+        message: `RUT no válido. Dígito verificador incorrecto. Para ${body}, el DV correcto es ${expected}.`
+      });
+    }
+
     const reversed = body.split("").reverse();
     const grouped = [];
     for (let index = 0; index < reversed.length; index += 3) {
       grouped.push(reversed.slice(index, index + 3).reverse().join(""));
     }
-    return `${grouped.reverse().join(".")}-${verifier}`;
+
+    return Object.freeze({
+      valid: true,
+      formatted: `${grouped.reverse().join(".")}-${verifier}`,
+      reason: "",
+      message: ""
+    });
+  }
+
+  function normalizeProfessionalRut(value) {
+    return professionalRutResult(value).formatted;
   }
 
   function storedDailyProfessionalRut() {
@@ -303,7 +332,7 @@
         <h2 id="professional-rut-title">Identificación profesional</h2>
         <p>Ingrese su RUT profesional para registrar los controles de hoy. Se solicitará una sola vez al día en este computador.</p>
         <label for="professional-rut-input">RUT profesional</label>
-        <input id="professional-rut-input" inputmode="text" autocomplete="off" placeholder="12.345.678-5" aria-describedby="professional-rut-error">
+        <input id="professional-rut-input" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" placeholder="12.345.678-5 o 1.234.567-K" aria-describedby="professional-rut-error">
         <div id="professional-rut-error" role="alert" aria-live="polite"></div>
         <button id="professional-rut-submit" type="submit">CONTINUAR A INSULOG</button>
       </form>
@@ -314,13 +343,15 @@
     const error = gate.querySelector("#professional-rut-error");
     form.addEventListener("submit", (event) => {
       event.preventDefault();
-      const rut = normalizeProfessionalRut(input.value);
-      if (!rut) {
-        error.textContent = "RUT no válido. Revise el número y dígito verificador.";
+      const validation = professionalRutResult(input.value);
+      if (!validation.valid) {
+        error.textContent = validation.message;
         input.focus();
         input.select();
         return;
       }
+      const rut = validation.formatted;
+      input.value = rut;
       localStorage.setItem(PROFESSIONAL_RUT_STORAGE_KEY, JSON.stringify({ date: localDateKey(), rut }));
       closeProfessionalRutGate();
     });
