@@ -5,21 +5,26 @@ const copy = require("../clinical-copy.js");
 
 const initial = copy.buildInitialNote({
   criteria: "HbA1c 11% (>10%)",
+  suggestedSchemeText: "NPH monodosis nocturna con inicio conservador",
   schemeText: "NPH monodosis nocturna",
-  reason: "Inicio con insulina basal NPH en monodosis, con titulación posterior según protocolo APS.",
-  sensitivity: "Sensibilidad usual",
+  reason: "Alto riesgo o mayor sensibilidad a insulina; se sugiere dosis menor, ajuste progresivo y control precoz.",
+  sensitivity: "Insulinosensible",
+  suggestedFactor: 0.1,
+  appliedFactor: 0.3,
+  factorModified: true,
   am: 0,
-  pm: 14
+  pm: 21
 });
 
 assert.equal(initial, `INICIO
 Paciente con criterio(s) de inicio de insulina: HbA1c 11% (>10%).
-Esquema sugerido: NPH monodosis nocturna
-Motivo: Inicio con insulina basal NPH en monodosis, con titulación posterior según protocolo APS.
-Sensibilidad a insulina: Sensibilidad usual
+Recomendación Insulog: NPH monodosis nocturna con inicio conservador · factor 0,1 UI/kg.
+Motivo de la sugerencia: Alto riesgo o mayor sensibilidad a insulina; se sugiere dosis menor, ajuste progresivo y control precoz.
+Sensibilidad a insulina: Insulinosensible
+Selección para el cálculo: NPH monodosis nocturna · Factor aplicado: 0,3 UI/kg · modificada por el profesional respecto de la sugerencia de Insulog.
 Se inicia insulina NPH en dosis de:
 - 0 unidades antes del desayuno
-- 14 unidades antes de dormir
+- 21 unidades antes de dormir
 
 Educación por enfermería para inicio de insulina.
 Evaluación por nutricionista.
