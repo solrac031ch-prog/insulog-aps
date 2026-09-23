@@ -33,8 +33,11 @@ assert.equal(decision.scheme, "stop");
 assert.match(decision.emergencyReason, /Emergencia Hospitalaria/);
 
 const monodose = engine.calculateInitialDose({ weightKg: 70, factor: 0.3, scheme: "monodosis_pm" });
-assert.equal(monodose.factorApplied, 0.2, "0,3 UI/kg no se permite en monodosis");
-assert.deepEqual({ total: monodose.total, am: monodose.am, pm: monodose.pm }, { total: 14, am: 0, pm: 14 });
+assert.equal(monodose.factorApplied, 0.3, "0,3 UI/kg puede ser seleccionado por el profesional en monodosis");
+assert.deepEqual({ total: monodose.total, am: monodose.am, pm: monodose.pm }, { total: 21, am: 0, pm: 21 });
+
+const doubleDose = engine.calculateInitialDose({ weightKg: 70, factor: 0.3, scheme: "doble_dosis" });
+assert.deepEqual({ total: doubleDose.total, am: doubleDose.am, pm: doubleDose.pm }, { total: 21, am: 14, pm: 7 });
 
 const morningDose = engine.calculateInitialDose({ weightKg: 70, factor: 0.2, scheme: "monodosis_am" });
 assert.deepEqual({ am: morningDose.am, pm: morningDose.pm }, { am: 14, pm: 0 });
