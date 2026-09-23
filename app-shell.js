@@ -470,9 +470,9 @@
   }
 
   function reloadPendingPwaUpdateIfSafe() {
-    const pendingRelease = String(localStorage.getItem(PWA_UPDATE_PENDING_KEY) || "").trim();
+    const pendingRelease = String(sessionStorage.getItem(PWA_UPDATE_PENDING_KEY) || "").trim();
     if (!pendingRelease || runtime.navigation.activePageId() !== "p0") return false;
-    localStorage.removeItem(PWA_UPDATE_PENDING_KEY);
+    sessionStorage.removeItem(PWA_UPDATE_PENDING_KEY);
     window.location.reload();
     return true;
   }
@@ -494,7 +494,7 @@
 
     navigator.serviceWorker.addEventListener("message", (event) => {
       if (event.data?.type !== "INSULOG_UPDATE_READY") return;
-      localStorage.setItem(PWA_UPDATE_PENDING_KEY, String(event.data.release || "ready"));
+      sessionStorage.setItem(PWA_UPDATE_PENDING_KEY, String(event.data.release || "ready"));
       reloadPendingPwaUpdateIfSafe();
     });
 
