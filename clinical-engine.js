@@ -107,14 +107,14 @@
     let schemeText = "NPH monodosis nocturna";
     let reason = "Inicio con insulina basal NPH en monodosis, con titulación posterior según protocolo APS.";
 
-    if (markedHyperglycemia && !conservativeStart) {
-      scheme = "doble_dosis";
-      schemeText = "NPH doble dosis AM + PM";
-      reason = "HbA1c/glicemias marcadamente elevadas o síntomas catabólicos, compatible con hiperglicemia sostenida.";
-    } else if (Number.isFinite(fastingValue) && fastingValue <= 130 && criteria.length > 0 && !conservativeStart) {
+    if (Number.isFinite(fastingValue) && fastingValue <= 130 && criteria.length > 0 && !conservativeStart) {
       scheme = "monodosis_am";
       schemeText = "NPH monodosis matinal";
       reason = "La glicemia de ayuno está en rango; se prioriza NPH diurna para el patrón hiperglicémico no nocturno.";
+    } else if (markedHyperglycemia && !conservativeStart) {
+      scheme = "doble_dosis";
+      schemeText = "NPH doble dosis AM + PM";
+      reason = "HbA1c/glicemias marcadamente elevadas o síntomas catabólicos, compatible con hiperglicemia sostenida.";
     }
 
     if (conservativeStart) {
