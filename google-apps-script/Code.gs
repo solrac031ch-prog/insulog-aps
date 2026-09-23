@@ -8,7 +8,7 @@ const INSULOG_DRIVE_CONFIG = Object.freeze({
   eventsSheet: "Eventos",
   allowedOrigins: ["https://solrac031ch-prog.github.io"],
   bridgeVersion: "2026.09.23-drive-v3",
-  schemaVersion: "2026.09.23-schema-v8"
+  schemaVersion: "2026.09.23-schema-v9"
 });
 
 function doGet() {
@@ -150,6 +150,25 @@ function validatePayload_(payload) {
       throw new Error("Meta HbA1c inválida.");
     }
   }
+
+  const allowedInitiationSchemes = ["monodosis_pm", "monodosis_am", "doble_dosis"];
+  ["initiationSuggestedScheme", "initiationAppliedScheme"].forEach(function(key) {
+    if (payload[key] === undefined || payload[key] === null || payload[key] === "") return;
+    if (allowedInitiationSchemes.indexOf(String(payload[key])) === -1) {
+      throw new Error("Esquema de inicio inválido: " + key + ".");
+    }
+  });
+  ["initiationSuggestedFactor", "initiationAppliedFactor"].forEach(function(key) {
+    if (payload[key] === undefined || payload[key] === null || payload[key] === "") return;
+    if ([0.1, 0.2, 0.3].indexOf(Number(payload[key])) === -1) {
+      throw new Error("Factor de inicio inválido: " + key + ".");
+    }
+  });
+  ["initiationSchemeModified", "initiationFactorModified"].forEach(function(key) {
+    if (payload[key] !== undefined && typeof payload[key] !== "boolean") {
+      throw new Error("Indicador de modificación de inicio inválido: " + key + ".");
+    }
+  });
 }
 
 function requiredSheet_(spreadsheet, name) {
@@ -210,7 +229,17 @@ function ensureSchema_(patients, controls, events) {
     "HGT ayunas utilizados",
     "HGT pre-almuerzo utilizados"
   ];
-  const requiredControlColumns = 24 + medicationHeaders.length + safetyHeaders.length + professionalHeaders.length + validationHeaders.length;
+  const initiationHeaders = [
+    "Inicio esquema sugerido Insulog",
+    "Inicio factor sugerido (UI/kg)",
+    "Inicio dosis sugerida AM (UI)",
+    "Inicio dosis sugerida PM (UI)",
+    "Inicio esquema aplicado",
+    "Inicio factor aplicado (UI/kg)",
+    "Inicio esquema modificado por médico",
+    "Inicio factor modificado por médico"
+  ];
+  const requiredControlColumns = 24 + medicationHeaders.length + safetyHeaders.length + professionalHeaders.length + validationHeaders.length + initiationHeaders.length;
   if (controls.getMaxColumns() < requiredControlColumns) {
     controls.insertColumnsAfter(controls.getMaxColumns(), requiredControlColumns - controls.getMaxColumns());
   }
@@ -218,6 +247,7 @@ function ensureSchema_(patients, controls, events) {
   controls.getRange(1, 30, 1, safetyHeaders.length).setValues([safetyHeaders]);
   controls.getRange(1, 38, 1, professionalHeaders.length).setValues([professionalHeaders]);
   controls.getRange(1, 39, 1, validationHeaders.length).setValues([validationHeaders]);
+  controls.getRange(1, 46, 1, initiationHeaders.length).setValues([initiationHeaders]);
 
   if (events.getMaxColumns() < 13) {
     events.insertColumnsAfter(events.getMaxColumns(), 13 - events.getMaxColumns());
@@ -230,6 +260,7 @@ function ensureSchema_(patients, controls, events) {
     .build();
   controls.getRange(2, 27, Math.max(1, controls.getMaxRows() - 1), 5).setDataValidation(yesNoControlRule);
   controls.getRange(2, 34, Math.max(1, controls.getMaxRows() - 1), 2).setDataValidation(yesNoControlRule);
+  controls.getRange(2, 52, Math.max(1, controls.getMaxRows() - 1), 2).setDataValidation(yesNoControlRule);
 
   properties.setProperty("INSULOG_SCHEMA_VERSION", INSULOG_DRIVE_CONFIG.schemaVersion);
 }
@@ -377,6 +408,14 @@ function appendControl_(sheet, patient, payload, timestamp) {
   const targetA1c = numberOrBlank_(payload.targetA1c);
   const fastingValues = serializeGlucoseValues_(payload.fastingValues);
   const preLunchValues = serializeGlucoseValues_(payload.preLunchValues);
+  const initiationSuggestedScheme = String(payload.initiationSuggestedScheme || "").trim();
+  const initiationSuggestedFactor = numberOrBlank_(payload.initiationSuggestedFactor);
+  const initiationSuggestedAm = numberOrBlank_(payload.initiationSuggestedAm);
+  const initiationSuggestedPm = numberOrBlank_(payload.initiationSuggestedPm);
+  const initiationAppliedScheme = String(payload.initiationAppliedScheme || "").trim();
+  const initiationAppliedFactor = numberOrBlank_(payload.initiationAppliedFactor);
+  const initiationSchemeModified = payload.documentType === "inicio" ? (payload.initiationSchemeModified ? "Sí" : "No") : "";
+  const initiationFactorModified = payload.documentType === "inicio" ? (payload.initiationFactorModified ? "Sí" : "No") : "";
   const hba1c = numberOrBlank_(payload.hba1c);
   const egfr = numberOrBlank_(payload.egfr);
   const weight = numberOrBlank_(payload.weightKg);
@@ -437,7 +476,15 @@ function appendControl_(sheet, patient, payload, timestamp) {
     finalPm,
     targetA1c,
     fastingValues,
-    preLunchValues
+    preLunchValues,
+    initiationSuggestedScheme,
+    initiationSuggestedFactor,
+    initiationSuggestedAm,
+    initiationSuggestedPm,
+    initiationAppliedScheme,
+    initiationAppliedFactor,
+    initiationSchemeModified,
+    initiationFactorModified
   ]);
 }
 

@@ -60,6 +60,7 @@ El médico no necesita acceso al Google Sheet ni iniciar sesión en la cuenta pr
 - RUT profesional validado.
 - Tipo de control: inicio, ingreso con insulina previa, ajuste o seguimiento.
 - Recomendación NPH estructurada por horario: AM y PM.
+- En inicio: esquema y factor sugeridos originalmente por Insulog, dosis AM/PM que habría producido esa sugerencia, esquema y factor aplicados por el médico antes del cálculo, y banderas de modificación de esquema/factor.
 - Decisión final del médico estructurada por horario: AM y PM.
 - Meta HbA1c utilizada para la titulación.
 - HGT de ayunas y pre-almuerzo utilizados por el algoritmo, conservados en el orden registrado.
