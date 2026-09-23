@@ -69,10 +69,11 @@
     const factor = byId("factor-dosis");
     if (factor) {
       factor.innerHTML = '<option value="0.1">0,1 UI/kg · insulinosensible / alto riesgo</option><option value="0.2">0,2 UI/kg · sensibilidad usual o insulinorresistente en monodosis</option>';
-      factor.disabled = true;
+      factor.disabled = false;
+      factor.removeAttribute("aria-disabled");
       factor.setAttribute("aria-describedby", "factor-dosis-ayuda-r2");
       const grid = factor.closest(".dosing-grid");
-      if (grid && !byId("factor-dosis-ayuda-r2")) grid.insertAdjacentHTML("afterend", '<p id="factor-dosis-ayuda-r2" class="helper-text">El factor se determina automáticamente con edad, IMC, VFG y riesgo de hipoglicemia. En monodosis no se permite 0,3 UI/kg.</p>');
+      if (grid && !byId("factor-dosis-ayuda-r2")) grid.insertAdjacentHTML("afterend", '<p id="factor-dosis-ayuda-r2" class="helper-text">Insulog sugiere el factor según edad, IMC, VFG y riesgo de hipoglicemia. El profesional puede ajustar entre 0,1 y 0,2 UI/kg antes de calcular. En monodosis no se permite 0,3 UI/kg.</p>');
     }
 
     const guidance = document.querySelector("#p3 .guidance-content");

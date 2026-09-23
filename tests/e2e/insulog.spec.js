@@ -83,6 +83,7 @@ test("HbA1c >10 inicia NPH basal en monodosis y no doble dosis automática", asy
   await page.locator("#continuar-dosificacion-inicio").click();
   await expectActivePage(page, "p3");
   await expect(page.locator("#factor-dosis")).toHaveValue("0.2");
+  await expect(page.locator("#factor-dosis")).toBeEnabled();
   await page.locator("#peso-paciente").fill("70");
   await page.locator("#p3").getByRole("button", { name: "CALCULAR DOSIS Y GENERAR NOTA", exact: true }).click();
   await expectActivePage(page, "p5");
@@ -91,7 +92,7 @@ test("HbA1c >10 inicia NPH basal en monodosis y no doble dosis automática", asy
   await expect(page.locator("#nota-clinica")).toContainText("NPH monodosis nocturna");
 });
 
-test("riesgo de hipoglicemia usa 0,1 UI/kg y redondeo a unidad completa", async ({ page }) => {
+test("riesgo de hipoglicemia sugiere 0,1 UI/kg pero permite ajuste profesional a 0,2", async ({ page }) => {
   await openDefinition(page);
   await page.locator("#p2").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
   await page.locator("#hba1c-inicio").fill("11");
@@ -100,10 +101,13 @@ test("riesgo de hipoglicemia usa 0,1 UI/kg y redondeo a unidad completa", async 
   await expectActivePage(page, "p25");
   await page.locator("#continuar-dosificacion-inicio").click();
   await expect(page.locator("#factor-dosis")).toHaveValue("0.1");
+  await expect(page.locator("#factor-dosis")).toBeEnabled();
+  await page.locator("#factor-dosis").selectOption("0.2");
+  await expect(page.locator("#factor-dosis")).toHaveValue("0.2");
   await page.locator("#peso-paciente").fill("70");
   await page.locator("#p3").getByRole("button", { name: "CALCULAR DOSIS Y GENERAR NOTA", exact: true }).click();
   const data = await runtimeState(page);
-  expect({ am: data.am, pm: data.pm }).toEqual({ am: 0, pm: 7 });
+  expect({ am: data.am, pm: data.pm }).toEqual({ am: 0, pm: 14 });
 });
 
 test("sospecha de cetosis bloquea el flujo ambulatorio y deriva a urgencia", async ({ page }) => {
