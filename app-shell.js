@@ -11,6 +11,7 @@
   const { all, byId } = runtime.dom;
   const actions = runtime.actions;
   const BEST_HISTORY_LIMIT = 100;
+  let pwaUpdatePendingRelease = "";
   let bestSessionHistory = [];
   let bestReviewStatus = "";
   let bestReviewSignature = "";
@@ -468,18 +469,39 @@
     actions.register("best-history-home", () => runtime.navigation.go(0));
   }
 
+  function reloadPendingPwaUpdateIfSafe() {
+    if (!pwaUpdatePendingRelease || runtime.navigation.activePageId() !== "p0") return false;
+    pwaUpdatePendingRelease = "";
+    window.location.reload();
+    return true;
+  }
+
+  function observeReturnHomeForPwaUpdate() {
+    const home = byId("p0");
+    if (!home || home.dataset.pwaUpdateObserver === "1") return;
+    home.dataset.pwaUpdateObserver = "1";
+    const observer = new MutationObserver(() => {
+      if (reloadPendingPwaUpdateIfSafe()) observer.disconnect();
+    });
+    observer.observe(home, { attributes: true, attributeFilter: ["class", "aria-hidden"] });
+  }
+
   function registerServiceWorker() {
     if (!("serviceWorker" in navigator)) return;
 
+    observeReturnHomeForPwaUpdate();
+
     navigator.serviceWorker.addEventListener("message", (event) => {
       if (event.data?.type !== "INSULOG_UPDATE_READY") return;
-      if (runtime.navigation.activePageId() === "p0") window.location.reload();
+      pwaUpdatePendingRelease = String(event.data.release || "ready");
+      reloadPendingPwaUpdateIfSafe();
     });
 
     window.addEventListener("load", async () => {
       try {
         const registration = await navigator.serviceWorker.register("./sw.js", { scope: "./", updateViaCache: "none" });
         await registration.update();
+        reloadPendingPwaUpdateIfSafe();
       } catch (error) {
         console.warn("No se pudo registrar o actualizar el service worker de Insulog:", error);
       }

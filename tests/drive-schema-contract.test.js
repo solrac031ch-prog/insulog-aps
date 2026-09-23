@@ -28,7 +28,8 @@ const sync = fs.readFileSync("phase6b-document-sync.js", "utf8");
   "finalAm",
   "finalPm",
   "serializeGlucoseValues_(payload.fastingValues)",
-  "serializeGlucoseValues_(payload.preLunchValues)"
+  "serializeGlucoseValues_(payload.preLunchValues)",
+  "documentSyncVersion"
 ].forEach((token) => assert.ok(bridge.includes(token), `Falta contrato Drive: ${token}`));
 
 [
@@ -47,7 +48,8 @@ const sync = fs.readFileSync("phase6b-document-sync.js", "utf8");
   "initiationAppliedScheme,",
   "initiationAppliedFactor,",
   "initiationSchemeModified,",
-  "initiationFactorModified,"
+  "initiationFactorModified,",
+  "documentSyncVersion:"
 ].forEach((token) => assert.ok(sync.includes(token), `Falta payload de validación: ${token}`));
 
 console.log("Drive validation schema contract checks passed");

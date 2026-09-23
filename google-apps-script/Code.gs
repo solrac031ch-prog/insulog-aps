@@ -428,7 +428,8 @@ function appendControl_(sheet, patient, payload, timestamp) {
   const version = [
     String(payload.clinicalEngineVersion || "").trim(),
     String(payload.documentModuleVersion || "").trim(),
-    String(payload.appRuntimeVersion || "").trim()
+    String(payload.appRuntimeVersion || "").trim(),
+    String(payload.documentSyncVersion || "").trim()
   ].filter(Boolean).join(" | ");
 
   sheet.appendRow([
