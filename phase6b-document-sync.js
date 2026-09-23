@@ -196,7 +196,7 @@
         valid: false,
         formatted: "",
         reason: "length",
-        message: "Ingrese 7 u 8 dígitos de RUT más su dígito verificador."
+        message: "RUT no válido. Ingrese 7 u 8 dígitos de RUT más su dígito verificador."
       });
     }
 
@@ -216,7 +216,7 @@
         valid: false,
         formatted: "",
         reason: "verifier",
-        message: `Dígito verificador incorrecto. Para ${body}, el DV correcto es ${expected}.`
+        message: `RUT no válido. Dígito verificador incorrecto. Para ${body}, el DV correcto es ${expected}.`
       });
     }
 
