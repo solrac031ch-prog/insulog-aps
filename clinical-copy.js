@@ -6,11 +6,33 @@
   if (typeof module === "object" && module.exports) module.exports = clinicalCopy;
   if (root) root.InsulogClinicalCopy = clinicalCopy;
 })(typeof globalThis !== "undefined" ? globalThis : this, () => {
-  function buildInitialNote({ criteria = "", schemeText = "NPH monodosis nocturna", reason = "Inicio con NPH basal.", am = 0, pm = 0, sensitivity = "" } = {}) {
+  function formatFactor(value) {
+    const factor = Number(value);
+    return Number.isFinite(factor) ? factor.toFixed(1).replace(".", ",") : "";
+  }
+
+  function buildInitialNote({
+    criteria = "",
+    suggestedSchemeText = "",
+    schemeText = "NPH monodosis nocturna",
+    reason = "Inicio con NPH basal.",
+    am = 0,
+    pm = 0,
+    sensitivity = "",
+    suggestedFactor = null,
+    appliedFactor = null,
+    schemeModified = false,
+    factorModified = false
+  } = {}) {
+    const suggestedFactorText = formatFactor(suggestedFactor);
+    const appliedFactorText = formatFactor(appliedFactor);
+    const suggestion = suggestedSchemeText || schemeText;
+    const changed = schemeModified || factorModified;
     return `INICIO
 Paciente con criterio(s) de inicio de insulina: ${criteria || "criterio clínico documentado"}.
-Esquema sugerido: ${schemeText}
-Motivo: ${reason}${sensitivity ? `\nSensibilidad a insulina: ${sensitivity}` : ""}
+Recomendación Insulog: ${suggestion}${suggestedFactorText ? ` · factor ${suggestedFactorText} UI/kg` : ""}.
+Motivo de la sugerencia: ${reason}${sensitivity ? `\nSensibilidad a insulina: ${sensitivity}` : ""}
+Selección para el cálculo: ${schemeText}${appliedFactorText ? ` · Factor aplicado: ${appliedFactorText} UI/kg` : ""}${changed ? " · modificada por el profesional respecto de la sugerencia de Insulog" : ""}.
 Se inicia insulina NPH en dosis de:
 - ${am} unidades antes del desayuno
 - ${pm} unidades antes de dormir

@@ -1,7 +1,7 @@
 "use strict";
 
 (() => {
-  const EXPECTED_CLINICAL_VERSION = "APS-NPH-2026.09.23-r4";
+  const EXPECTED_CLINICAL_VERSION = "APS-NPH-2026.09.23-r5";
   const CRITICAL_ACTIONS = new Set([
     "define-initial-scheme", "calculate-initial", "calculate-followup", "generate-high-dose-note",
     "best-review-accept", "best-review-modify-save", "best-review-reassess",
@@ -49,6 +49,10 @@
       if (engine.version !== EXPECTED_CLINICAL_VERSION || app.clinicalVersion !== EXPECTED_CLINICAL_VERSION) throw new Error("Las versiones del motor clínico y de la interfaz no coinciden.");
       const stable = engine.calculateAdjustment(engine.analyzeGlucose([100, 100, 100], "Autotest"), "PM", 20, 7);
       if (stable.newDose !== 20 || stable.dataSufficient !== true) throw new Error("Falló el autotest de titulación estable.");
+      const initialChoice = engine.calculateInitialDose({ weightKg: 70, factor: 0.3, scheme: "monodosis_pm" });
+      if (!initialChoice.valid || initialChoice.factorApplied !== 0.3 || initialChoice.pm !== 21) {
+        throw new Error("Falló el autotest de selección profesional del factor inicial.");
+      }
       if (!engine.assessDoseSafety(0.5).blocksAutomaticEscalation) throw new Error("Falló el autotest del techo basal de 0,5 UI/kg/día.");
       if (engine.classifyHypoglycemia([53], false)?.nivel !== 2) throw new Error("Falló el autotest de hipoglicemia nivel 2.");
       const insufficient = engine.calculateFollowup({ weightKg: 70, regimenType: "pm", amDose: 0, pmDose: 20, fastingValues: [160, 170], targetA1c: 7 });
@@ -76,7 +80,7 @@
   }
 
   window.InsulogSafetyGuard = Object.freeze({
-    version: "2026.09.21-safety2",
+    version: "2026.09.23-safety3-r5",
     expectedClinicalVersion: EXPECTED_CLINICAL_VERSION,
     selfTest, reportActionError,
     isLocked: () => locked,

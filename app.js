@@ -141,9 +141,14 @@
 
     renderNotaClinica(clinicalCopy.buildInitialNote({
       criteria: data.criteria,
+      suggestedSchemeText: data.textoEsquemaInicioSugerido || selectedSchemeText,
       schemeText: selectedSchemeText,
       reason: data.motivoEsquemaInicio || "Inicio con NPH basal.",
       sensitivity: data.sensibilidadInsulina,
+      suggestedFactor: data.factorInicioSugerido,
+      appliedFactor: resultado.factorApplied,
+      schemeModified,
+      factorModified,
       am: resultado.am,
       pm: resultado.pm
     }));
