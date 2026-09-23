@@ -122,3 +122,29 @@ test("Android Chromium instala el shell y vuelve a abrir la app offline", async 
   await expect(page.locator("#p0")).toHaveClass(/active/);
   await context.setOffline(false);
 });
+
+test("datos del paciente conserva acciones centradas y sin aviso técnico en móvil", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.InsulogRuntime.navigation.go(6));
+  await expectActivePage(page, "p6");
+
+  await expect(page.locator("#drive-sync-status")).toHaveCount(0);
+
+  const metrics = await page.locator("#p6").evaluate((section) => {
+    const sectionRect = section.getBoundingClientRect();
+    const center = sectionRect.left + sectionRect.width / 2;
+    const buttons = Array.from(section.querySelectorAll(".document-actions .btn, :scope > .secondary-nav"));
+    return {
+      deltas: buttons.map((button) => {
+        const rect = button.getBoundingClientRect();
+        return Math.abs((rect.left + rect.width / 2) - center);
+      }),
+      clientWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth
+    };
+  });
+
+  expect(metrics.deltas.length).toBe(4);
+  metrics.deltas.forEach((delta) => expect(delta).toBeLessThanOrEqual(2));
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 2);
+});
