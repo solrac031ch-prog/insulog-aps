@@ -59,6 +59,10 @@ El médico no necesita acceso al Google Sheet ni iniciar sesión en la cuenta pr
 - Fecha/hora.
 - RUT profesional validado.
 - Tipo de control: inicio, ingreso con insulina previa, ajuste o seguimiento.
+- Recomendación NPH estructurada por horario: AM y PM.
+- Decisión final del médico estructurada por horario: AM y PM.
+- Meta HbA1c utilizada para la titulación.
+- HGT de ayunas y pre-almuerzo utilizados por el algoritmo, conservados en el orden registrado.
 - Peso.
 - HbA1c basal o HbA1c actual si está disponible.
 - VFG en el inicio si fue registrada.
