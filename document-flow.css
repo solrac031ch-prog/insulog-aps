@@ -3,7 +3,21 @@
 }
 
 .pdf-preparation-page .document-actions {
-  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 18px auto 0;
+}
+
+.pdf-preparation-page .document-actions .btn {
+  flex: 0 1 240px;
+}
+
+.pdf-preparation-page > .secondary-nav {
+  display: block;
+  margin: 18px auto 0;
 }
 
 .pdf-preview-page {
@@ -64,6 +78,15 @@ body.pdf-isolated-document #pdf.imprimible-container {
 }
 
 @media (max-width: 760px) {
+  .pdf-preparation-page .document-actions {
+    flex-direction: column;
+  }
+
+  .pdf-preparation-page .document-actions .btn,
+  .pdf-preparation-page > .secondary-nav {
+    width: min(100%, 320px);
+  }
+
   .pdf-preview-frame {
     height: 880px;
   }
