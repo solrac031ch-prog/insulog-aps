@@ -225,8 +225,12 @@
     if (/CRISIS HIPERGLICÉMICA|CETOSIS/i.test(note)) safety.push("Se activó una alerta de posible crisis hiperglicémica/cetosis.");
     if (!safety.length) safety.push("En este resultado no se activó una puerta automática de hipoglicemia, crisis o sobrebasalización.");
 
+    const suggestedFactor = safeNumber(data.factorInicioSugerido);
+    const appliedFactor = safeNumber(data.factorInicioAplicado);
+    const factorText = (value) => value === null ? "N/A" : value.toFixed(1).replace(".", ",");
+    const initialChoiceChanged = Boolean(data.esquemaInicioModificadoPorProfesional || data.factorInicioModificadoPorProfesional);
     const dataUsed = type === "inicio"
-      ? `Criterios: ${data.criteria || "registrados en el flujo"}. Sensibilidad: ${data.sensibilidadInsulina || "no consignada"}.`
+      ? `Criterios: ${data.criteria || "registrados en el flujo"}. Sensibilidad: ${data.sensibilidadInsulina || "no consignada"}. Sugerencia Insulog: ${data.textoEsquemaInicioSugerido || data.esquemaInicioSugerido || "N/A"}, factor ${factorText(suggestedFactor)} UI/kg. Selección para cálculo: ${data.textoEsquemaInicio || data.esquemaInicio || "N/A"}, factor ${factorText(appliedFactor)} UI/kg${initialChoiceChanged ? " (modificada por el profesional)" : ""}.`
       : `Ayunas: ${fasting.length} registro(s); pre-almuerzo: ${preLunch.length} registro(s). Menor ayunas: ${data.minAy ?? "N/A"} mg/dL; menor pre-almuerzo: ${data.minPre ?? "N/A"} mg/dL.`;
 
     return {
