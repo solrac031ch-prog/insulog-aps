@@ -67,7 +67,8 @@
       motivoEsquemaInicio: decision.reason,
       sensibilidadInsulina: decision.sensitivity?.label || "",
       catabolicos: decision.catabolicText,
-      riesgoHipo: decision.hypoRiskText
+      riesgoHipo: decision.hypoRiskText,
+      factorInicioSugerido: decision.factor
     });
 
     const caja = byId("sugerencia-esquema-inicio");
@@ -106,7 +107,13 @@
 
     const resultado = clinicalEngine.calculateInitialDose({ weightKg: peso, factor, scheme: data.esquemaInicio });
     if (resultado.valid === false) { alert("No fue posible calcular una dosis inicial segura con los datos ingresados. Revise peso, esquema y factor antes de continuar."); return undefined; }
-    state.patch({ am: resultado.am, pm: resultado.pm, dosisKg: resultado.dosePerKg });
+    state.patch({
+      am: resultado.am,
+      pm: resultado.pm,
+      dosisKg: resultado.dosePerKg,
+      factorInicioAplicado: resultado.factorApplied,
+      factorInicioModificadoPorProfesional: Number(data.factorInicioSugerido) !== Number(resultado.factorApplied)
+    });
 
     const preview = byId("preview-dosis");
     preview.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(data.textoEsquemaInicio || "NPH monodosis nocturna")}<br><br>Dosis total: ${resultado.total} UI/día (${resultado.dosePerKg.toFixed(2)} UI/kg/día)<br><br>• Mañana: ${resultado.am} UI<br>• Noche: ${resultado.pm} UI`;
@@ -279,8 +286,8 @@
   actions.register("finish", finalizar);
 
   window.InsulogApp = Object.freeze({
-    version: "2026.09.21-clinical-r3",
-    clinicalVersion: "APS-NPH-2026.09.21-r3",
+    version: "2026.09.23-clinical-r4",
+    clinicalVersion: "APS-NPH-2026.09.23-r4",
     notes: Object.freeze({ render: renderNotaClinica }),
     inputs: Object.freeze({ handle: handleInput }),
     text: Object.freeze({ escapeHTML: notePresenter.escapeHTML })
