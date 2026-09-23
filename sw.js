@@ -57,21 +57,22 @@ async function precacheFreshShell() {
 }
 
 self.addEventListener("install", (event) => {
-  // El worker nuevo solo queda listo si pudo descargar el shell completo.
-  // No adelantamos la activación: una atención ya abierta sigue con su versión anterior.
-  event.waitUntil(precacheFreshShell());
+  event.waitUntil((async () => {
+    await precacheFreshShell();
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener("activate", (event) => {
-  // La activación ocurre cuando la versión anterior ya no controla clientes.
-  // Recién entonces retiramos caches viejos y no reclamamos pestañas ya abiertas.
-  event.waitUntil(
-    caches.keys().then((keys) => Promise.all(
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
       keys
         .filter((key) => key.startsWith("insulog-shell-") && key !== CACHE_NAME)
         .map((key) => caches.delete(key))
-    ))
-  );
+    );
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener("fetch", (event) => {
