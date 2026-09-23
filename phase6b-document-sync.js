@@ -11,7 +11,9 @@
   const state = runtime.state;
   const DRIVE_ENDPOINT_STORAGE_KEY = "insulog.drive.bridge.endpoint.v1";
   const DRIVE_ENDPOINT_PARAM = "driveEndpoint";
-  const DRIVE_BRIDGE_VERSION = "2026.09.21-drive-v2";
+  const PRODUCTION_DRIVE_ENDPOINT = "https://script.google.com/macros/s/AKfycbx203QzIWqGmeTh_p1XjjmADWBuu_L3RJmUoV9A1fk12_OEtnhkSLq62bgup0ERe3IlBw/exec";
+  const DRIVE_BRIDGE_VERSION = "2026.09.23-drive-v3";
+  const PROFESSIONAL_RUT_STORAGE_KEY = "insulog.professional.rut.daily.v1";
   const EXPECTED_DRIVE_HOST = /(^|\.)script\.google\.com$/i;
   const transientRetryQueue = [];
   let lastDriveFingerprint = "";
@@ -172,7 +174,73 @@
     const globalEndpoint = String(window.INSULOG_DRIVE_ENDPOINT || "").trim();
     if (validDriveEndpoint(globalEndpoint)) return globalEndpoint;
     const stored = String(localStorage.getItem(DRIVE_ENDPOINT_STORAGE_KEY) || "").trim();
-    return validDriveEndpoint(stored) ? stored : "";
+    if (validDriveEndpoint(stored)) return stored;
+    return validDriveEndpoint(PRODUCTION_DRIVE_ENDPOINT) ? PRODUCTION_DRIVE_ENDPOINT : "";
+  }
+
+  function localDateKey(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function normalizeProfessionalRut(value) {
+    const compact = String(value || "")
+      .toUpperCase()
+      .replace(/[^0-9K]/g, "");
+    if (!/^\d{7,8}[0-9K]$/.test(compact)) return "";
+    const body = compact.slice(0, -1);
+    const verifier = compact.slice(-1);
+    let sum = 0;
+    let multiplier = 2;
+    for (let index = body.length - 1; index >= 0; index -= 1) {
+      sum += Number(body[index]) * multiplier;
+      multiplier = multiplier === 7 ? 2 : multiplier + 1;
+    }
+    const remainder = 11 - (sum % 11);
+    const expected = remainder === 11 ? "0" : (remainder === 10 ? "K" : String(remainder));
+    if (verifier !== expected) return "";
+    const reversed = body.split("").reverse();
+    const grouped = [];
+    for (let index = 0; index < reversed.length; index += 3) {
+      grouped.push(reversed.slice(index, index + 3).reverse().join(""));
+    }
+    return `${grouped.reverse().join(".")}-${verifier}`;
+  }
+
+  function storedDailyProfessionalRut() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(PROFESSIONAL_RUT_STORAGE_KEY) || "null");
+      if (!stored || stored.date !== localDateKey()) {
+        localStorage.removeItem(PROFESSIONAL_RUT_STORAGE_KEY);
+        return "";
+      }
+      return normalizeProfessionalRut(stored.rut);
+    } catch {
+      localStorage.removeItem(PROFESSIONAL_RUT_STORAGE_KEY);
+      return "";
+    }
+  }
+
+  function requestDailyProfessionalRut() {
+    const current = storedDailyProfessionalRut();
+    if (current) return current;
+
+    while (true) {
+      const input = window.prompt(
+        "Ingrese su RUT profesional para registrar los controles de hoy.\nSe solicitará una sola vez al día en este computador.",
+        ""
+      );
+      if (input === null) return "";
+      const rut = normalizeProfessionalRut(input);
+      if (!rut) {
+        window.alert("RUT no válido. Revise el número y dígito verificador.");
+        continue;
+      }
+      localStorage.setItem(PROFESSIONAL_RUT_STORAGE_KEY, JSON.stringify({ date: localDateKey(), rut }));
+      return rut;
+    }
   }
 
   function renderDriveStatus() {
@@ -305,11 +373,14 @@
     const medication = concomitantMedicationSnapshot(tipo, data);
     const fingerprint = [patientName, birthDate, tipo, note, decision, urgencyAcceptedWithoutDose ? "urgency-no-dose" : "", data.level3Timing || "", data.level3ReversibleCause || "", finalAm ?? "", finalPm ?? "", hba1c ?? "", medication.text].join("|");
 
+    const professionalRut = storedDailyProfessionalRut();
+
     return {
       bridgeVersion: DRIVE_BRIDGE_VERSION,
       recordId: stableRecordId(fingerprint),
       sourceOrigin: window.location.origin,
       timestamp: new Date().toISOString(),
+      professionalRut,
       patientName,
       patientBirthDate: birthDate,
       documentType: tipo,
@@ -411,6 +482,12 @@
         return next(context);
       }
 
+      const professionalRut = requestDailyProfessionalRut();
+      if (!professionalRut) {
+        alert("Debe ingresar un RUT profesional válido para registrar este control.");
+        return undefined;
+      }
+
       const birthDateInput = document.getElementById("fecha-nacimiento-paciente");
       if (!patientBirthDate()) {
         alert("Ingrese la fecha de nacimiento del paciente para identificar correctamente el seguimiento longitudinal.");
@@ -438,6 +515,7 @@
   function init() {
     configureDriveEndpointFromQuery();
     renderDriveStatus();
+    requestDailyProfessionalRut();
     injectFollowupHbA1cField();
     registerProfessionalOverbasalizationOverride();
     registerDocumentSync();
@@ -448,10 +526,12 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.21-phase6b-document-sync-level3-dose",
+    version: "2026.09.23-phase6b-document-sync-professional-rut",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),
+      automaticProductionEndpoint: configuredDriveEndpoint() === PRODUCTION_DRIVE_ENDPOINT,
+      professionalRutRegisteredToday: Boolean(storedDailyProfessionalRut()),
       transientPending: transientRetryQueue.length
     }),
     flushDrive: flushTransientRetryQueue,

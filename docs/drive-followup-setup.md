@@ -41,20 +41,23 @@ La vinculación longitudinal usa **nombre normalizado + fecha de nacimiento**. D
 
 ## Configuración de Insulog
 
-La URL del puente se configura una sola vez por navegador. Abrir Insulog agregando temporalmente:
+La aplicación incorpora el endpoint de producción del puente de Drive. Por lo tanto, **no es necesario configurar cada computador**: al abrir la versión publicada de Insulog, los controles pueden enviarse a la base central automáticamente.
 
-`?driveEndpoint=URL_DEL_WEB_APP`
+El parámetro `?driveEndpoint=` y la clave local del endpoint se conservan únicamente como mecanismos de override técnico para pruebas o recuperación.
 
-Ejemplo conceptual:
+### Identificación diaria del profesional
 
-`https://solrac031ch-prog.github.io/insulog-aps/?driveEndpoint=https://script.google.com/macros/s/DEPLOYMENT_ID/exec`
+Al abrir Insulog, el sistema solicita el **RUT profesional**. Se valida el dígito verificador y se guarda en el navegador asociado a la fecha local del día. Mientras siga siendo el mismo día, no vuelve a solicitarse en ese computador.
 
-Insulog valida la URL, la guarda localmente y elimina el parámetro de la barra de direcciones. Solo se almacena la URL del puente; los nombres de pacientes no se guardan de forma persistente en el navegador por este módulo.
+Al cambiar de día, la identificación diaria expira y el RUT se solicita nuevamente. Cada control y evento de hipoglicemia queda asociado al RUT profesional que emitió la decisión clínica.
+
+El médico no necesita acceso al Google Sheet ni iniciar sesión en la cuenta propietaria del Drive. El Apps Script escribe en la base utilizando la cuenta propietaria del puente.
 
 ## Datos enviados por control
 
 - Nombre completo del paciente y fecha de nacimiento.
 - Fecha/hora.
+- RUT profesional validado.
 - Tipo de control: inicio, ingreso con insulina previa, ajuste o seguimiento.
 - Peso.
 - HbA1c basal o HbA1c actual si está disponible.
@@ -71,7 +74,7 @@ Insulog valida la URL, la guarda localmente y elimina el parámetro de la barra 
 
 ## Comportamiento ante fallas
 
-Si Drive no está configurado, Insulog no guarda nombres en almacenamiento persistente local. Si falla la red durante una pestaña abierta, conserva temporalmente el registro solo en memoria y vuelve a intentar al recuperar conexión. Al cerrar la pestaña, ese buffer se pierde; por eso la implementación de Apps Script debe verificarse con un paciente ficticio antes del uso prospectivo.
+El endpoint de producción de Drive viene configurado en la aplicación. Si se invalida o se reemplaza manualmente por un endpoint incorrecto, Insulog no guarda nombres en almacenamiento persistente local. Si falla la red durante una pestaña abierta, conserva temporalmente el registro solo en memoria y vuelve a intentar al recuperar conexión. Al cerrar la pestaña, ese buffer se pierde; por eso la implementación de Apps Script debe verificarse con un paciente ficticio antes del uso prospectivo.
 
 ## Duplicados
 
