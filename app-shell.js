@@ -68,16 +68,16 @@
 
     const factor = byId("factor-dosis");
     if (factor) {
-      factor.innerHTML = '<option value="0.1">0,1 UI/kg · insulinosensible / alto riesgo</option><option value="0.2">0,2 UI/kg · sensibilidad usual o insulinorresistente en monodosis</option>';
+      factor.innerHTML = '<option value="0.1">0,1 UI/kg · mayor riesgo / inicio conservador</option><option value="0.2">0,2 UI/kg · riesgo habitual</option><option value="0.3">0,3 UI/kg · hiperglicemia marcada / mayor requerimiento inicial</option>';
       factor.disabled = false;
       factor.removeAttribute("aria-disabled");
       factor.setAttribute("aria-describedby", "factor-dosis-ayuda-r2");
       const grid = factor.closest(".dosing-grid");
-      if (grid && !byId("factor-dosis-ayuda-r2")) grid.insertAdjacentHTML("afterend", '<p id="factor-dosis-ayuda-r2" class="helper-text">Insulog sugiere automáticamente el factor según edad, IMC, VFG y riesgo de hipoglicemia. El profesional puede ajustarlo entre 0,1 y 0,2 UI/kg antes de calcular. En monodosis no se permite 0,3 UI/kg.</p>');
+      if (grid && !byId("factor-dosis-ayuda-r2")) grid.insertAdjacentHTML("afterend", '<p id="factor-dosis-ayuda-r2" class="helper-text">Insulog sugiere esquema y factor según los datos clínicos. El profesional puede elegir monodosis o doble dosis y cualquiera de los factores definidos en la guía: 0,1, 0,2 o 0,3 UI/kg antes de calcular.</p>');
     }
 
     const guidance = document.querySelector("#p3 .guidance-content");
-    if (guidance) guidance.innerHTML = '<ul class="compact-list"><li><strong>0,1 UI/kg:</strong> insulinosensible, VFG &lt;60, edad &gt;70 años o alto riesgo de hipoglicemia.</li><li><strong>0,2 UI/kg:</strong> sensibilidad usual o insulinorresistente cuando se usa monodosis.</li><li><strong>0,3 UI/kg:</strong> reservado por protocolo MINSAL para NPH doble dosis en insulinorresistencia; Insulog no lo propone automáticamente como inicio basal 2026.</li></ul>';
+    if (guidance) guidance.innerHTML = '<ul class="compact-list"><li><strong>0,1 UI/kg:</strong> mayor riesgo de hipoglicemia o mayor sensibilidad a insulina.</li><li><strong>0,2 UI/kg:</strong> inicio estándar.</li><li><strong>0,3 UI/kg:</strong> hiperglicemia marcada o mayor requerimiento inicial, siempre sujeto al juicio clínico.</li></ul>';
 
     const p4 = byId("p4");
     const tracking = p4?.querySelector(".table-guide");
