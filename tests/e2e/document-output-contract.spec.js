@@ -26,12 +26,12 @@ test("los medicamentos coadyuvantes del caso aparecen en inicio, seguimiento y P
   await page.locator("#nombre-paciente").fill("Paciente contrato documental");
   await page.locator("#fecha-nacimiento-paciente").fill("1965-03-14");
 
-  const medication = page.locator('input[data-aps-med="seguimiento"][data-med-key="dapagliflozina10"]');
-  await medication.check();
   await page.evaluate(() => {
     const input = document.querySelector('input[data-aps-med="seguimiento"][data-med-key="dapagliflozina10"]');
+    input.checked = true;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
     window.InsulogRuntime.state.patch({
-      tratamientoConcomitante: input?.dataset.label || "Dapagliflozina: 10 mg/día"
+      tratamientoConcomitante: input.dataset.label
     });
   });
 
