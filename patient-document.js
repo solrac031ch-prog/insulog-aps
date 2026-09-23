@@ -208,7 +208,7 @@
         ${dosis}
         <section class="pdf-alert-important">
           <div class="pdf-section-title">Indicación importante</div>
-          <p>Si el glucómetro es propiedad del CESFAM, favor devolverlo en la oficina de dirección (2do piso) con la encargada Susan al finalizar este ciclo.</p>
+          <p>Si el glucómetro es propiedad del CESFAM, favor devolverlo en la encargado del programa de salud cardiovascular.</p>
         </section>
         <section class="pdf-program-note">
           <div class="pdf-section-title">Control de programa</div>

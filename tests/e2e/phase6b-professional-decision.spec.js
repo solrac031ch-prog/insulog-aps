@@ -95,7 +95,7 @@ test("6B exige fecha de nacimiento antes de generar el documento", async ({ page
   expect(message).toContain("fecha de nacimiento");
 });
 
-test("6B informa si Drive está configurado en este dispositivo", async ({ page }) => {
+test("6B conserva Drive configurado sin mostrar avisos técnicos en P6", async ({ page }) => {
   await page.goto("/?driveEndpoint=https%3A%2F%2Fscript.google.com%2Fmacros%2Fs%2FTEST-ENDPOINT-123456%2Fexec");
   await page.locator("#p0").getByRole("button", { name: "INICIAR ALGORITMO", exact: true }).click();
   await page.locator("#p1").getByRole("button", { name: "NO", exact: true }).click();
@@ -113,8 +113,10 @@ test("6B informa si Drive está configurado en este dispositivo", async ({ page 
   await page.locator("#p5").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
 
   await expectActivePage(page, "p6");
-  await expect(page.locator("#drive-sync-status")).toContainText("Drive configurado en este dispositivo");
+  await expect(page.locator("#drive-sync-status")).toHaveCount(0);
   expect(page.url()).not.toContain("driveEndpoint");
+  const storedEndpoint = await page.evaluate(() => localStorage.getItem("insulog.drive.bridge.endpoint.v1"));
+  expect(storedEndpoint).toBe("https://script.google.com/macros/s/TEST-ENDPOINT-123456/exec");
 });
 
 test("6B envía tratamiento concomitante estructurado al registro longitudinal", async ({ page }) => {

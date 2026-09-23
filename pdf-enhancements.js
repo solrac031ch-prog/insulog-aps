@@ -79,15 +79,47 @@
     return `${nombre.split(":")[0]}: tomar según la indicación entregada por su equipo de salud.`;
   }
 
-  function instruccionesMedicamentosPaciente(tipo) {
-    const scope = tipo === "inicio" ? "inicio" : tipo === "seguimiento" ? "seguimiento" : "";
-    if (!scope) return [];
-    return Array.from(document.querySelectorAll(`input[data-aps-med="${scope}"]:checked`)).map(instruccionMedicamento).filter(Boolean);
+  function inputsMedicamentosPacienteActuales() {
+    const seleccionados = Array.from(document.querySelectorAll('input[data-aps-med]:checked'));
+    if (!seleccionados.length) return [];
+
+    const tratamientoActual = String(runtime.state.get("tratamientoConcomitante") || "").trim();
+    if (tratamientoActual && tratamientoActual !== "No registrado") {
+      for (const scope of ["inicio", "seguimiento"]) {
+        const inputs = seleccionados.filter((input) => input.dataset.apsMed === scope);
+        const texto = inputs.map((input) => input.dataset.label).filter(Boolean).join("; ");
+        if (inputs.length && texto === tratamientoActual) return inputs;
+      }
+    }
+
+    const nota = document.getElementById("nota-clinica");
+    const textoNota = nota?.dataset.rawText || nota?.innerText || "";
+    const scopePreferido = /^INICIO\b/i.test(textoNota)
+      ? "inicio"
+      : /^SEGUIMIENTO\b/i.test(textoNota)
+        ? "seguimiento"
+        : "";
+
+    if (scopePreferido) {
+      const preferidos = seleccionados.filter((input) => input.dataset.apsMed === scopePreferido);
+      if (preferidos.length) return preferidos;
+    }
+
+    const seguimiento = seleccionados.filter((input) => input.dataset.apsMed === "seguimiento");
+    if (seguimiento.length) return seguimiento;
+    return seleccionados.filter((input) => input.dataset.apsMed === "inicio");
   }
 
-  function actualizarTratamientoPaciente(pdf, tipo) {
+  function instruccionesMedicamentosPaciente() {
+    const vistas = new Set();
+    return inputsMedicamentosPacienteActuales()
+      .map(instruccionMedicamento)
+      .filter((texto) => texto && !vistas.has(texto) && vistas.add(texto));
+  }
+
+  function actualizarTratamientoPaciente(pdf) {
     pdf.querySelectorAll(".tratamiento-pdf").forEach((node) => node.remove());
-    const instrucciones = instruccionesMedicamentosPaciente(tipo);
+    const instrucciones = instruccionesMedicamentosPaciente();
     if (!instrucciones.length) return;
     const dosis = pdf.querySelector(".pdf-insulina-paciente") || obtenerCajaDosis(pdf);
     const bloque = document.createElement("section");
@@ -135,10 +167,10 @@
     if (indicacionRegistro) indicacionRegistro.innerHTML = "<strong>Registro:</strong> glicemias capilares en ayunas y pre-almuerzo, anotando hora y valor de cada medición.";
   }
 
-  documents.useEnhancer("patient-pdf-enhancements", ({ pdf, tipo, state }) => {
+  documents.useEnhancer("patient-pdf-enhancements", ({ pdf, state }) => {
     transformarTablaSeguimiento(pdf);
     actualizarDosisInsulinaPaciente(pdf, state);
-    actualizarTratamientoPaciente(pdf, tipo);
+    actualizarTratamientoPaciente(pdf);
     marcarEstructuraCarta(pdf);
     aplicarDensidadDocumento(pdf);
   });
