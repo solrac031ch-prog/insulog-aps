@@ -515,7 +515,18 @@
     const finalPm = urgencyAcceptedWithoutDose ? null : numberOrZero(data.professionalPm);
     const decision = data.professionalDecision === "modificada" ? "Modificada" : "Aceptada";
     const medication = concomitantMedicationSnapshot(tipo, data);
-    const fingerprint = [patientName, birthDate, tipo, note, decision, urgencyAcceptedWithoutDose ? "urgency-no-dose" : "", data.level3Timing || "", data.level3ReversibleCause || "", finalAm ?? "", finalPm ?? "", hba1c ?? "", targetA1c ?? "", fastingValues.join(","), preLunchValues.join(","), medication.text].join("|");
+    const fingerprint = [
+      patientName, birthDate, tipo, note, decision,
+      urgencyAcceptedWithoutDose ? "urgency-no-dose" : "",
+      data.level3Timing || "", data.level3ReversibleCause || "",
+      finalAm ?? "", finalPm ?? "", hba1c ?? "", targetA1c ?? "",
+      fastingValues.join(","), preLunchValues.join(","),
+      initiationSuggestedScheme, initiationSuggestedFactor ?? "",
+      initiationAppliedScheme, initiationAppliedFactor ?? "",
+      initiationSchemeModified ? "scheme-modified" : "",
+      initiationFactorModified ? "factor-modified" : "",
+      medication.text
+    ].join("|");
 
     const professionalRut = storedDailyProfessionalRut();
 
@@ -533,6 +544,14 @@
       hba1c,
       egfr,
       targetA1c,
+      initiationSuggestedScheme,
+      initiationSuggestedFactor,
+      initiationSuggestedAm,
+      initiationSuggestedPm,
+      initiationAppliedScheme,
+      initiationAppliedFactor,
+      initiationSchemeModified,
+      initiationFactorModified,
       currentAm,
       currentPm,
       currentTotal: totalDose(currentAm, currentPm),
@@ -671,7 +690,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.23-phase6b-document-sync-validation-v3",
+    version: "2026.09.23-phase6b-document-sync-initiation-trace",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),
