@@ -119,7 +119,7 @@ test("el profesional puede modificar el factor inicial sugerido antes de calcula
   const factor = page.locator("#factor-dosis");
   await expect(factor).toBeEnabled();
   await expect(factor).toHaveValue("0.1");
-  await expect(factor.locator("option")).toHaveCount(2);
+  await expect(factor.locator("option")).toHaveCount(3);
 
   await factor.selectOption("0.2");
   await page.locator("#peso-paciente").fill("80");
@@ -131,6 +131,27 @@ test("el profesional puede modificar el factor inicial sugerido antes de calcula
   expect(data.factorInicioAplicado).toBe(0.2);
   expect(data.factorInicioModificadoPorProfesional).toBe(true);
   expect({ am: data.am, pm: data.pm }).toEqual({ am: 0, pm: 16 });
+});
+
+test("el profesional puede usar 0,3 UI/kg en monodosis", async ({ page }) => {
+  await openDefinition(page);
+  await page.locator("#p2").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
+  await page.locator("#hba1c-inicio").fill("11");
+  await page.locator("#p2").getByRole("button", { name: "SIGUIENTE: DOSIFICACIÓN", exact: true }).click();
+  await expectActivePage(page, "p25");
+  await page.locator("#continuar-dosificacion-inicio").click();
+  await expectActivePage(page, "p3");
+
+  await page.locator("#esquema-inicio").selectOption("monodosis_pm");
+  await page.locator("#factor-dosis").selectOption("0.3");
+  await page.locator("#peso-paciente").fill("70");
+  await page.locator("#p3").getByRole("button", { name: "CALCULAR DOSIS Y GENERAR NOTA", exact: true }).click();
+
+  await expectActivePage(page, "p5");
+  const data = await runtimeState(page);
+  expect(data.factorInicioAplicado).toBe(0.3);
+  expect({ am: data.am, pm: data.pm }).toEqual({ am: 0, pm: 21 });
+  await expect(page.locator("#nota-clinica")).toContainText("Factor aplicado: 0,3 UI/kg");
 });
 
 test("sospecha de cetosis bloquea el flujo ambulatorio y deriva a urgencia", async ({ page }) => {
