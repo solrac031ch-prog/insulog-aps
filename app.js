@@ -52,10 +52,11 @@
       return decision;
     }
 
-    if (decision.criteria.length === 0) {
-      alert("Con los datos ingresados no se identifica una indicación protocolizada de inicio de NPH en este flujo. Revise el control metabólico, adherencia, tratamiento y contexto clínico.");
-      return undefined;
-    }
+    const hasAutomaticInitiationCriteria = decision.criteria.length > 0;
+    const professionalInitiation = !hasAutomaticInitiationCriteria;
+    const criteriaForRecord = hasAutomaticInitiationCriteria
+      ? decision.criteriaText
+      : (inicio.length ? inicio.join(", ") : "Decisión clínica del profesional");
 
     const factorInput = byId("factor-dosis");
     if (factorInput) factorInput.value = String(decision.factor);
@@ -63,7 +64,8 @@
     if (schemeInput) schemeInput.value = decision.scheme;
 
     state.patch({
-      criteria: decision.criteriaText,
+      criteria: criteriaForRecord,
+      inicioPorDecisionProfesional: professionalInitiation,
       esquemaInicio: decision.scheme,
       textoEsquemaInicio: decision.schemeText,
       esquemaInicioSugerido: decision.scheme,
@@ -77,7 +79,10 @@
 
     const caja = byId("sugerencia-esquema-inicio");
     if (caja) {
-      caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(decision.schemeText)}<br><br><strong>Sensibilidad:</strong> ${notePresenter.escapeHTML(decision.sensitivity?.label || "No determinada")}<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(decision.reason)}`;
+      const decisionMessage = professionalInitiation
+        ? "<br><br><strong>Decisión profesional:</strong> Insulog no identificó un criterio automático de inicio con los datos registrados. Si el médico decide iniciar NPH, puede continuar y seleccionar libremente el esquema y el factor; la decisión quedará documentada."
+        : "<br><br><strong>Decisión profesional:</strong> puede aceptar o modificar el esquema y el factor sugeridos antes de calcular.";
+      caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(decision.schemeText)}<br><br><strong>Sensibilidad:</strong> ${notePresenter.escapeHTML(decision.sensitivity?.label || "No determinada")}<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(decision.reason)}${decisionMessage}`;
       show(caja, true);
     }
 
@@ -110,10 +115,12 @@
       alert("Ingrese un peso válido entre 1 y 300 kg.");
       return undefined;
     }
+    const criteriaForRecord = data.criteria || "Decisión clínica del profesional";
     if (!data.criteria) {
-      alert("Complete primero los datos clínicos para confirmar la indicación y orientar el esquema inicial.");
-      go(2);
-      return undefined;
+      state.patch({
+        criteria: criteriaForRecord,
+        inicioPorDecisionProfesional: true
+      });
     }
 
     const resultado = clinicalEngine.calculateInitialDose({ weightKg: peso, factor, scheme });
@@ -140,7 +147,7 @@
     show(preview, true);
 
     renderNotaClinica(clinicalCopy.buildInitialNote({
-      criteria: data.criteria,
+      criteria: criteriaForRecord,
       suggestedSchemeText: data.textoEsquemaInicioSugerido || selectedSchemeText,
       schemeText: selectedSchemeText,
       reason: data.motivoEsquemaInicio || "Inicio con NPH basal.",

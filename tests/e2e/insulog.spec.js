@@ -166,15 +166,34 @@ test("sospecha de cetosis bloquea el flujo ambulatorio y deriva a urgencia", asy
   await expect(page.locator("#nota-clinica")).toContainText("Unidad de Emergencia Hospitalaria");
 });
 
-test("preferencia del paciente no funciona como indicación independiente", async ({ page }) => {
+test("la decisión profesional puede iniciar NPH aun sin criterio automático y elegir esquema/factor", async ({ page }) => {
   await openDefinition(page);
   await page.locator("#p2").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
   await page.getByRole("button", { name: "Paciente acepta insulinoterapia", exact: true }).click();
-  let dialogText = "";
-  page.once("dialog", async (dialog) => { dialogText = dialog.message(); await dialog.accept(); });
   await page.locator("#p2").getByRole("button", { name: "SIGUIENTE: DOSIFICACIÓN", exact: true }).click();
-  expect(dialogText).toContain("no se identifica una indicación protocolizada");
-  await expectActivePage(page, "p2");
+
+  await expectActivePage(page, "p25");
+  await page.locator("#continuar-dosificacion-inicio").click();
+  await expectActivePage(page, "p3");
+
+  const scheme = page.locator("#esquema-inicio");
+  const factor = page.locator("#factor-dosis");
+  await expect(scheme).toBeEnabled();
+  await expect(factor).toBeEnabled();
+  await expect(scheme.locator("option")).toHaveCount(3);
+  await expect(factor.locator("option")).toHaveCount(3);
+
+  await scheme.selectOption("doble_dosis");
+  await factor.selectOption("0.1");
+  await page.locator("#peso-paciente").fill("90");
+  await page.locator("#p3").getByRole("button", { name: "CALCULAR DOSIS Y GENERAR NOTA", exact: true }).click();
+
+  await expectActivePage(page, "p5");
+  const data = await runtimeState(page);
+  expect(data.inicioPorDecisionProfesional).toBe(true);
+  expect(data.esquemaInicio).toBe("doble_dosis");
+  expect(data.factorInicioAplicado).toBe(0.1);
+  expect({ am: data.am, pm: data.pm }).toEqual({ am: 6, pm: 3 });
 });
 
 test("seguimiento titula con el menor de 3 glicemias y ajuste porcentual", async ({ page }) => {
