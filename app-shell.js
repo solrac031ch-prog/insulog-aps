@@ -11,7 +11,7 @@
   const { all, byId } = runtime.dom;
   const actions = runtime.actions;
   const BEST_HISTORY_LIMIT = 100;
-  const PWA_UPDATE_PENDING_KEY = "insulog.pwa.update.pending.v1";
+  let pwaUpdatePendingRelease = "";
   let bestSessionHistory = [];
   let bestReviewStatus = "";
   let bestReviewSignature = "";
@@ -470,9 +470,8 @@
   }
 
   function reloadPendingPwaUpdateIfSafe() {
-    const pendingRelease = String(sessionStorage.getItem(PWA_UPDATE_PENDING_KEY) || "").trim();
-    if (!pendingRelease || runtime.navigation.activePageId() !== "p0") return false;
-    sessionStorage.removeItem(PWA_UPDATE_PENDING_KEY);
+    if (!pwaUpdatePendingRelease || runtime.navigation.activePageId() !== "p0") return false;
+    pwaUpdatePendingRelease = "";
     window.location.reload();
     return true;
   }
@@ -494,7 +493,7 @@
 
     navigator.serviceWorker.addEventListener("message", (event) => {
       if (event.data?.type !== "INSULOG_UPDATE_READY") return;
-      sessionStorage.setItem(PWA_UPDATE_PENDING_KEY, String(event.data.release || "ready"));
+      pwaUpdatePendingRelease = String(event.data.release || "ready");
       reloadPendingPwaUpdateIfSafe();
     });
 
