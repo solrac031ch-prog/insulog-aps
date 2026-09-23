@@ -223,24 +223,115 @@
     }
   }
 
-  function requestDailyProfessionalRut() {
-    const current = storedDailyProfessionalRut();
-    if (current) return current;
+  function ensureProfessionalRutStyles() {
+    if (document.getElementById("insulog-professional-rut-styles")) return;
+    const style = document.createElement("style");
+    style.id = "insulog-professional-rut-styles";
+    style.textContent = `
+      #professional-rut-gate {
+        position: fixed;
+        inset: 0;
+        z-index: 100000;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(4px);
+      }
+      #professional-rut-gate[hidden] { display: none !important; }
+      #professional-rut-gate .professional-rut-card {
+        width: min(100%, 430px);
+        background: #fff;
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+      }
+      #professional-rut-gate h2 { margin: 0 0 8px; font-size: 1.35rem; }
+      #professional-rut-gate p { margin: 0 0 16px; line-height: 1.45; }
+      #professional-rut-gate label { display: block; font-weight: 700; margin-bottom: 6px; }
+      #professional-rut-input {
+        width: 100%;
+        min-height: 48px;
+        box-sizing: border-box;
+        border: 1px solid #94a3b8;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font: inherit;
+      }
+      #professional-rut-error {
+        min-height: 1.3em;
+        margin: 8px 0 12px;
+        color: #b91c1c;
+        font-weight: 600;
+      }
+      #professional-rut-submit {
+        width: 100%;
+        min-height: 48px;
+        border: 0;
+        border-radius: 10px;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+        background: #0f766e;
+        color: #fff;
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
-    while (true) {
-      const input = window.prompt(
-        "Ingrese su RUT profesional para registrar los controles de hoy.\nSe solicitará una sola vez al día en este computador.",
-        ""
-      );
-      if (input === null) return "";
-      const rut = normalizeProfessionalRut(input);
+  function closeProfessionalRutGate() {
+    document.getElementById("professional-rut-gate")?.remove();
+  }
+
+  function showProfessionalRutGate() {
+    const current = storedDailyProfessionalRut();
+    if (current) {
+      closeProfessionalRutGate();
+      return current;
+    }
+
+    ensureProfessionalRutStyles();
+    if (document.getElementById("professional-rut-gate")) return "";
+
+    const gate = document.createElement("div");
+    gate.id = "professional-rut-gate";
+    gate.setAttribute("role", "dialog");
+    gate.setAttribute("aria-modal", "true");
+    gate.setAttribute("aria-labelledby", "professional-rut-title");
+    gate.innerHTML = `
+      <form class="professional-rut-card" id="professional-rut-form" novalidate>
+        <h2 id="professional-rut-title">Identificación profesional</h2>
+        <p>Ingrese su RUT profesional para registrar los controles de hoy. Se solicitará una sola vez al día en este computador.</p>
+        <label for="professional-rut-input">RUT profesional</label>
+        <input id="professional-rut-input" inputmode="text" autocomplete="off" placeholder="12.345.678-5" aria-describedby="professional-rut-error">
+        <div id="professional-rut-error" role="alert" aria-live="polite"></div>
+        <button id="professional-rut-submit" type="submit">CONTINUAR A INSULOG</button>
+      </form>
+    `;
+
+    const form = gate.querySelector("#professional-rut-form");
+    const input = gate.querySelector("#professional-rut-input");
+    const error = gate.querySelector("#professional-rut-error");
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const rut = normalizeProfessionalRut(input.value);
       if (!rut) {
-        window.alert("RUT no válido. Revise el número y dígito verificador.");
-        continue;
+        error.textContent = "RUT no válido. Revise el número y dígito verificador.";
+        input.focus();
+        input.select();
+        return;
       }
       localStorage.setItem(PROFESSIONAL_RUT_STORAGE_KEY, JSON.stringify({ date: localDateKey(), rut }));
-      return rut;
-    }
+      closeProfessionalRutGate();
+    });
+
+    document.body.appendChild(gate);
+    requestAnimationFrame(() => input.focus());
+    return "";
+  }
+
+  function requestDailyProfessionalRut() {
+    return storedDailyProfessionalRut() || showProfessionalRutGate();
   }
 
   function renderDriveStatus() {
@@ -526,7 +617,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.23-phase6b-document-sync-professional-rut",
+    version: "2026.09.23-phase6b-document-sync-professional-rut-gate",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),
@@ -542,5 +633,9 @@
     })
   });
 
-  document.addEventListener("DOMContentLoaded", init, { once: true });
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init, { once: true });
+  } else {
+    init();
+  }
 })();
