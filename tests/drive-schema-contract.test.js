@@ -26,7 +26,8 @@ const sync = fs.readFileSync("phase6b-document-sync.js", "utf8");
 [
   "fastingValues,",
   "preLunchValues,",
-  'targetA1c: tipo === "seguimiento" ? safeNumber(data.targetA1c) : null',
+  'document.getElementById("meta-hba1c-seguimiento")?.value',
+  "targetA1c,",
   "recommendedAm,",
   "recommendedPm,",
   "finalAm,",
