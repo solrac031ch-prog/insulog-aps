@@ -588,7 +588,8 @@
       level3ReductionPercent: safeNumber(data.level3ReductionPercent),
       clinicalEngineVersion: window.InsulogClinicalEngine?.version || "",
       documentModuleVersion: window.InsulogDocuments?.version || "",
-      appRuntimeVersion: runtime.version || ""
+      appRuntimeVersion: runtime.version || "",
+      documentSyncVersion: window.InsulogPhase6BDocumentSync?.version || ""
     };
   }
 
