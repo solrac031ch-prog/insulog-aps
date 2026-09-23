@@ -59,11 +59,15 @@
 
     const factorInput = byId("factor-dosis");
     if (factorInput) factorInput.value = String(decision.factor);
+    const schemeInput = byId("esquema-inicio");
+    if (schemeInput) schemeInput.value = decision.scheme;
 
     state.patch({
       criteria: decision.criteriaText,
       esquemaInicio: decision.scheme,
       textoEsquemaInicio: decision.schemeText,
+      esquemaInicioSugerido: decision.scheme,
+      textoEsquemaInicioSugerido: decision.schemeText,
       motivoEsquemaInicio: decision.reason,
       sensibilidadInsulina: decision.sensitivity?.label || "",
       catabolicos: decision.catabolicText,
@@ -86,7 +90,7 @@
     const data = state.snapshot();
     const caja = byId("resumen-esquema-inicio");
     if (!caja || !data.textoEsquemaInicio) return;
-    caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(data.textoEsquemaInicio)}<br><br><strong>Sensibilidad:</strong> ${notePresenter.escapeHTML(data.sensibilidadInsulina || "No determinada")}<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(data.motivoEsquemaInicio)}`;
+    caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(data.textoEsquemaInicioSugerido || data.textoEsquemaInicio)}<br><br><strong>Factor sugerido:</strong> ${Number(data.factorInicioSugerido || 0.2).toFixed(1).replace(".", ",")} UI/kg<br><br><strong>Sensibilidad:</strong> ${notePresenter.escapeHTML(data.sensibilidadInsulina || "No determinada")}<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(data.motivoEsquemaInicio)}`;
     show(caja, true);
   }
 
@@ -94,6 +98,13 @@
     const peso = parseFloat(byId("peso-paciente")?.value);
     const factor = parseFloat(byId("factor-dosis")?.value);
     const data = state.snapshot();
+    const scheme = byId("esquema-inicio")?.value || data.esquemaInicio;
+    const schemeTextByValue = {
+      monodosis_pm: "NPH monodosis nocturna",
+      monodosis_am: "NPH monodosis matinal",
+      doble_dosis: "NPH doble dosis AM + PM"
+    };
+    const selectedSchemeText = schemeTextByValue[scheme] || data.textoEsquemaInicio || "NPH monodosis nocturna";
 
     if (!Number.isFinite(peso) || peso <= 0 || peso > 300) {
       alert("Ingrese un peso válido entre 1 y 300 kg.");
@@ -105,23 +116,32 @@
       return undefined;
     }
 
-    const resultado = clinicalEngine.calculateInitialDose({ weightKg: peso, factor, scheme: data.esquemaInicio });
+    const resultado = clinicalEngine.calculateInitialDose({ weightKg: peso, factor, scheme });
     if (resultado.valid === false) { alert("No fue posible calcular una dosis inicial segura con los datos ingresados. Revise peso, esquema y factor antes de continuar."); return undefined; }
+
+    const schemeModified = Boolean(data.esquemaInicioSugerido) && data.esquemaInicioSugerido !== scheme;
+    const factorModified = Number(data.factorInicioSugerido) !== Number(resultado.factorApplied);
     state.patch({
       am: resultado.am,
       pm: resultado.pm,
       dosisKg: resultado.dosePerKg,
+      esquemaInicio: scheme,
+      textoEsquemaInicio: selectedSchemeText,
+      esquemaInicioModificadoPorProfesional: schemeModified,
       factorInicioAplicado: resultado.factorApplied,
-      factorInicioModificadoPorProfesional: Number(data.factorInicioSugerido) !== Number(resultado.factorApplied)
+      factorInicioModificadoPorProfesional: factorModified
     });
 
     const preview = byId("preview-dosis");
-    preview.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(data.textoEsquemaInicio || "NPH monodosis nocturna")}<br><br>Dosis total: ${resultado.total} UI/día (${resultado.dosePerKg.toFixed(2)} UI/kg/día)<br><br>• Mañana: ${resultado.am} UI<br>• Noche: ${resultado.pm} UI`;
+    const modificationText = (schemeModified || factorModified)
+      ? `<br><br><strong>Decisión previa al cálculo:</strong> el profesional modificó ${[schemeModified ? "el esquema" : "", factorModified ? "el factor" : ""].filter(Boolean).join(" y ")} sugerido por Insulog.`
+      : "";
+    preview.innerHTML = `<strong>Esquema para el cálculo:</strong> ${notePresenter.escapeHTML(selectedSchemeText)}<br><strong>Factor aplicado:</strong> ${resultado.factorApplied.toFixed(1).replace(".", ",")} UI/kg${modificationText}<br><br>Dosis total: ${resultado.total} UI/día (${resultado.dosePerKg.toFixed(2)} UI/kg/día)<br><br>• Mañana: ${resultado.am} UI<br>• Noche: ${resultado.pm} UI`;
     show(preview, true);
 
     renderNotaClinica(clinicalCopy.buildInitialNote({
       criteria: data.criteria,
-      schemeText: data.textoEsquemaInicio || "NPH monodosis nocturna",
+      schemeText: selectedSchemeText,
       reason: data.motivoEsquemaInicio || "Inicio con NPH basal.",
       sensitivity: data.sensibilidadInsulina,
       am: resultado.am,
@@ -252,6 +272,7 @@
     all("input").forEach((input) => { if (input.type === "checkbox") input.checked = false; else input.value = ""; });
     all("select").forEach((select) => { select.selectedIndex = 0; });
     if (byId("factor-dosis")) byId("factor-dosis").value = "0.2";
+    if (byId("esquema-inicio")) byId("esquema-inicio").value = "monodosis_pm";
     if (byId("tipo-esquema")) byId("tipo-esquema").value = "2";
     if (byId("meta-hba1c-seguimiento")) byId("meta-hba1c-seguimiento").value = "7";
     all(".seleccionada").forEach((button) => { button.classList.remove("seleccionada"); button.setAttribute("aria-pressed", "false"); });
@@ -286,8 +307,8 @@
   actions.register("finish", finalizar);
 
   window.InsulogApp = Object.freeze({
-    version: "2026.09.23-clinical-r4",
-    clinicalVersion: "APS-NPH-2026.09.23-r4",
+    version: "2026.09.23-clinical-r5",
+    clinicalVersion: "APS-NPH-2026.09.23-r5",
     notes: Object.freeze({ render: renderNotaClinica }),
     inputs: Object.freeze({ handle: handleInput }),
     text: Object.freeze({ escapeHTML: notePresenter.escapeHTML })
