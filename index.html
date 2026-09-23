@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b63ce">
   <meta name="description" content="Herramienta de apoyo clínico para inicio, seguimiento y ajuste de insulina NPH en Atención Primaria de Salud.">
   <meta name="referrer" content="no-referrer">
-  <meta name="insulog-clinical-version" content="APS-NPH-2026.09.23-r4">
+  <meta name="insulog-clinical-version" content="APS-NPH-2026.09.23-r5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Insulog APS">
@@ -151,7 +151,7 @@
     <section id="p3" class="page page-center" aria-hidden="true">
       <div class="page-label">Inicio · dosis NPH</div>
       <h2>Dosis inicial de insulina NPH</h2>
-      <p class="lead">Ingrese el peso. Insulog sugiere el factor de inicio según la evaluación clínica previa; el profesional puede modificarlo antes de calcular.</p>
+      <p class="lead">Ingrese el peso. Insulog sugiere el esquema y el factor de inicio según la evaluación clínica previa; el profesional puede modificar ambos antes de calcular.</p>
 
       <div id="resumen-esquema-inicio" class="alert alert-info text-left is-hidden"></div>
 
@@ -161,11 +161,19 @@
           <input type="number" inputmode="decimal" id="peso-paciente" placeholder="Ej: 70" min="1" max="300" step="0.1">
         </div>
         <div class="field">
+          <label for="esquema-inicio">Esquema de inicio</label>
+          <select id="esquema-inicio">
+            <option value="monodosis_pm" selected>Monodosis nocturna</option>
+            <option value="monodosis_am">Monodosis matinal</option>
+            <option value="doble_dosis">Doble dosis (AM + PM)</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="factor-dosis">Factor de inicio</label>
           <select id="factor-dosis">
-            <option value="0.1">Alto riesgo → adulto mayor, ERC o fragilidad</option>
-            <option value="0.2" selected>Riesgo estándar</option>
-            
+            <option value="0.1">0,1 UI/kg · mayor riesgo / inicio conservador</option>
+            <option value="0.2" selected>0,2 UI/kg · riesgo habitual</option>
+            <option value="0.3">0,3 UI/kg · hiperglicemia marcada / mayor requerimiento inicial</option>
           </select>
         </div>
       </div>
@@ -174,9 +182,9 @@
         <summary>Ver referencia de factores 0,1–0,3 UI/kg</summary>
         <div class="guidance-content">
           <ul class="compact-list">
-            <li><strong>0.1 UI/kg:</strong> alto riesgo de hipoglicemia (adulto mayor, ERC, fragilidad)</li>
-            <li><strong>0.2 UI/kg:</strong> paciente estándar</li>
-            <li><strong>0,3 UI/kg:</strong> no se propone automáticamente en el flujo basal 2026 de Insulog.</li>
+            <li><strong>0,1 UI/kg:</strong> mayor riesgo de hipoglicemia o mayor sensibilidad a insulina</li>
+            <li><strong>0,2 UI/kg:</strong> inicio estándar</li>
+            <li><strong>0,3 UI/kg:</strong> hiperglicemia marcada o mayor requerimiento inicial; disponible tanto en monodosis como en doble dosis según criterio clínico</li>
           </ul>
         </div>
       </details>
