@@ -92,7 +92,7 @@ test("HbA1c >10 inicia NPH basal en monodosis y no doble dosis automática", asy
   await expect(page.locator("#nota-clinica")).toContainText("NPH monodosis nocturna");
 });
 
-test("riesgo de hipoglicemia usa 0,1 UI/kg y redondeo a unidad completa", async ({ page }) => {
+test("riesgo de hipoglicemia sugiere 0,1 UI/kg pero permite ajuste profesional a 0,2", async ({ page }) => {
   await openDefinition(page);
   await page.locator("#p2").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
   await page.locator("#hba1c-inicio").fill("11");
