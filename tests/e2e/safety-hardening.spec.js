@@ -11,7 +11,7 @@ test("autotest fail-safe is healthy on normal load", async ({ page }) => {
   }));
   expect(status.guard).toBe(true);
   expect(status.locked).toBe(false);
-  expect(status.engineVersion).toBe("APS-NPH-2026.09.23-r4");
+  expect(status.engineVersion).toBe("APS-NPH-2026.09.23-r5");
   expect(status.appVersion).toBe(status.engineVersion);
 });
 
