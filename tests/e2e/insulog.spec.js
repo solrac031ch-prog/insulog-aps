@@ -59,7 +59,7 @@ test("arranca sin errores JavaScript y monta las APIs explícitas", async ({ pag
     shell: Boolean(window.InsulogShell),
     version: window.InsulogApp?.version
   }));
-  expect(architecture).toEqual({ runtime: true, engine: true, app: true, shell: true, version: "2026.09.21-clinical-r3" });
+  expect(architecture).toEqual({ runtime: true, engine: true, app: true, shell: true, version: "2026.09.23-clinical-r4" });
   expect(pageErrors).toEqual([]);
 });
 
