@@ -12,7 +12,7 @@
     8.5: Object.freeze({ hba1c: 8.5, lower: 100, upper: 160, high10: 220 })
   });
 
-  const CLINICAL_ENGINE_VERSION = "APS-NPH-2026.09.21-r3";
+  const CLINICAL_ENGINE_VERSION = "APS-NPH-2026.09.23-r4";
   const MIN_REQUIRED_READINGS = 3;
   const GLUCOSE_MIN_MGDL = 1;
   const GLUCOSE_MAX_MGDL = 700;

@@ -2,7 +2,7 @@
 const assert = require("node:assert/strict");
 const engine = require("../clinical-engine.js");
 
-assert.equal(engine.version, "APS-NPH-2026.09.21-r3");
+assert.equal(engine.version, "APS-NPH-2026.09.23-r4");
 assert.equal(engine.MIN_REQUIRED_READINGS, 3);
 assert.equal(engine.GLUCOSE_MIN_MGDL, 1);
 assert.equal(engine.GLUCOSE_MAX_MGDL, 700);

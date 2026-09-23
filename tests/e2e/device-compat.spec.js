@@ -109,13 +109,34 @@ test("Android Chromium instala el shell y vuelve a abrir la app offline", async 
   test.skip(testInfo.project.name !== "android-chromium", "El contrato offline con service worker se valida en Chromium Android");
 
   await page.goto("/");
-  await page.evaluate(async () => navigator.serviceWorker.ready);
 
-  if (!(await page.evaluate(() => Boolean(navigator.serviceWorker.controller)))) {
-    await page.reload({ waitUntil: "domcontentloaded" });
+  await expect.poll(async () => {
+    try {
+      return await page.evaluate(async () => {
+        await navigator.serviceWorker.ready;
+        return true;
+      });
+    } catch {
+      return false;
+    }
+  }).toBe(true);
+
+  let controlled = false;
+  try {
+    controlled = await page.evaluate(() => Boolean(navigator.serviceWorker.controller));
+  } catch {
+    await page.waitForLoadState("domcontentloaded");
   }
 
-  await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+  if (!controlled) await page.reload({ waitUntil: "domcontentloaded" });
+
+  await expect.poll(async () => {
+    try {
+      return await page.evaluate(() => Boolean(navigator.serviceWorker.controller));
+    } catch {
+      return false;
+    }
+  }).toBe(true);
   await context.setOffline(true);
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("#p0 .brand-title")).toHaveText("Insulog APS");

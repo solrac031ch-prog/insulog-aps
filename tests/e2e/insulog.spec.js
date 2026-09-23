@@ -59,7 +59,7 @@ test("arranca sin errores JavaScript y monta las APIs explícitas", async ({ pag
     shell: Boolean(window.InsulogShell),
     version: window.InsulogApp?.version
   }));
-  expect(architecture).toEqual({ runtime: true, engine: true, app: true, shell: true, version: "2026.09.21-clinical-r3" });
+  expect(architecture).toEqual({ runtime: true, engine: true, app: true, shell: true, version: "2026.09.23-clinical-r4" });
   expect(pageErrors).toEqual([]);
 });
 
@@ -104,6 +104,33 @@ test("riesgo de hipoglicemia usa 0,1 UI/kg y redondeo a unidad completa", async 
   await page.locator("#p3").getByRole("button", { name: "CALCULAR DOSIS Y GENERAR NOTA", exact: true }).click();
   const data = await runtimeState(page);
   expect({ am: data.am, pm: data.pm }).toEqual({ am: 0, pm: 7 });
+});
+
+test("el profesional puede modificar el factor inicial sugerido antes de calcular", async ({ page }) => {
+  await openDefinition(page);
+  await page.locator("#p2").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
+  await page.locator("#hba1c-inicio").fill("11");
+  await page.locator(".riesgo-hipo-btn[data-value=\"Adulto mayor frágil\"]").click();
+  await page.locator("#p2").getByRole("button", { name: "SIGUIENTE: DOSIFICACIÓN", exact: true }).click();
+  await expectActivePage(page, "p25");
+  await page.locator("#continuar-dosificacion-inicio").click();
+  await expectActivePage(page, "p3");
+
+  const factor = page.locator("#factor-dosis");
+  await expect(factor).toBeEnabled();
+  await expect(factor).toHaveValue("0.1");
+  await expect(factor.locator("option")).toHaveCount(2);
+
+  await factor.selectOption("0.2");
+  await page.locator("#peso-paciente").fill("80");
+  await page.locator("#p3").getByRole("button", { name: "CALCULAR DOSIS Y GENERAR NOTA", exact: true }).click();
+
+  await expectActivePage(page, "p5");
+  const data = await runtimeState(page);
+  expect(data.factorInicioSugerido).toBe(0.1);
+  expect(data.factorInicioAplicado).toBe(0.2);
+  expect(data.factorInicioModificadoPorProfesional).toBe(true);
+  expect({ am: data.am, pm: data.pm }).toEqual({ am: 0, pm: 16 });
 });
 
 test("sospecha de cetosis bloquea el flujo ambulatorio y deriva a urgencia", async ({ page }) => {
