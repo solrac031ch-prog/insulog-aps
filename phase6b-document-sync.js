@@ -510,6 +510,7 @@
       weightKg: weight,
       hba1c,
       egfr,
+      targetA1c: tipo === "seguimiento" ? safeNumber(data.targetA1c) : null,
       currentAm,
       currentPm,
       currentTotal: totalDose(currentAm, currentPm),
@@ -648,7 +649,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.23-phase6b-document-sync-professional-rut-gate",
+    version: "2026.09.23-phase6b-document-sync-validation-v2",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),
