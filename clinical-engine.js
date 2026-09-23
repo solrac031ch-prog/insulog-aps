@@ -12,7 +12,7 @@
     8.5: Object.freeze({ hba1c: 8.5, lower: 100, upper: 160, high10: 220 })
   });
 
-  const CLINICAL_ENGINE_VERSION = "APS-NPH-2026.09.23-r4";
+  const CLINICAL_ENGINE_VERSION = "APS-NPH-2026.09.23-r5";
   const MIN_REQUIRED_READINGS = 3;
   const GLUCOSE_MIN_MGDL = 1;
   const GLUCOSE_MAX_MGDL = 700;
@@ -78,6 +78,12 @@
     const allClinicalFlags = [...initiationCriteria, ...catabolic];
     const emergency = containsAcuteEmergency(allClinicalFlags);
     const sensitivity = assessInsulinSensitivity({ age, bmi, egfr, hypoRisk });
+    const markedHyperglycemia =
+      (Number.isFinite(hba1cValue) && hba1cValue >= 11) ||
+      (Number.isFinite(fastingValue) && fastingValue >= 250) ||
+      (Number.isFinite(casualValue) && casualValue >= 300) ||
+      catabolic.some((item) => !containsAcuteEmergency([item]));
+    const conservativeStart = hypoRisk.length > 0 || sensitivity.category === "sensitive";
 
     if (emergency) {
       return Object.freeze({
@@ -101,17 +107,28 @@
     let schemeText = "NPH monodosis nocturna";
     let reason = "Inicio con insulina basal NPH en monodosis, con titulación posterior según protocolo APS.";
 
-    if (Number.isFinite(fastingValue) && fastingValue <= 130 && criteria.length > 0) {
+    if (markedHyperglycemia && !conservativeStart) {
+      scheme = "doble_dosis";
+      schemeText = "NPH doble dosis AM + PM";
+      reason = "HbA1c/glicemias marcadamente elevadas o síntomas catabólicos, compatible con hiperglicemia sostenida.";
+    } else if (Number.isFinite(fastingValue) && fastingValue <= 130 && criteria.length > 0 && !conservativeStart) {
       scheme = "monodosis_am";
       schemeText = "NPH monodosis matinal";
       reason = "La glicemia de ayuno está en rango; se prioriza NPH diurna para el patrón hiperglicémico no nocturno.";
     }
-    if (hypoRisk.length > 0) reason += " Se utiliza inicio conservador por riesgo de hipoglicemia.";
+
+    if (conservativeStart) {
+      scheme = "monodosis_pm";
+      schemeText = "NPH monodosis nocturna con inicio conservador";
+      reason = "Alto riesgo o mayor sensibilidad a insulina; se sugiere dosis menor, ajuste progresivo y control precoz.";
+    }
+
+    const suggestedFactor = conservativeStart ? 0.1 : (markedHyperglycemia ? 0.3 : 0.2);
 
     return Object.freeze({
       emergency: false, emergencyReason: "", criteria, criteriaText: criteria.join(", "), patientPreference,
       scheme, schemeText, reason, catabolicText: catabolic.join(", "), hypoRiskText: hypoRisk.join(", "),
-      factor: sensitivity.factor, sensitivity
+      factor: suggestedFactor, sensitivity
     });
   }
 
@@ -123,10 +140,8 @@
     }
 
     let safeFactor = Number(factor);
-    if (!Number.isFinite(safeFactor)) safeFactor = 0.2;
-    if (scheme !== "doble_dosis" && safeFactor > 0.2) safeFactor = 0.2;
-    if (scheme === "doble_dosis" && safeFactor > 0.3) safeFactor = 0.3;
-    safeFactor = Math.max(0.1, safeFactor);
+    const allowedFactors = new Set([0.1, 0.2, 0.3]);
+    if (!allowedFactors.has(safeFactor)) safeFactor = 0.2;
 
     const total = Math.max(4, roundUnits(weight * safeFactor));
     let am = 0;
