@@ -8,7 +8,7 @@ const INSULOG_DRIVE_CONFIG = Object.freeze({
   eventsSheet: "Eventos",
   allowedOrigins: ["https://solrac031ch-prog.github.io"],
   bridgeVersion: "2026.09.23-drive-v3",
-  schemaVersion: "2026.09.23-schema-v7"
+  schemaVersion: "2026.09.23-schema-v8"
 });
 
 function doGet() {
@@ -131,6 +131,25 @@ function validatePayload_(payload) {
   if (Array.isArray(payload.concomitantMedications) && payload.concomitantMedications.length > 20) {
     throw new Error("Demasiados medicamentos concomitantes.");
   }
+
+  ["fastingValues", "preLunchValues"].forEach(function(key) {
+    if (payload[key] === undefined) return;
+    if (!Array.isArray(payload[key]) || payload[key].length > 15) {
+      throw new Error("Serie de glicemias inválida: " + key + ".");
+    }
+    payload[key].forEach(function(value) {
+      if (!isFiniteNumber_(value) || Number(value) < 20 || Number(value) > 600) {
+        throw new Error("Valor de glicemia inválido en " + key + ".");
+      }
+    });
+  });
+
+  if (payload.targetA1c !== undefined && payload.targetA1c !== null) {
+    const target = Number(payload.targetA1c);
+    if ([7, 8, 8.5].indexOf(target) === -1) {
+      throw new Error("Meta HbA1c inválida.");
+    }
+  }
 }
 
 function requiredSheet_(spreadsheet, name) {
@@ -182,13 +201,23 @@ function ensureSchema_(patients, controls, events) {
     "Reducción propuesta (%)"
   ];
   const professionalHeaders = ["RUT profesional"];
-  const requiredControlColumns = 24 + medicationHeaders.length + safetyHeaders.length + professionalHeaders.length;
+  const validationHeaders = [
+    "Recomendación NPH AM (UI)",
+    "Recomendación NPH PM (UI)",
+    "Decisión final NPH AM (UI)",
+    "Decisión final NPH PM (UI)",
+    "Meta HbA1c (%)",
+    "HGT ayunas utilizados",
+    "HGT pre-almuerzo utilizados"
+  ];
+  const requiredControlColumns = 24 + medicationHeaders.length + safetyHeaders.length + professionalHeaders.length + validationHeaders.length;
   if (controls.getMaxColumns() < requiredControlColumns) {
     controls.insertColumnsAfter(controls.getMaxColumns(), requiredControlColumns - controls.getMaxColumns());
   }
   controls.getRange(1, 25, 1, medicationHeaders.length).setValues([medicationHeaders]);
   controls.getRange(1, 30, 1, safetyHeaders.length).setValues([safetyHeaders]);
   controls.getRange(1, 38, 1, professionalHeaders.length).setValues([professionalHeaders]);
+  controls.getRange(1, 39, 1, validationHeaders.length).setValues([validationHeaders]);
 
   if (events.getMaxColumns() < 13) {
     events.insertColumnsAfter(events.getMaxColumns(), 13 - events.getMaxColumns());
@@ -341,6 +370,13 @@ function appendControl_(sheet, patient, payload, timestamp) {
   const urgencyAcceptedWithoutDose = urgencyAccepted && !Boolean(payload.level3AutomaticRecommendation);
   const recommendedTotal = urgencyAcceptedWithoutDose ? "" : numberOrBlank_(payload.recommendedTotal);
   const finalTotal = urgencyAcceptedWithoutDose ? "" : numberOrBlank_(payload.finalTotal);
+  const recommendedAm = urgencyAcceptedWithoutDose ? "" : numberOrBlank_(payload.recommendedAm);
+  const recommendedPm = urgencyAcceptedWithoutDose ? "" : numberOrBlank_(payload.recommendedPm);
+  const finalAm = urgencyAcceptedWithoutDose ? "" : numberOrBlank_(payload.finalAm);
+  const finalPm = urgencyAcceptedWithoutDose ? "" : numberOrBlank_(payload.finalPm);
+  const targetA1c = numberOrBlank_(payload.targetA1c);
+  const fastingValues = serializeGlucoseValues_(payload.fastingValues);
+  const preLunchValues = serializeGlucoseValues_(payload.preLunchValues);
   const hba1c = numberOrBlank_(payload.hba1c);
   const egfr = numberOrBlank_(payload.egfr);
   const weight = numberOrBlank_(payload.weightKg);
@@ -394,7 +430,14 @@ function appendControl_(sheet, patient, payload, timestamp) {
     payload.level3AutomaticRecommendation ? "Sí" : "No",
     String(payload.level3ImplicatedDose || "").trim().toUpperCase(),
     numberOrBlank_(payload.level3ReductionPercent),
-    normalizeRut_(payload.professionalRut)
+    normalizeRut_(payload.professionalRut),
+    recommendedAm,
+    recommendedPm,
+    finalAm,
+    finalPm,
+    targetA1c,
+    fastingValues,
+    preLunchValues
   ]);
 }
 
@@ -434,6 +477,14 @@ function appendAutomaticHypoglycemiaEvent_(sheet, patientId, payload, timestamp)
     "Generado automáticamente desde el control " + String(payload.recordId),
     normalizeRut_(payload.professionalRut)
   ]);
+}
+
+function serializeGlucoseValues_(value) {
+  if (!Array.isArray(value) || !value.length) return "";
+  return value
+    .map(function(item) { return Number(item); })
+    .filter(function(item) { return Number.isFinite(item); })
+    .join("; ");
 }
 
 function normalizeMedications_(value) {
