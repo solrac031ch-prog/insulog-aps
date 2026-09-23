@@ -3,6 +3,7 @@ const path = require("path");
 const { test, expect } = require("@playwright/test");
 
 const swSource = fs.readFileSync(path.join(__dirname, "..", "..", "sw.js"), "utf8");
+const appShellSource = fs.readFileSync(path.join(__dirname, "..", "..", "app-shell.js"), "utf8");
 const releaseMatch = swSource.match(/const CACHE_NAME = "insulog-shell-([0-9a-f]{16})"/);
 if (!releaseMatch) throw new Error("No se encontró fingerprint canónico en sw.js");
 const RELEASE = releaseMatch[1];
@@ -13,6 +14,9 @@ test("la actualización PWA avisa sin reclamar una atención abierta", async () 
   expect(swSource).toContain('self.clients.matchAll({ type: "window", includeUncontrolled: true })');
   expect(swSource).toContain('type: "INSULOG_UPDATE_READY"');
   expect(swSource).not.toContain("clients.claim()");
+  expect(appShellSource).toContain("PWA_UPDATE_PENDING_KEY");
+  expect(appShellSource).toContain("reloadPendingPwaUpdateIfSafe");
+  expect(appShellSource).toContain('attributeFilter: ["class", "aria-hidden"]');
 });
 
 
