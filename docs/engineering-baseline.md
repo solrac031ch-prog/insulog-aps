@@ -137,9 +137,9 @@ Contratos:
 `sw.js` trata cada release como una unidad completa:
 
 - instala solo si puede preparar todo el app shell;
-- no usa `skipWaiting()`;
-- no usa `clients.claim()`;
-- una atención abierta permanece sobre su worker anterior;
+- tras completar el precache puede usar `skipWaiting()` para que la nueva versión quede activa sin esperar al cierre de todas las pestañas;
+- no usa `clients.claim()`, por lo que una atención ya abierta no cambia de worker ni mezcla assets durante la sesión;
+- la nueva versión se aplica en la siguiente navegación/recarga;
 - caches antiguos se eliminan durante activación de la nueva versión;
 - no existe actualización archivo-por-archivo durante `fetch`;
 - app y `pdf-preview.html` pertenecen al mismo release;

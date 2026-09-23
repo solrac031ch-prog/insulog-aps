@@ -14,7 +14,8 @@ REQUIRED = [
     f'const DEPLOYMENT_REVISION = "release-{EXPECTED_RELEASE}"',
     'const SHELL_ASSET_BY_PATH = new Map(',
     'new Request(asset, { cache: "reload" })',
-    'event.waitUntil(precacheFreshShell())',
+    'await precacheFreshShell();',
+    'await self.skipWaiting();',
     'key.startsWith("insulog-shell-") && key !== CACHE_NAME',
     'cache.match(navigationAsset)',
     'cache.match(shellAsset)',
@@ -25,7 +26,6 @@ if missing:
     raise SystemExit(f"Atomic shell contract missing: {missing}")
 
 FORBIDDEN = [
-    "skipWaiting()",
     "clients.claim()",
     "refreshNavigation",
     "refreshAsset",
