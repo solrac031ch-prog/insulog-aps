@@ -98,9 +98,9 @@
     const caja = byId("sugerencia-esquema-inicio");
     if (caja) {
       const decisionMessage = professionalInitiation
-        ? "<br><br><strong>Decisión profesional:</strong> Insulog no identificó un criterio automático de inicio con los datos registrados. Si el médico decide iniciar NPH, puede continuar y seleccionar libremente el esquema y el factor; la decisión quedará documentada."
-        : "<br><br><strong>Decisión profesional:</strong> puede aceptar o modificar el esquema y el factor sugeridos antes de calcular.";
-      caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(decision.schemeText)}<br><br><strong>Sensibilidad:</strong> ${notePresenter.escapeHTML(decision.sensitivity?.label || "No determinada")}<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(decision.reason)}${decisionMessage}`;
+        ? "<br><br><strong>Nota:</strong> inicio por decisión clínica del profesional."
+        : "";
+      caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(decision.schemeText)}<br><br><strong>Factor sugerido:</strong> ${Number(decision.factor || 0.2).toFixed(1).replace(".", ",")} UI/kg<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(decision.reason)}${decisionMessage}`;
       show(caja, true);
     }
 
@@ -113,7 +113,7 @@
     const data = state.snapshot();
     const caja = byId("resumen-esquema-inicio");
     if (!caja || !data.textoEsquemaInicio) return;
-    caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(data.textoEsquemaInicioSugerido || data.textoEsquemaInicio)}<br><br><strong>Factor sugerido:</strong> ${Number(data.factorInicioSugerido || 0.2).toFixed(1).replace(".", ",")} UI/kg<br><br><strong>Sensibilidad:</strong> ${notePresenter.escapeHTML(data.sensibilidadInsulina || "No determinada")}<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(data.motivoEsquemaInicio)}`;
+    caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(data.textoEsquemaInicioSugerido || data.textoEsquemaInicio)}<br><br><strong>Factor sugerido:</strong> ${Number(data.factorInicioSugerido || 0.2).toFixed(1).replace(".", ",")} UI/kg<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(data.motivoEsquemaInicio)}`;
     show(caja, true);
   }
 
