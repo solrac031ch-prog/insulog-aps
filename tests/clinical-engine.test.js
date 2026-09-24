@@ -22,6 +22,11 @@ assert.equal(decision.factor, 0.2);
 
 decision = engine.suggestInitialScheme({ hba1c: 11, fasting: 110, age: 60, bmi: 25, egfr: 90 });
 assert.equal(decision.scheme, "monodosis_am", "ayuno en rango favorece NPH diurna");
+assert.equal(decision.factor, 0.2, "la sugerencia automática de monodosis no usa 0,3 UI/kg");
+
+decision = engine.suggestInitialScheme({ hba1c: 11, fasting: 260, age: 60, bmi: 25, egfr: 90 });
+assert.equal(decision.scheme, "doble_dosis");
+assert.equal(decision.factor, 0.3, "0,3 UI/kg automático se reserva para doble dosis");
 
 decision = engine.suggestInitialScheme({ initiationCriteria: ["Deseo del paciente"] });
 assert.equal(decision.criteria.length, 0);
@@ -129,3 +134,6 @@ assert.equal(level3.automaticRecommendation, false);
 assert.match(level3.reason, /pérdida de conciencia|convulsión/i);
 
 console.log("Clinical engine r3 checks passed");
+
+assert.deepEqual(engine.normalizeGlucoseValues([20, 600]).valid, [20, 600]);
+assert.deepEqual(engine.normalizeGlucoseValues([19, 601]).invalid, [19, 601]);
