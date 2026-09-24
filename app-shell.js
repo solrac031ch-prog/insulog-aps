@@ -204,7 +204,7 @@
     const reassess = byId("best-review-reassess");
     if (accept) accept.setAttribute("aria-pressed", String(bestReviewStatus === "aceptada"));
     if (reassess) reassess.setAttribute("aria-pressed", String(bestReviewStatus === "reevaluar"));
-    if (!bestReviewStatus) setBestStatus("best-review-status", "Revisión profesional aún no registrada.", true);
+    if (!bestReviewStatus) setBestStatus("best-review-status", "", true);
     if (bestReviewStatus === "aceptada") setBestStatus("best-review-status", "✓ Recomendación revisada y aceptada por el profesional.", true);
     if (bestReviewStatus === "reevaluar") setBestStatus("best-review-status", "Recomendación marcada para reevaluación clínica.", false);
   }
@@ -275,7 +275,6 @@
       decisionCard.insertAdjacentHTML("beforebegin", `
 <div id="best-professional-review" class="card compact-card best-card text-left">
           <p class="card-title text-center">Revisión profesional</p>
-          <p class="helper-text">Insulog propone una recomendación; la decisión final corresponde al profesional. Registrar esta revisión no modifica el cálculo Clinical r2 ni la nota generada.</p>
           <div class="best-review-actions">
             <button id="best-review-accept" type="button" class="btn btn-success" data-action="best-review-accept" aria-pressed="false">ACEPTAR RECOMENDACIÓN</button>
             <button id="best-review-reassess" type="button" class="btn" data-action="best-review-reassess" aria-pressed="false">MARCAR PARA REEVALUAR</button>
