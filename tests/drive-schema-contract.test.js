@@ -43,8 +43,29 @@ const sync = fs.readFileSync("phase6b-document-sync.js", "utf8");
   '"Dosis actual (UI/kg/día)"',
   '"Bloqueo escalamiento automático"',
   '"ID estudio paciente"',
-  '"ID estudio profesional"'
+  '"ID estudio profesional"',
+  "findControl_",
+  "rawCaseAlreadyExists_",
+  "automaticEventAlreadyExists_",
+  "professionalReasonProvided",
+  "initiationClinicalReasonProvided",
+  "level3ReversibleCauseProvided",
+  "emergencyReasonProvided",
+  "blockReasons",
+  "concomitantMedicationKeys"
 ].forEach((token) => assert.ok(bridge.includes(token), `Falta contrato Drive: ${token}`));
+
+[
+  "delete clean.patientName",
+  "delete clean.patientBirthDate",
+  "delete clean.professionalRut",
+  "delete clean.sourceOrigin"
+].forEach((token) => assert.ok(!bridge.includes(token), `CasosRaw no debe depender de borrado parcial: ${token}`));
+
+assert.ok(
+  bridge.includes('const scalarKeys = ['),
+  "CasosRaw debe construirse desde una allowlist estructurada"
+);
 
 [
   "fastingValues,",
