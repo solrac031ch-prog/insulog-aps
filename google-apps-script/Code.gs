@@ -76,7 +76,7 @@ function parsePayload_(e) {
 function validatePayload_(payload) {
   if (!payload || typeof payload !== "object") throw new Error("Payload inválido.");
   const bridgeVersion = String(payload.bridgeVersion || "");
-  const compatibleVersions = ["2026.09.21-drive-v2", "2026.09.23-drive-v3", INSULOG_DRIVE_CONFIG.bridgeVersion];
+  const compatibleVersions = ["2026.09.23-drive-v3", INSULOG_DRIVE_CONFIG.bridgeVersion];
   if (compatibleVersions.indexOf(bridgeVersion) === -1) {
     throw new Error("Versión del puente no compatible.");
   }
@@ -89,7 +89,7 @@ function validatePayload_(payload) {
   const recordId = String(payload.recordId || "").trim();
   if (recordId.length < 8 || recordId.length > 120) throw new Error("recordId inválido.");
 
-  if (bridgeVersion === INSULOG_DRIVE_CONFIG.bridgeVersion && !validRut_(payload.professionalRut)) {
+  if (compatibleVersions.indexOf(bridgeVersion) !== -1 && !validRut_(payload.professionalRut)) {
     throw new Error("RUT profesional inválido.");
   }
 
@@ -361,7 +361,11 @@ function ensureSchema_(patients, controls, events, rawCases) {
   const protections = rawCases.getProtections(SpreadsheetApp.ProtectionType.SHEET);
   if (!protections.length) {
     const protection = rawCases.protect().setDescription("Insulog CasosRaw: append-only bridge audit trail");
-    protection.removeEditors(protection.getEditors());
+    const effectiveEmail = String(Session.getEffectiveUser().getEmail() || "").toLowerCase();
+    const removableEditors = protection.getEditors().filter(function(user) {
+      return String(user.getEmail() || "").toLowerCase() !== effectiveEmail;
+    });
+    if (removableEditors.length) protection.removeEditors(removableEditors);
     if (protection.canDomainEdit()) protection.setDomainEdit(false);
   }
 
