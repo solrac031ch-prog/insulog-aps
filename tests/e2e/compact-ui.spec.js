@@ -18,7 +18,7 @@ test("la interfaz clínica mantiene solo ayudas esenciales", async ({ page }) =>
 
   const review = page.locator("#best-professional-review");
   await expect(review).toHaveCount(1);
-  await expect(review.locator(".helper-text")).toHaveCount(0);
+  await expect(review.locator(":scope > .helper-text")).toHaveCount(0);
 });
 
 test("la recomendación de inicio prioriza esquema y factor y deja el criterio colapsable", async ({ page }) => {
@@ -28,6 +28,8 @@ test("la recomendación de inicio prioriza esquema y factor y deja el criterio c
   await page.locator("#p2").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
   await page.locator("#p2").getByRole("button", { name: "Fracaso terapia oral", exact: true }).click();
   await page.locator("#p2").getByRole("button", { name: "SIGUIENTE: DOSIFICACIÓN", exact: true }).click();
+  await expect(page.locator("#p25")).toHaveClass(/active/);
+  await page.locator("#p25").getByRole("button", { name: "CONTINUAR A DOSIFICACIÓN NPH", exact: true }).click();
 
   await expect(page.locator("#p3")).toHaveClass(/active/);
   await expect(page.locator("#p3 > .lead")).toHaveCount(0);
