@@ -4,8 +4,8 @@ const engine = require("../clinical-engine.js");
 
 assert.equal(engine.version, "APS-NPH-2026.09.24-r6");
 assert.equal(engine.MIN_REQUIRED_READINGS, 3);
-assert.equal(engine.GLUCOSE_MIN_MGDL, 1);
-assert.equal(engine.GLUCOSE_MAX_MGDL, 700);
+assert.equal(engine.GLUCOSE_MIN_MGDL, 20);
+assert.equal(engine.GLUCOSE_MAX_MGDL, 600);
 
 const incomplete = engine.assessInsulinSensitivity({ age: 60, bmi: 25 });
 assert.equal(incomplete.factor, 0.1);
