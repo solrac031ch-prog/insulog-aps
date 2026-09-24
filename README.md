@@ -96,7 +96,7 @@ npm run verify
 
 El service worker no usa `skipWaiting()` ni `clients.claim()`: una atención ya abierta conserva un release coherente hasta que el worker anterior deja de controlar clientes.
 
-Release técnico vigente para Clinical r2: **`37f338f5e4547993`**.
+El release técnico vigente se obtiene del fingerprint canónico del app shell y se actualiza en cada cambio de `SHELL_FILES`.
 
 ## Cambios visuales
 
@@ -104,7 +104,7 @@ Release técnico vigente para Clinical r2: **`37f338f5e4547993`**.
 
 ## Cambios clínicos
 
-La versión clínica vigente es **`APS-NPH-2026.09.14-r2`** y vive en `clinical-protocol.json`.
+La versión clínica vigente es **`APS-NPH-2026.09.24-r6`** y vive en `clinical-protocol.json`.
 
 El baseline r2 alinea el motor con la Vía Clínica DM2 MINSAL 2026, el protocolo MINSAL de insulinización NPH y la capa de seguridad/hipoglicemia ADA 2026. Las adaptaciones locales deliberadas están declaradas en `clinical-protocol.json`.
 
@@ -134,6 +134,7 @@ La emulación cross-browser no reemplaza dispositivos físicos. El protocolo de 
 - Fase 10C: reproducibilidad de mantenimiento y documentación operativa.
 - Fase 11A: versionado explícito y gobernanza del protocolo clínico.
 - Fase 11B: generación de notas clínicas separada del DOM con regresión exacta.
-- Clinical r2: alineación MINSAL 2026/ADA 2026, titulación porcentual, metas individualizadas y guardrails de urgencia/dosis basal.
+- Clinical r6: matriz MINSAL para factor inicial automático (0,3 UI/kg solo en doble dosis), HGT de seguimiento 20–600 mg/dL y guardrails de urgencia/dosis basal.
+- Pre-piloto 2026-09-24: identidad profesional visible/cambiable y trazabilidad de investigación pseudonimizada en `CasosRaw`. Ver `docs/prepilot-hardening-2026-09-24.md`.
 
 Para el detalle y la deuda técnica vigente, revisar [`docs/engineering-baseline.md`](docs/engineering-baseline.md), [`docs/phase11a-clinical-protocol-versioning.md`](docs/phase11a-clinical-protocol-versioning.md) y [`docs/phase11b-clinical-copy.md`](docs/phase11b-clinical-copy.md).

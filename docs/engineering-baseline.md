@@ -1,5 +1,7 @@
 # Insulog APS — baseline de ingeniería
 
+> **Estado vigente 2026-09-24:** la identidad clínica canónica es `APS-NPH-2026.09.24-r6`. Las secciones históricas de fases anteriores se conservan como registro de evolución; ante cualquier diferencia, mandan `clinical-protocol.json`, `clinical-engine.js` y la matriz de regresión vigente. El endurecimiento pre-piloto (identidad profesional, dataset estructurado y `CasosRaw`) está documentado en `docs/prepilot-hardening-2026-09-24.md`.
+
 Este documento fija el estado técnico que debe protegerse antes de cualquier cambio relevante. Su objetivo es separar responsabilidades y evitar que cambios de interfaz, PWA, PDF, infraestructura, accesibilidad o compatibilidad alteren inadvertidamente la lógica clínica.
 
 ## Principios de trabajo
@@ -26,7 +28,7 @@ Funciones protegidas:
 - `calculateInitialDose()` — dosis inicial y reparto AM/PM;
 - `detectDiscordantHighs()` / `analyzeGlucose()` — análisis de HGT;
 - `classifyHypoglycemia()` — niveles 1, 2 y 3;
-- `calculateAdjustment()` — ajuste ±2/±4 UI;
+- `calculateAdjustment()` — ajuste porcentual −20/−10/0/+10/+20% según el menor HGT del perfil;
 - `calculateSecondDose()` — segunda dosis con límites vigentes;
 - `assessDoseSafety()` — seguridad de dosis alta;
 - `calculateFollowup()` — resultado integral del seguimiento.
@@ -34,20 +36,20 @@ Funciones protegidas:
 Reglas que siguen siendo contrato:
 
 - exclusiones: DM1, embarazo, pancreatitis/cirugía pancreática y menores de 18 años;
-- inicio NPH dentro de 0,1–0,3 UI/kg según riesgo y contexto;
+- inicio NPH dentro de 0,1–0,3 UI/kg; la sugerencia automática usa 0,3 UI/kg solo en doble dosis, mientras el profesional puede seleccionarlo manualmente como override documentado;
 - hiperglicemia marcada puede sugerir esquema AM + PM;
-- seguimiento guiado por promedios de ayunas/pre-noche con ajustes ±2/±4 UI;
+- seguimiento titulado con el menor de al menos 3 HGT válidos del perfil correspondiente; los promedios quedan como descripción;
 - valores altos discordantes se señalan, pero **se mantienen en el promedio**;
 - regresión protegida: `[100,100,100,300]` produce promedio 150 mg/dL y PM 20 → 22 UI, además de advertencia;
 - hipoglicemia: 54–69 mg/dL nivel 1, <54 mg/dL nivel 2 y cualquier episodio con asistencia nivel 3;
 - 54 mg/dL exactos permanecen en nivel 1 bajo el contrato actual (`<54` para nivel 2);
-- nivel 3 bloquea el ajuste automático de NPH y exige reevaluación prioritaria;
-- revisión de dosis alta desde ≥0,7 UI/kg/día;
-- no existe escalamiento automático por el solo hecho de alcanzar ≥1 UI/kg/día.
+- nivel 3 activa urgencia; solo existe reducción automática del 20% de una dosis atribuible cuando no hay causa reversible ni pérdida de conciencia/convulsión; en los demás casos exige ajuste médico;
+- revisión de dosis basal desde ≥0,4 UI/kg/día;
+- el escalamiento automático se bloquea si la dosis proyectada alcanza o supera 0,5 UI/kg/día.
 
 La identidad canónica de estas reglas vive en `clinical-protocol.json`. La versión vigente es:
 
-`APS-NPH-2026.09.14-r1`
+`APS-NPH-2026.09.24-r6`
 
 Cualquier modificación intencional de dosis, umbral, criterio o conducta en `clinical-engine.js` debe tratarse como cambio clínico, actualizar esa versión y conservar verde la matriz declarada de regresión.
 

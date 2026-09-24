@@ -47,6 +47,8 @@ La suite Chromium histórica continuó verde sin re-baseline perceptual de P0/P2
 
 ## Fase 9B — protocolo de aceptación en hardware real
 
+**Estado 2026-09-24: PENDIENTE DE HARDWARE FÍSICO.** El checklist está preparado y la compatibilidad automatizada continúa en CI, pero 9B no puede cerrarse sin ejecutar estas pruebas en un iPhone y un Android reales.
+
 La siguiente validación debe ejecutarse al menos en:
 
 - un iPhone reciente con una versión soportada de iOS y Safari;

@@ -22,6 +22,11 @@ assert.equal(decision.factor, 0.2);
 
 decision = engine.suggestInitialScheme({ hba1c: 11, fasting: 110, age: 60, bmi: 25, egfr: 90 });
 assert.equal(decision.scheme, "monodosis_am", "ayuno en rango favorece NPH diurna");
+assert.equal(decision.factor, 0.2, "MINSAL: la sugerencia automática en monodosis no usa 0,3 UI/kg");
+
+decision = engine.suggestInitialScheme({ hba1c: 11, fasting: 260, age: 60, bmi: 25, egfr: 90 });
+assert.equal(decision.scheme, "doble_dosis");
+assert.equal(decision.factor, 0.3, "MINSAL: 0,3 UI/kg automático se reserva para doble dosis");
 
 decision = engine.suggestInitialScheme({ initiationCriteria: ["Deseo del paciente"] });
 assert.equal(decision.criteria.length, 0);

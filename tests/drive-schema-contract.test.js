@@ -7,7 +7,7 @@ const bridge = fs.readFileSync("google-apps-script/Code.gs", "utf8");
 const sync = fs.readFileSync("phase6b-document-sync.js", "utf8");
 
 [
-  '"2026.09.23-schema-v9"',
+  '"2026.09.24-schema-v10"',
   '"Recomendación NPH AM (UI)"',
   '"Recomendación NPH PM (UI)"',
   '"Decisión final NPH AM (UI)"',
@@ -33,7 +33,17 @@ const sync = fs.readFileSync("phase6b-document-sync.js", "utf8");
   "appendAutomaticHyperglycemicEmergencyEvent_",
   "hyperglycemicEmergency",
   "initiationFasting",
-  "initiationCasual"
+  "initiationCasual",
+  '"CasosRaw"',
+  "appendRawCase_",
+  "pseudonymizedPayload_",
+  "payload_sha256",
+  "chain_hash",
+  '"HGT mínimo ayunas utilizado"',
+  '"Dosis actual (UI/kg/día)"',
+  '"Bloqueo escalamiento automático"',
+  '"ID estudio paciente"',
+  '"ID estudio profesional"'
 ].forEach((token) => assert.ok(bridge.includes(token), `Falta contrato Drive: ${token}`));
 
 [
@@ -57,7 +67,17 @@ const sync = fs.readFileSync("phase6b-document-sync.js", "utf8");
   "hyperglycemicEmergency,",
   "emergencyReason:",
   "initiationFasting,",
-  "initiationCasual,"
+  "initiationCasual,",
+  "initiationAge,",
+  "initiationBmi,",
+  "initiationCriteria,",
+  "initiationCatabolic,",
+  "initiationHypoRisk,",
+  "fastingMinimumUsed:",
+  "preLunchMinimumUsed:",
+  "currentDosePerKg:",
+  "automaticEscalationBlocked:",
+  "doseSafetyWarning:"
 ].forEach((token) => assert.ok(sync.includes(token), `Falta payload de validación: ${token}`));
 
 console.log("Drive validation schema contract checks passed");
