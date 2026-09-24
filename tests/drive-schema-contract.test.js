@@ -7,7 +7,7 @@ const bridge = fs.readFileSync("google-apps-script/Code.gs", "utf8");
 const sync = fs.readFileSync("phase6b-document-sync.js", "utf8");
 
 [
-  '"2026.09.23-schema-v9"',
+  '"2026.09.24-schema-v10"',
   '"Recomendación NPH AM (UI)"',
   '"Recomendación NPH PM (UI)"',
   '"Decisión final NPH AM (UI)"',
