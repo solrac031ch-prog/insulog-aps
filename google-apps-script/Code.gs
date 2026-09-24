@@ -8,8 +8,8 @@ const INSULOG_DRIVE_CONFIG = Object.freeze({
   eventsSheet: "Eventos",
   rawCasesSheet: "CasosRaw",
   allowedOrigins: ["https://solrac031ch-prog.github.io"],
-  bridgeVersion: "2026.09.24-drive-v4",
-  schemaVersion: "2026.09.24-schema-v10"
+  bridgeVersion: "2026.09.24-drive-v5",
+  schemaVersion: "2026.09.24-schema-v11"
 });
 
 function doGet() {
@@ -103,7 +103,7 @@ function parsePayload_(e) {
 function validatePayload_(payload) {
   if (!payload || typeof payload !== "object") throw new Error("Payload inválido.");
   const bridgeVersion = String(payload.bridgeVersion || "");
-  const compatibleVersions = ["2026.09.23-drive-v3", INSULOG_DRIVE_CONFIG.bridgeVersion];
+  const compatibleVersions = ["2026.09.23-drive-v3", "2026.09.24-drive-v4", INSULOG_DRIVE_CONFIG.bridgeVersion];
   if (compatibleVersions.indexOf(bridgeVersion) === -1) {
     throw new Error("Versión del puente no compatible.");
   }
@@ -158,6 +158,16 @@ function validatePayload_(payload) {
   }
   if (payload.emergencyReason !== undefined && String(payload.emergencyReason).length > 2500) {
     throw new Error("Motivo de urgencia demasiado extenso.");
+  }
+
+  if (payload.dataPhase !== undefined) {
+    const dataPhase = String(payload.dataPhase || "").trim();
+    if (["PREPILOTO_OPERATIVO", "PRUEBA_TECNICA", "PROSPECTIVO_CEC"].indexOf(dataPhase) === -1) {
+      throw new Error("Fase de datos inválida.");
+    }
+  }
+  if (payload.researchEligible !== undefined && typeof payload.researchEligible !== "boolean") {
+    throw new Error("Indicador de elegibilidad para investigación inválido.");
   }
   if (payload.initiationFasting !== undefined && payload.initiationFasting !== null
       && (!isFiniteNumber_(payload.initiationFasting) || Number(payload.initiationFasting) < 20 || Number(payload.initiationFasting) > 600)) {
@@ -337,7 +347,11 @@ function ensureSchema_(patients, controls, events, rawCases) {
     "ID estudio paciente",
     "ID estudio profesional"
   ];
-  const requiredControlColumns = 24 + medicationHeaders.length + safetyHeaders.length + professionalHeaders.length + validationHeaders.length + initiationHeaders.length + researchHeaders.length;
+  const operationalHeaders = [
+    "Fase de datos",
+    "Elegible para investigación"
+  ];
+  const requiredControlColumns = 24 + medicationHeaders.length + safetyHeaders.length + professionalHeaders.length + validationHeaders.length + initiationHeaders.length + researchHeaders.length + operationalHeaders.length;
   if (controls.getMaxColumns() < requiredControlColumns) {
     controls.insertColumnsAfter(controls.getMaxColumns(), requiredControlColumns - controls.getMaxColumns());
   }
@@ -347,6 +361,7 @@ function ensureSchema_(patients, controls, events, rawCases) {
   controls.getRange(1, 39, 1, validationHeaders.length).setValues([validationHeaders]);
   controls.getRange(1, 46, 1, initiationHeaders.length).setValues([initiationHeaders]);
   controls.getRange(1, 54, 1, researchHeaders.length).setValues([researchHeaders]);
+  controls.getRange(1, 75, 1, operationalHeaders.length).setValues([operationalHeaders]);
 
   if (events.getMaxColumns() < 13) {
     events.insertColumnsAfter(events.getMaxColumns(), 13 - events.getMaxColumns());
@@ -362,6 +377,24 @@ function ensureSchema_(patients, controls, events, rawCases) {
   controls.getRange(2, 52, Math.max(1, controls.getMaxRows() - 1), 2).setDataValidation(yesNoControlRule);
   controls.getRange(2, 60, Math.max(1, controls.getMaxRows() - 1), 2).setDataValidation(yesNoControlRule);
   controls.getRange(2, 71, Math.max(1, controls.getMaxRows() - 1), 1).setDataValidation(yesNoControlRule);
+  controls.getRange(2, 76, Math.max(1, controls.getMaxRows() - 1), 1).setDataValidation(yesNoControlRule);
+
+  if (controls.getLastRow() >= 2) {
+    const legacyRange = controls.getRange(2, 75, controls.getLastRow() - 1, 2);
+    const legacyValues = legacyRange.getValues();
+    let legacyChanged = false;
+    legacyValues.forEach(function(row) {
+      if (!String(row[0] || "").trim()) {
+        row[0] = "PREPILOTO_LEGACY";
+        legacyChanged = true;
+      }
+      if (!String(row[1] || "").trim()) {
+        row[1] = "No";
+        legacyChanged = true;
+      }
+    });
+    if (legacyChanged) legacyRange.setValues(legacyValues);
+  }
 
   const rawHeaders = [
     "raw_id",
@@ -378,13 +411,32 @@ function ensureSchema_(patients, controls, events, rawCases) {
     "payload_sha256",
     "previous_chain_hash",
     "chain_hash",
-    "timestamp_guardado"
+    "timestamp_guardado",
+    "fase_datos",
+    "elegible_investigación"
   ];
   if (rawCases.getMaxColumns() < rawHeaders.length) {
     rawCases.insertColumnsAfter(rawCases.getMaxColumns(), rawHeaders.length - rawCases.getMaxColumns());
   }
   rawCases.getRange(1, 1, 1, rawHeaders.length).setValues([rawHeaders]);
   rawCases.setFrozenRows(1);
+
+  if (rawCases.getLastRow() >= 2) {
+    const rawLegacyRange = rawCases.getRange(2, 16, rawCases.getLastRow() - 1, 2);
+    const rawLegacyValues = rawLegacyRange.getValues();
+    let rawLegacyChanged = false;
+    rawLegacyValues.forEach(function(row) {
+      if (!String(row[0] || "").trim()) {
+        row[0] = "PREPILOTO_LEGACY";
+        rawLegacyChanged = true;
+      }
+      if (!String(row[1] || "").trim()) {
+        row[1] = "No";
+        rawLegacyChanged = true;
+      }
+    });
+    if (rawLegacyChanged) rawLegacyRange.setValues(rawLegacyValues);
+  }
   const protections = rawCases.getProtections(SpreadsheetApp.ProtectionType.SHEET);
   if (!protections.length) {
     const protection = rawCases.protect().setDescription("Insulog CasosRaw: append-only bridge audit trail");
@@ -576,6 +628,8 @@ function appendControl_(sheet, patient, payload, timestamp, researchIds) {
     String(payload.appRuntimeVersion || "").trim(),
     String(payload.documentSyncVersion || "").trim()
   ].filter(Boolean).join(" | ");
+  const dataPhase = String(payload.dataPhase || "PREPILOTO_OPERATIVO").trim();
+  const researchEligible = payload.researchEligible === true ? "Sí" : "No";
 
   sheet.appendRow([
     String(payload.recordId),
@@ -651,7 +705,9 @@ function appendControl_(sheet, patient, payload, timestamp, researchIds) {
     payload.hyperglycemicEmergency ? "Sí" : "No",
     String(payload.emergencyReason || "").trim(),
     researchIds.patientStudyId,
-    researchIds.professionalStudyId
+    researchIds.professionalStudyId,
+    dataPhase,
+    researchEligible
   ]);
 }
 
@@ -834,7 +890,9 @@ function pseudonymizedPayload_(payload, researchIds) {
     "clinicalEngineVersion",
     "documentModuleVersion",
     "appRuntimeVersion",
-    "documentSyncVersion"
+    "documentSyncVersion",
+    "dataPhase",
+    "researchEligible"
   ];
   const clean = {};
   scalarKeys.forEach(function(key) {
@@ -913,7 +971,9 @@ function appendRawCase_(sheet, patient, payload, timestamp, researchIds) {
     payloadHash,
     previousHash,
     chainHash,
-    new Date()
+    new Date(),
+    String(payload.dataPhase || "PREPILOTO_OPERATIVO").trim(),
+    payload.researchEligible === true ? "Sí" : "No"
   ]);
   return true;
 }

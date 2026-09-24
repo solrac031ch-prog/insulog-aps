@@ -37,6 +37,8 @@ Se añade `CasosRaw`, destinado a una traza append-only del payload clínico pse
 
 `Pacientes` y `Controles` continúan siendo las tablas operativas identificadas. `CasosRaw` no reemplaza la gobernanza de acceso ni un plan formal de investigación.
 
+Desde la preparación para inicio de atenciones, todo caso nuevo se etiqueta como `PREPILOTO_OPERATIVO` y `Elegible para investigación = No`. Los registros históricos previos a esta separación se etiquetan `PREPILOTO_LEGACY`. Esto permite conservar los casos asistenciales/prepiloto sin incorporarlos automáticamente a una cohorte prospectiva futura. La transición a `PROSPECTIVO_CEC` requiere un cambio de versión explícito después de completar los gates éticos e institucionales.
+
 ### Regla clínica de dosis inicial
 
 La recomendación automática queda alineada con la matriz MINSAL:

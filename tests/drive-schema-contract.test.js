@@ -7,7 +7,7 @@ const bridge = fs.readFileSync("google-apps-script/Code.gs", "utf8");
 const sync = fs.readFileSync("phase6b-document-sync.js", "utf8");
 
 [
-  '"2026.09.24-schema-v10"',
+  '"2026.09.24-schema-v11"',
   '"Recomendación NPH AM (UI)"',
   '"Recomendación NPH PM (UI)"',
   '"Decisión final NPH AM (UI)"',
@@ -52,7 +52,14 @@ const sync = fs.readFileSync("phase6b-document-sync.js", "utf8");
   "level3ReversibleCauseProvided",
   "emergencyReasonProvided",
   "blockReasons",
-  "concomitantMedicationKeys"
+  "concomitantMedicationKeys",
+  '"Fase de datos"',
+  '"Elegible para investigación"',
+  '"fase_datos"',
+  '"elegible_investigación"',
+  '"PREPILOTO_LEGACY"',
+  "dataPhase",
+  "researchEligible"
 ].forEach((token) => assert.ok(bridge.includes(token), `Falta contrato Drive: ${token}`));
 
 [
@@ -98,7 +105,9 @@ assert.ok(
   "preLunchMinimumUsed:",
   "currentDosePerKg:",
   "automaticEscalationBlocked:",
-  "doseSafetyWarning:"
+  "doseSafetyWarning:",
+  'dataPhase: "PREPILOTO_OPERATIVO"',
+  "researchEligible: false"
 ].forEach((token) => assert.ok(sync.includes(token), `Falta payload de validación: ${token}`));
 
 console.log("Drive validation schema contract checks passed");
