@@ -42,11 +42,11 @@ function doPost(e) {
     }
 
     const timestamp = safeDate_(payload.timestamp) || new Date();
-    appendRawCase_(rawCases, payload, timestamp);
     const patient = upsertPatient_(patients, payload, timestamp);
     appendControl_(controls, patient, payload, timestamp);
     appendAutomaticHypoglycemiaEvent_(events, patient.patientId, payload, timestamp);
     appendAutomaticHyperglycemicEmergencyEvent_(events, patient.patientId, payload, timestamp);
+    appendRawCase_(rawCases, patient.patientId, payload, timestamp);
 
     return jsonResponse_({
       ok: true,
@@ -338,7 +338,14 @@ function ensureRawCasesSchema_(sheet) {
   const protections = sheet.getProtections(SpreadsheetApp.ProtectionType.SHEET);
   if (!protections.length) {
     const protection = sheet.protect().setDescription("Insulog CasosRaw append-only audit log");
-    protection.setWarningOnly(true);
+    protection.setWarningOnly(false);
+    try {
+      const editors = protection.getEditors();
+      if (editors.length) protection.removeEditors(editors);
+      if (protection.canDomainEdit()) protection.setDomainEdit(false);
+    } catch (error) {
+      console.warn("No fue posible restringir editores de CasosRaw:", error);
+    }
   }
 }
 
@@ -364,11 +371,9 @@ function pseudonym_(value, namespace) {
   }).join("").slice(0, 32);
 }
 
-function pseudonymizedPayload_(payload) {
+function pseudonymizedPayload_(patientId, payload) {
   const copy = JSON.parse(JSON.stringify(payload || {}));
-  const normalizedBirth = normalizeBirthDate_(copy.patientBirthDate);
-  const patientKey = normalizeName_(copy.patientName) + "|" + normalizedBirth;
-  copy.patientStudyId = pseudonym_(patientKey, "patient");
+  copy.patientStudyId = pseudonym_(String(patientId || ""), "patient");
   copy.clinicianStudyId = pseudonym_(normalizeRut_(copy.professionalRut), "clinician");
   delete copy.patientName;
   delete copy.patientBirthDate;
@@ -376,8 +381,8 @@ function pseudonymizedPayload_(payload) {
   return copy;
 }
 
-function appendRawCase_(sheet, payload, timestamp) {
-  const redacted = pseudonymizedPayload_(payload);
+function appendRawCase_(sheet, patientId, payload, timestamp) {
+  const redacted = pseudonymizedPayload_(patientId, payload);
   sheet.appendRow([
     Utilities.getUuid(),
     String(payload.recordId || ""),
