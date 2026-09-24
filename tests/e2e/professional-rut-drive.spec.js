@@ -111,13 +111,15 @@ test("Inicio muestra el profesional activo enmascarado y permite cambiarlo", asy
 
   const identity = page.locator("#professional-identity-bar");
   await expect(identity).toBeVisible();
-  await expect(identity).toContainText("Sesión profesional");
-  await expect(identity).toContainText("Activo");
-  await expect(identity).not.toContainText("Profesional activo");
+  await expect(identity).toContainText("Profesional");
+  await expect(identity).not.toContainText("Sesión profesional");
+  await expect(identity).not.toContainText("Activo");
   await expect(identity).not.toContainText("Registro operativo activo");
   await expect(identity).not.toContainText("Base clínica habilitada");
   await expect(identity).not.toContainText("12.345.678-5");
   await expect(identity).toContainText("678-5");
+  await expect(identity.locator(".professional-card__status.ok")).toHaveAttribute("aria-label", "Registro operativo activo");
+  await expect(identity.locator(".professional-card__dot")).toBeVisible();
   await expect(page.getByRole("button", { name: "Cambiar", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Cerrar", exact: true })).toBeVisible();
 
@@ -184,8 +186,9 @@ test("la sesión profesional expone estado operativo claro y responsive", async 
   const identity = page.locator("#professional-identity-bar");
   await expect(identity).toBeVisible();
   await expect(identity.locator(".professional-card__rut")).toContainText("678-5");
-  await expect(identity.locator(".professional-card__status")).toContainText("Activo");
-  await expect(identity.locator("#professional-operational-status")).toHaveCount(0);
+  await expect(identity.locator(".professional-card__status.ok")).toHaveAttribute("aria-label", "Registro operativo activo");
+  await expect(identity.locator(".professional-card__dot")).toBeVisible();
+  await expect(identity).not.toContainText("Activo");
   await expect(identity).not.toContainText("Base clínica habilitada");
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -193,4 +196,31 @@ test("la sesión profesional expone estado operativo claro y responsive", async 
   expect(box).not.toBeNull();
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(390);
+});
+
+
+test("la sesión profesional conserva estilo crítico aunque el RUT ya esté guardado", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => {
+    localStorage.setItem("insulog.professional.rut.daily.v1", JSON.stringify({
+      date: new Date().toISOString().slice(0, 10),
+      rut: "12.345.678-5"
+    }));
+  });
+  await page.reload({ waitUntil: "domcontentloaded" });
+
+  const fallbackStyles = page.locator("#insulog-professional-rut-styles");
+  await expect(fallbackStyles).toHaveCount(1);
+  const fallbackCss = await fallbackStyles.evaluate((node) => node.textContent || "");
+  expect(fallbackCss).toContain(".professional-card");
+
+  const computed = await page.locator("#professional-identity-bar .professional-card").evaluate((node) => {
+    const style = getComputedStyle(node);
+    return {
+      display: style.display,
+      borderRadius: style.borderRadius
+    };
+  });
+  expect(computed.display).toBe("flex");
+  expect(parseFloat(computed.borderRadius)).toBeGreaterThanOrEqual(10);
 });

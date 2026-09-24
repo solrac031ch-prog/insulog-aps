@@ -29,6 +29,16 @@
     boton.setAttribute("aria-pressed", String(boton.classList.contains("seleccionada")));
   }
 
+  function initiationSuggestionMarkup(schemeText, factor, reason, suffix = "") {
+    const factorText = Number(factor || 0.2).toFixed(1).replace(".", ",");
+    const safeScheme = notePresenter.escapeHTML(schemeText || "");
+    const safeReason = notePresenter.escapeHTML(reason || "");
+    const safeSuffix = notePresenter.escapeHTML(suffix || "");
+    return `
+      <div class="initiation-summary-line"><strong>Insulog sugiere:</strong> ${safeScheme} · ${factorText} UI/kg${safeSuffix}</div>
+      ${safeReason ? `<details class="initiation-summary-details"><summary>Ver criterio</summary><p>${safeReason}</p></details>` : ""}`;
+  }
+
   function definirEsquemaInicio() {
     const hba1c = parseFloat(byId("hba1c-inicio")?.value);
     const ayunas = parseFloat(byId("glicemia-ayunas-inicio")?.value);
@@ -97,10 +107,12 @@
 
     const caja = byId("sugerencia-esquema-inicio");
     if (caja) {
-      const decisionMessage = professionalInitiation
-        ? "<br><br><strong>Nota:</strong> inicio por decisión clínica del profesional."
-        : "";
-      caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(decision.schemeText)}<br><br><strong>Factor sugerido:</strong> ${Number(decision.factor || 0.2).toFixed(1).replace(".", ",")} UI/kg<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(decision.reason)}${decisionMessage}`;
+      caja.innerHTML = initiationSuggestionMarkup(
+        decision.schemeText,
+        decision.factor,
+        decision.reason,
+        professionalInitiation ? " · decisión clínica" : ""
+      );
       show(caja, true);
     }
 
@@ -113,7 +125,11 @@
     const data = state.snapshot();
     const caja = byId("resumen-esquema-inicio");
     if (!caja || !data.textoEsquemaInicio) return;
-    caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(data.textoEsquemaInicioSugerido || data.textoEsquemaInicio)}<br><br><strong>Factor sugerido:</strong> ${Number(data.factorInicioSugerido || 0.2).toFixed(1).replace(".", ",")} UI/kg<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(data.motivoEsquemaInicio)}`;
+    caja.innerHTML = initiationSuggestionMarkup(
+      data.textoEsquemaInicioSugerido || data.textoEsquemaInicio,
+      data.factorInicioSugerido,
+      data.motivoEsquemaInicio
+    );
     show(caja, true);
   }
 
