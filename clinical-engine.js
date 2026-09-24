@@ -14,8 +14,8 @@
 
   const CLINICAL_ENGINE_VERSION = "APS-NPH-2026.09.24-r6";
   const MIN_REQUIRED_READINGS = 3;
-  const GLUCOSE_MIN_MGDL = 1;
-  const GLUCOSE_MAX_MGDL = 700;
+  const GLUCOSE_MIN_MGDL = 20;
+  const GLUCOSE_MAX_MGDL = 600;
 
   function normalizeGlucoseValues(values = []) {
     const valid = [];
