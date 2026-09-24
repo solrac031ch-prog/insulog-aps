@@ -97,3 +97,27 @@ test("explica si falla el largo o el dígito verificador", async ({ page }) => {
   await page.locator("#professional-rut-submit").click();
   await expect(page.locator("#professional-rut-error")).toContainText("DV correcto es 4");
 });
+
+
+test("muestra profesional activo enmascarado y permite cambiar o cerrar sesión en equipo compartido", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => localStorage.removeItem("insulog.professional.rut.daily.v1"));
+  await page.reload({ waitUntil: "domcontentloaded" });
+
+  await page.locator("#professional-rut-input").fill("12.345.678-5");
+  await page.locator("#professional-rut-submit").click();
+  await expect(page.locator("#professional-active-panel")).toContainText("Profesional activo");
+  await expect(page.locator("#professional-active-panel")).toContainText("••••••••-5");
+  await expect(page.locator("#professional-active-panel")).not.toContainText("12.345.678");
+
+  await page.locator("#professional-change-btn").click();
+  await expect(page.locator("#professional-rut-gate")).toBeVisible();
+  await page.locator("#professional-rut-input").fill("1.234.567-4");
+  await page.locator("#professional-rut-submit").click();
+  await expect(page.locator("#professional-active-panel")).toContainText("••••••••-4");
+
+  await page.locator("#professional-logout-btn").click();
+  await expect(page.locator("#professional-rut-gate")).toBeVisible();
+  const stored = await page.evaluate(() => localStorage.getItem("insulog.professional.rut.daily.v1"));
+  expect(stored).toBeNull();
+});
