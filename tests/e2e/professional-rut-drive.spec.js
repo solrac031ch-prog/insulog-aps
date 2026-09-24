@@ -111,13 +111,15 @@ test("Inicio muestra el profesional activo enmascarado y permite cambiarlo", asy
 
   const identity = page.locator("#professional-identity-bar");
   await expect(identity).toBeVisible();
-  await expect(identity).toContainText("Sesión profesional");
-  await expect(identity).toContainText("Activo");
-  await expect(identity).not.toContainText("Profesional activo");
+  await expect(identity).toContainText("Profesional");
+  await expect(identity).not.toContainText("Sesión profesional");
+  await expect(identity).not.toContainText("Activo");
   await expect(identity).not.toContainText("Registro operativo activo");
   await expect(identity).not.toContainText("Base clínica habilitada");
   await expect(identity).not.toContainText("12.345.678-5");
   await expect(identity).toContainText("678-5");
+  await expect(identity.locator(".professional-card__status.ok")).toHaveAttribute("title", "Registro operativo activo");
+  await expect(identity.locator(".professional-card__dot")).toBeVisible();
   await expect(page.getByRole("button", { name: "Cambiar", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Cerrar", exact: true })).toBeVisible();
 
@@ -184,8 +186,9 @@ test("la sesión profesional expone estado operativo claro y responsive", async 
   const identity = page.locator("#professional-identity-bar");
   await expect(identity).toBeVisible();
   await expect(identity.locator(".professional-card__rut")).toContainText("678-5");
-  await expect(identity.locator(".professional-card__status")).toContainText("Activo");
-  await expect(identity.locator("#professional-operational-status")).toHaveCount(0);
+  await expect(identity.locator(".professional-card__status.ok")).toHaveAttribute("title", "Registro operativo activo");
+  await expect(identity.locator(".professional-card__dot")).toBeVisible();
+  await expect(identity).not.toContainText("Activo");
   await expect(identity).not.toContainText("Base clínica habilitada");
 
   await page.setViewportSize({ width: 390, height: 844 });
