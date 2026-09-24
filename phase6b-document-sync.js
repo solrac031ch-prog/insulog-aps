@@ -332,6 +332,7 @@
   }
 
   function renderProfessionalIdentity() {
+    ensureProfessionalRutStyles();
     const home = document.getElementById("p0");
     if (!home) return;
 
@@ -364,12 +365,12 @@
     const statusText = status.kind === "ready" ? "" : status.badge;
     const statusLabel = status.kind === "ready" ? "Registro operativo activo" : status.badge;
     node.innerHTML = `
-      <div class="professional-card">
+      <div class="professional-card" aria-label="Profesional activo ${maskedProfessionalRut(rut)}">
         <div class="professional-card__identity">
           <span class="professional-card__status ${statusClass}" aria-label="${statusLabel}" title="${statusLabel}">
             <span class="professional-card__dot" aria-hidden="true"></span>${statusText}
           </span>
-          <span class="professional-card__label">Profesional</span>
+          <span class="sr-only">Profesional activo</span>
           <span class="professional-card__rut">${maskedProfessionalRut(rut)}</span>
         </div>
         <div class="professional-card__actions">
@@ -934,6 +935,11 @@
       }
       setOperationalSyncState("sent", "Registro enviado");
       showOperationalToast("Registro enviado a la base operativa.", "success");
+      window.setTimeout(() => {
+        if (operationalSyncState.kind === "sent" && transientRetryQueue.length === 0) {
+          setOperationalSyncState("ready");
+        }
+      }, 3600);
       resetOperationalStateLater();
     } catch (error) {
       transientRetryQueue.push(record);
@@ -1033,7 +1039,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.24-phase6b-document-sync-clean-ui-v8",
+    version: "2026.09.24-phase6b-document-sync-minimal-ui-v9",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),
