@@ -211,7 +211,8 @@ test("la sesión profesional conserva estilo crítico aunque el RUT ya esté gua
 
   const fallbackStyles = page.locator("#insulog-professional-rut-styles");
   await expect(fallbackStyles).toHaveCount(1);
-  await expect(fallbackStyles).toContainText(".professional-card");
+  const fallbackCss = await fallbackStyles.evaluate((node) => node.textContent || "");
+  expect(fallbackCss).toContain(".professional-card");
 
   const computed = await page.locator("#professional-identity-bar .professional-card").evaluate((node) => {
     const style = getComputedStyle(node);
