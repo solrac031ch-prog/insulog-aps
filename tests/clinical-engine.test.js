@@ -22,6 +22,7 @@ assert.equal(decision.factor, 0.2);
 
 decision = engine.suggestInitialScheme({ hba1c: 11, fasting: 110, age: 60, bmi: 25, egfr: 90 });
 assert.equal(decision.scheme, "monodosis_am", "ayuno en rango favorece NPH diurna");
+assert.equal(decision.factor, 0.2, "la sugerencia automática de monodosis no supera 0,2 UI/kg");
 
 decision = engine.suggestInitialScheme({ initiationCriteria: ["Deseo del paciente"] });
 assert.equal(decision.criteria.length, 0);
@@ -129,3 +130,8 @@ assert.equal(level3.automaticRecommendation, false);
 assert.match(level3.reason, /pérdida de conciencia|convulsión/i);
 
 console.log("Clinical engine r3 checks passed");
+
+
+const glucoseBounds = engine.analyzeGlucose([19, 20, 600, 601], "Límites");
+assert.deepEqual(glucoseBounds.validos || glucoseBounds.datos, [20, 600], "seguimiento acepta solo 20-600 mg/dL");
+assert.deepEqual(glucoseBounds.invalidos, [19, 601], "valores fuera de 20-600 se bloquean como inválidos");
