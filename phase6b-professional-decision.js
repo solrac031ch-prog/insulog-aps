@@ -289,8 +289,7 @@
   function injectProfessionalDecisionUI() {
     const review = byId("best-professional-review");
     if (!review || byId("best-review-modify")) return;
-    const helper = review.querySelector(".helper-text");
-    if (helper) helper.textContent = "Puede aceptar, modificar o reevaluar el plan.";
+    review.querySelector(".helper-text")?.remove();
 
     const actionsHost = review.querySelector(".best-review-actions");
     if (actionsHost) {
