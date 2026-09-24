@@ -206,8 +206,9 @@
 
     const summary = byId("best-final-decision-summary");
     if (summary) {
+      summary.classList.toggle("is-hidden", !decision);
       if (!decision) {
-        summary.innerHTML = '<strong>Decisión final:</strong> pendiente de revisión profesional.';
+        summary.innerHTML = "";
       } else if (decision === "reevaluar") {
         summary.innerHTML = '<strong>Decisión final:</strong> reevaluar antes de emitir pauta definitiva.';
       } else if (decision === "aceptada" && level3Automatic) {
@@ -244,7 +245,7 @@
       byId("best-professional-overbasal-warning")?.remove();
     }
 
-    if (!decision) setReviewStatus("Revisión profesional aún no registrada.", true);
+    if (!decision) setReviewStatus("", true);
     if (!decision && hyperglycemicEmergency) {
       setReviewStatus("⚠ Posible crisis hiperglicémica/cetosis: puede registrar DERIVAR A URGENCIA SIN PAUTA; Insulog no emitirá una titulación ambulatoria de NPH.", "warning");
     } else if (!decision && urgency && !level3Automatic) {
@@ -289,7 +290,7 @@
     const review = byId("best-professional-review");
     if (!review || byId("best-review-modify")) return;
     const helper = review.querySelector(".helper-text");
-    if (helper) helper.textContent = "Clinical r2 mantiene su recomendación original y sus alertas de seguridad. El profesional puede aceptarla, modificar la pauta dejando un motivo, o indicar reevaluación. Una alerta del algoritmo nunca sustituye el criterio clínico documentado del profesional.";
+    if (helper) helper.textContent = "Puede aceptar, modificar o reevaluar el plan.";
 
     const actionsHost = review.querySelector(".best-review-actions");
     if (actionsHost) {
@@ -318,7 +319,7 @@
           <button type="button" class="btn" data-action="best-review-modify-cancel">CANCELAR</button>
         </div>
       </div>
-      <div id="best-final-decision-summary" class="best-final-summary"><strong>Decisión final:</strong> pendiente de revisión profesional.</div>`);
+      <div id="best-final-decision-summary" class="best-final-summary is-hidden"></div>`);
   }
 
   function validateModifiedPlan(am, pm, reason) {
