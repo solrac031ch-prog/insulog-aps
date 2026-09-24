@@ -1374,6 +1374,14 @@ footer p {
   display: none;
 }
 
+/* En pantallas autoexplicativas el título principal reemplaza al rótulo superior. */
+#p3 > .page-label,
+#p5 > .page-label,
+#p6 > .page-label,
+#p7 > .page-label {
+  display: none;
+}
+
 @media (max-width: 640px) {
   .professional-card {
     align-items: stretch;
