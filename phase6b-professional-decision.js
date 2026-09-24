@@ -207,7 +207,7 @@
     const summary = byId("best-final-decision-summary");
     if (summary) {
       if (!decision) {
-        summary.innerHTML = '<strong>Decisión final:</strong> pendiente de revisión profesional.';
+        summary.innerHTML = '<strong>Decisión final:</strong> pendiente.';
       } else if (decision === "reevaluar") {
         summary.innerHTML = '<strong>Decisión final:</strong> reevaluar antes de emitir pauta definitiva.';
       } else if (decision === "aceptada" && level3Automatic) {
@@ -216,7 +216,7 @@
         summary.innerHTML = '<strong>Decisión final:</strong> conducta de urgencia de Insulog aceptada.<br><strong>Pauta final:</strong> no se emite una nueva pauta ambulatoria de NPH.';
       } else {
         const urgencyNotice = decision === "modificada" && caseType(baseClinicalNote || rawNote()) === "urgencia"
-          ? '<br><strong>Alerta Clinical r2:</strong> se detectó un criterio de urgencia; la pauta continúa por decisión profesional documentada.'
+          ? '<br><strong>Alerta Insulog:</strong> se detectó un criterio de urgencia; la pauta continúa por decisión profesional documentada.'
           : "";
         summary.innerHTML = `<strong>Decisión final:</strong> ${notePresenter.escapeHTML(decisionLabel(decision))}<br><strong>Pauta final:</strong> ${notePresenter.escapeHTML(doseText(data.professionalAm, data.professionalPm))}` +
           (decision === "modificada" ? `<br><strong>Motivo:</strong> ${notePresenter.escapeHTML(data.professionalReason || "")}` : "") + urgencyNotice;
@@ -244,7 +244,7 @@
       byId("best-professional-overbasal-warning")?.remove();
     }
 
-    if (!decision) setReviewStatus("Revisión profesional aún no registrada.", true);
+    if (!decision) setReviewStatus("", true);
     if (!decision && hyperglycemicEmergency) {
       setReviewStatus("⚠ Posible crisis hiperglicémica/cetosis: puede registrar DERIVAR A URGENCIA SIN PAUTA; Insulog no emitirá una titulación ambulatoria de NPH.", "warning");
     } else if (!decision && urgency && !level3Automatic) {
@@ -257,7 +257,7 @@
       setReviewStatus("✓ Recomendación revisada y aceptada por el profesional.", true);
     }
     if (decision === "modificada" && caseType(baseClinicalNote || rawNote()) !== "urgencia") setReviewStatus("✓ Plan modificado y documentado como decisión profesional.", true);
-    if (decision === "modificada" && caseType(baseClinicalNote || rawNote()) === "urgencia") setReviewStatus("⚠ Clinical r2 detectó un criterio de urgencia. Se conserva la alerta, pero prevalece la pauta modificada por el profesional con justificación documentada.", "warning");
+    if (decision === "modificada" && caseType(baseClinicalNote || rawNote()) === "urgencia") setReviewStatus("⚠ Insulog detectó un criterio de urgencia. Se conserva la alerta y prevalece la pauta documentada por el profesional.", "warning");
     if (decision === "reevaluar") setReviewStatus("Recomendación marcada para reevaluación clínica; no se emitirá documento con nueva pauta.", false);
   }
 
@@ -289,7 +289,7 @@
     const review = byId("best-professional-review");
     if (!review || byId("best-review-modify")) return;
     const helper = review.querySelector(".helper-text");
-    if (helper) helper.textContent = "Clinical r2 mantiene su recomendación original y sus alertas de seguridad. El profesional puede aceptarla, modificar la pauta dejando un motivo, o indicar reevaluación. Una alerta del algoritmo nunca sustituye el criterio clínico documentado del profesional.";
+    if (helper) helper.remove();
 
     const actionsHost = review.querySelector(".best-review-actions");
     if (actionsHost) {
@@ -378,7 +378,7 @@
     syncBaseClinicalNote();
     if (!baseClinicalNote) return;
     if (caseType(baseClinicalNote) === "urgencia") {
-      setReviewStatus("⚠ Clinical r2 detectó un criterio de urgencia. Puede modificar la pauta por criterio profesional; la justificación quedará registrada y la alerta original se conservará.", "warning");
+      setReviewStatus("⚠ Insulog detectó un criterio de urgencia. Puede modificar la pauta por criterio profesional; la alerta original se conservará.", "warning");
     }
     const recommendation = currentRecommendation();
     byId("best-final-am").value = String(recommendation.am);
