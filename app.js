@@ -300,7 +300,7 @@
 
   function handleInput(event) {
     const target = event.target;
-    if (target.matches(".glicemia")) sanitizeNumericInput(target, 3, 999);
+    if (target.matches(".glicemia")) sanitizeNumericInput(target, 3, 600);
     if (target.id === "am-actual" || target.id === "pm-actual") sanitizeNumericInput(target, 3, 150);
     if (target.id === "peso-paciente" || target.id === "peso-seguimiento") { if (Number(target.value) > 300) target.value = "300"; }
   }
@@ -319,8 +319,8 @@
   actions.register("finish", finalizar);
 
   window.InsulogApp = Object.freeze({
-    version: "2026.09.23-clinical-r5",
-    clinicalVersion: "APS-NPH-2026.09.23-r5",
+    version: "2026.09.24-clinical-r6",
+    clinicalVersion: "APS-NPH-2026.09.24-r6",
     notes: Object.freeze({ render: renderNotaClinica }),
     inputs: Object.freeze({ handle: handleInput }),
     text: Object.freeze({ escapeHTML: notePresenter.escapeHTML })
