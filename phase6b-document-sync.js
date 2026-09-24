@@ -20,8 +20,8 @@
   let lastDriveRecordId = "";
   let operationalSyncState = Object.freeze({
     kind: "ready",
-    message: "Registro operativo activo",
-    detail: "Base clínica habilitada para esta sesión."
+    message: "",
+    detail: ""
   });
 
   function safeNumber(value) {
@@ -316,27 +316,25 @@
       return Object.freeze({
         badge: "Sin base",
         kind: "warning",
-        message: "Registro operativo no disponible",
-        detail: "Configure el bridge de Drive antes de registrar controles."
+        message: "Base no configurada",
+        detail: ""
       });
     }
     if (!online) {
       return Object.freeze({
         badge: "Sin conexión",
         kind: "warning",
-        message: "Registro pendiente de conexión",
-        detail: transientRetryQueue.length
-          ? `${transientRetryQueue.length} registro(s) pendiente(s) de reintento en esta pestaña.`
-          : "La base está configurada, pero este equipo está sin conexión."
+        message: transientRetryQueue.length ? "Envío pendiente" : "Sin conexión",
+        detail: ""
       });
     }
     return Object.freeze({
       badge: operationalSyncState.kind === "error"
-        ? "Reintento pendiente"
+        ? "Pendiente"
         : (operationalSyncState.kind === "sent" ? "Enviado" : "Activo"),
       kind: operationalSyncState.kind,
       message: operationalSyncState.message,
-      detail: operationalSyncState.detail
+      detail: ""
     });
   }
 
@@ -348,7 +346,7 @@
       node = document.createElement("section");
       node.id = "professional-identity-bar";
       node.className = "professional-identity-bar no-print";
-      node.setAttribute("aria-label", "Sesión profesional y estado de registro");
+      node.setAttribute("aria-label", "Sesión profesional");
       const heroAction = home.querySelector(".hero-action");
       if (heroAction) heroAction.insertAdjacentElement("afterend", node);
       else home.prepend(node);
@@ -358,43 +356,52 @@
     const status = operationalStatusMeta();
     if (!rut) {
       node.innerHTML = `
-        <div class="professional-session-main">
-          <div class="professional-session-eyebrow">Sesión profesional</div>
-          <div class="professional-session-heading">
-            <span class="professional-session-label">Identificación pendiente</span>
-            <span class="professional-session-badge is-warning"><span class="professional-status-dot"></span>Pendiente</span>
+        <div class="professional-card professional-card-pending">
+          <div class="professional-card-main">
+            <span class="professional-card-title">Sesión profesional</span>
+            <span class="professional-card-message">Identificación pendiente</span>
           </div>
-          <div class="professional-session-detail">Ingrese su RUT profesional para habilitar el registro operativo.</div>
         </div>`;
       return;
     }
 
+    const statusMessage = status.message && status.kind !== "ready"
+      ? `<div class="professional-card-message" id="professional-operational-status" aria-live="polite">${status.message}</div>`
+      : "";
+
     node.innerHTML = `
-      <div class="professional-session-main">
-        <div class="professional-session-eyebrow">Sesión profesional</div>
-        <div class="professional-session-heading">
-          <span class="professional-session-label">Profesional activo</span>
-          <span class="professional-session-badge is-${status.kind}">
-            <span class="professional-status-dot"></span>${status.badge}
-          </span>
+      <div class="professional-card">
+        <div class="professional-card-main">
+          <span class="professional-card-title">Sesión profesional</span>
+          <div class="professional-card-row">
+            <span class="professional-card-rut">${maskedProfessionalRut(rut)}</span>
+            <span class="professional-card-badge is-${status.kind}">
+              <span class="professional-status-dot"></span>${status.badge}
+            </span>
+          </div>
+          ${statusMessage}
         </div>
-        <div class="professional-session-rut">${maskedProfessionalRut(rut)}</div>
-        <div class="professional-session-message" id="professional-operational-status" aria-live="polite">${status.message}</div>
-        <div class="professional-session-detail">${status.detail}</div>
-      </div>
-      <div class="professional-identity-actions">
-        <button type="button" class="professional-identity-button" data-action="professional-rut-change">Cambiar profesional</button>
-        <button type="button" class="professional-identity-button professional-identity-logout" data-action="professional-rut-logout">Cerrar sesión</button>
+        <div class="professional-card-actions">
+          <button type="button" class="professional-card-button" data-action="professional-rut-change">Cambiar</button>
+          <button type="button" class="professional-card-button is-danger" data-action="professional-rut-logout">Cerrar</button>
+        </div>
       </div>`;
   }
 
   function setOperationalSyncState(kind, message, detail) {
     operationalSyncState = Object.freeze({
       kind: String(kind || "ready"),
-      message: String(message || "Registro operativo activo"),
+      message: String(message || ""),
       detail: String(detail || "")
     });
     renderProfessionalIdentity();
+  }
+
+  function resetOperationalStateLater() {
+    window.clearTimeout(resetOperationalStateLater.timer);
+    resetOperationalStateLater.timer = window.setTimeout(() => {
+      setOperationalSyncState("ready", "", "");
+    }, 2800);
   }
 
   function showOperationalToast(message, kind = "success") {
@@ -424,8 +431,8 @@
     lastDriveRecordId = "";
     operationalSyncState = Object.freeze({
       kind: "ready",
-      message: "Registro operativo activo",
-      detail: "Base clínica habilitada para esta sesión."
+      message: "",
+      detail: ""
     });
     closeProfessionalRutGate();
     renderProfessionalIdentity();
@@ -448,230 +455,8 @@
   }
 
   function ensureProfessionalRutStyles() {
-    if (document.getElementById("insulog-professional-rut-styles")) return;
-    const style = document.createElement("style");
-    style.id = "insulog-professional-rut-styles";
-    style.textContent = `
-      #professional-rut-gate {
-        position: fixed;
-        inset: 0;
-        z-index: 100000;
-        display: grid;
-        place-items: center;
-        padding: 20px;
-        background: rgba(15, 23, 42, 0.72);
-        backdrop-filter: blur(4px);
-      }
-      #professional-rut-gate[hidden] { display: none !important; }
-      #professional-rut-gate .professional-rut-card {
-        width: min(100%, 430px);
-        background: #fff;
-        border-radius: 18px;
-        padding: 24px;
-        box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
-      }
-      #professional-rut-gate h2 { margin: 0 0 8px; font-size: 1.35rem; }
-      #professional-rut-gate p { margin: 0 0 16px; line-height: 1.45; }
-      #professional-rut-gate label { display: block; font-weight: 700; margin-bottom: 6px; }
-      #professional-rut-input {
-        width: 100%;
-        min-height: 48px;
-        box-sizing: border-box;
-        border: 1px solid #94a3b8;
-        border-radius: 10px;
-        padding: 10px 12px;
-        font: inherit;
-      }
-      #professional-rut-error {
-        min-height: 1.3em;
-        margin: 8px 0 12px;
-        color: #b91c1c;
-        font-weight: 600;
-      }
-      #professional-rut-submit {
-        width: 100%;
-        min-height: 48px;
-        border: 0;
-        border-radius: 10px;
-        font: inherit;
-        font-weight: 800;
-        cursor: pointer;
-        background: #0f766e;
-        color: #fff;
-      }
-      .professional-identity-bar {
-        width: min(calc(100% - 24px), 650px);
-        margin: 16px auto 8px;
-        padding: 16px 18px;
-        border: 1px solid #d7e3f4;
-        border-radius: 18px;
-        background: linear-gradient(180deg, #fbfdff 0%, #f0f6ff 100%);
-        box-shadow: 0 10px 28px rgba(20, 67, 126, 0.08);
-        color: #233a5b;
-        display: flex;
-        gap: 18px;
-        align-items: center;
-        justify-content: space-between;
-        text-align: left;
-      }
-      .professional-session-main {
-        display: grid;
-        gap: 5px;
-        min-width: 0;
-      }
-      .professional-session-eyebrow {
-        color: #647b9c;
-        font-size: .69rem;
-        font-weight: 850;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-      }
-      .professional-session-heading {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        flex-wrap: wrap;
-      }
-      .professional-session-label {
-        color: #173d73;
-        font-size: .95rem;
-        font-weight: 850;
-      }
-      .professional-session-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        min-height: 26px;
-        padding: 3px 9px;
-        border: 1px solid #b9dfc8;
-        border-radius: 999px;
-        background: #edf9f1;
-        color: #187548;
-        font-size: .72rem;
-        font-weight: 800;
-        white-space: nowrap;
-      }
-      .professional-session-badge.is-sent {
-        border-color: #b9d8f8;
-        background: #edf6ff;
-        color: #155a9c;
-      }
-      .professional-session-badge.is-warning,
-      .professional-session-badge.is-error {
-        border-color: #f0c98c;
-        background: #fff8e8;
-        color: #966114;
-      }
-      .professional-status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 999px;
-        background: currentColor;
-        flex: 0 0 auto;
-      }
-      .professional-session-rut {
-        width: fit-content;
-        margin-top: 2px;
-        padding: 6px 10px;
-        border: 1px solid #d7e3f4;
-        border-radius: 10px;
-        background: #fff;
-        color: #0f4e98;
-        font-size: 1rem;
-        font-weight: 850;
-        letter-spacing: .015em;
-      }
-      .professional-session-message {
-        margin-top: 2px;
-        color: #234b7d;
-        font-size: .81rem;
-        font-weight: 750;
-      }
-      .professional-session-detail {
-        color: #6a7f9d;
-        font-size: .72rem;
-        line-height: 1.35;
-      }
-      .professional-identity-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-      }
-      .professional-identity-button {
-        min-height: 40px;
-        border: 1px solid #c6d8ee;
-        border-radius: 11px;
-        padding: 8px 12px;
-        background: #fff;
-        color: #185699;
-        font: inherit;
-        font-size: .77rem;
-        font-weight: 800;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(15, 76, 151, 0.05);
-        transition: transform .15s ease, background .15s ease, border-color .15s ease;
-      }
-      .professional-identity-button:hover {
-        background: #f2f7fd;
-        border-color: #9ebee4;
-        transform: translateY(-1px);
-      }
-      .professional-identity-button:focus-visible {
-        outline: 3px solid rgba(29, 111, 217, .22);
-        outline-offset: 2px;
-      }
-      .professional-identity-logout {
-        color: #a33636;
-        border-color: #efc7c7;
-      }
-      .professional-identity-logout:hover {
-        background: #fff5f5;
-        border-color: #e3aaaa;
-      }
-      .insulog-operational-toast {
-        position: fixed;
-        right: 20px;
-        bottom: 20px;
-        z-index: 100001;
-        max-width: min(420px, calc(100vw - 40px));
-        padding: 12px 15px;
-        border-radius: 12px;
-        background: #173d73;
-        color: #fff;
-        box-shadow: 0 16px 40px rgba(15, 23, 42, .22);
-        font-size: .84rem;
-        font-weight: 750;
-        line-height: 1.35;
-        opacity: 0;
-        transform: translateY(10px);
-        pointer-events: none;
-        transition: opacity .18s ease, transform .18s ease;
-      }
-      .insulog-operational-toast.is-visible {
-        opacity: 1;
-        transform: translateY(0);
-      }
-      .insulog-operational-toast.is-success { background: #176b45; }
-      .insulog-operational-toast.is-warning { background: #966114; }
-      .insulog-operational-toast.is-error { background: #a33636; }
-      @media (max-width: 640px) {
-        .professional-identity-bar {
-          align-items: stretch;
-          flex-direction: column;
-          padding: 14px;
-        }
-        .professional-identity-actions {
-          width: 100%;
-          justify-content: stretch;
-        }
-        .professional-identity-button {
-          flex: 1 1 0;
-          min-width: 0;
-        }
-      }
-    `;
-    document.head.appendChild(style);
+    // Los estilos viven en styles.css para evitar una portada sin formato cuando
+    // el RUT diario ya estaba guardado y el modal no necesitaba abrirse.
   }
 
   function closeProfessionalRutGate() {
@@ -723,8 +508,8 @@
       lastDriveRecordId = "";
       operationalSyncState = Object.freeze({
         kind: "ready",
-        message: "Registro operativo activo",
-        detail: "Base clínica habilitada para esta sesión."
+        message: "",
+        detail: ""
       });
       closeProfessionalRutGate();
       renderProfessionalIdentity();
@@ -1027,29 +812,20 @@
   async function sendDriveRecord(record) {
     if (!record) return;
     try {
-      setOperationalSyncState("ready", "Enviando registro…", "El caso se está enviando a la base operativa.");
       const result = await postDriveRecord(record);
       if (!result.configured) {
-        setOperationalSyncState("warning", "Registro operativo no disponible", "El bridge de Drive no está configurado.");
-        showOperationalToast("No se pudo enviar el caso: base operativa no configurada.", "warning");
+        setOperationalSyncState("warning", "Base no configurada", "");
+        showOperationalToast("Base operativa no configurada.", "warning");
         console.info("Insulog: seguimiento Drive aún no configurado; no se almacenó información identificatoria localmente.");
         return;
       }
-      const recordLabel = shortRecordId(record.recordId);
-      setOperationalSyncState(
-        "sent",
-        "Registro enviado a base operativa",
-        recordLabel ? `ID de registro: …${recordLabel}` : "Envío de red realizado correctamente."
-      );
+      setOperationalSyncState("sent", "Registro enviado", "");
       showOperationalToast("Registro enviado a la base operativa.", "success");
+      resetOperationalStateLater();
     } catch (error) {
       transientRetryQueue.push(record);
-      setOperationalSyncState(
-        "error",
-        "Envío pendiente de reintento",
-        `${transientRetryQueue.length} registro(s) pendiente(s) mientras esta pestaña permanezca abierta.`
-      );
-      showOperationalToast("No se pudo enviar ahora. Insulog reintentará al recuperar conexión.", "warning");
+      setOperationalSyncState("error", "Envío pendiente", "");
+      showOperationalToast("No se pudo enviar ahora. Se reintentará al recuperar conexión.", "warning");
       console.error("Insulog: no se pudo enviar el control a Drive; se reintentará mientras esta pestaña siga abierta.", error);
     }
   }
@@ -1060,30 +836,22 @@
       return;
     }
     const pending = transientRetryQueue.splice(0, transientRetryQueue.length);
-    let lastRetriedRecord = null;
+    let resentAny = false;
     for (const record of pending) {
       try {
         await postDriveRecord(record);
-        lastRetriedRecord = record;
+        resentAny = true;
       } catch (error) {
         transientRetryQueue.push(record);
-        setOperationalSyncState(
-          "error",
-          "Reintento pendiente",
-          `${transientRetryQueue.length} registro(s) sigue(n) pendiente(s) en esta pestaña.`
-        );
+        setOperationalSyncState("error", "Envío pendiente", "");
         console.error("Insulog: reintento de Drive fallido.", error);
         break;
       }
     }
-    if (!transientRetryQueue.length && lastRetriedRecord) {
-      const recordLabel = shortRecordId(lastRetriedRecord.recordId);
-      setOperationalSyncState(
-        "sent",
-        "Registro pendiente reenviado",
-        recordLabel ? `ID de registro: …${recordLabel}` : "Reintento enviado a la base operativa."
-      );
-      showOperationalToast("Registro pendiente reenviado a la base operativa.", "success");
+    if (!transientRetryQueue.length && resentAny) {
+      setOperationalSyncState("sent", "Registro enviado", "");
+      showOperationalToast("Registro pendiente reenviado.", "success");
+      resetOperationalStateLater();
     }
   }
 
@@ -1149,7 +917,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.24-phase6b-document-sync-operational-v5",
+    version: "2026.09.24-phase6b-document-sync-operational-v6",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),
