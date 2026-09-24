@@ -1,10 +1,10 @@
 {
-  "version": "prepilot-r9-clean-clinical-ui-20260924",
+  "version": "prepilot-r10-minimal-clinical-ui-20260924",
   "hashBits": 64,
   "defaultTolerance": 6,
   "profiles": {
     "mobile-p0": {
-      "hash": "ece886ecf2000000",
+      "hash": "f486eaa000000000",
       "tolerance": 6
     },
     "mobile-p2": {
@@ -12,7 +12,7 @@
       "tolerance": 6
     },
     "mobile-p4": {
-      "hash": "d4d0c08101e4c182",
+      "hash": "d4918381a4f101d8",
       "tolerance": 6
     },
     "mobile-hypo": {
@@ -20,7 +20,7 @@
       "tolerance": 6
     },
     "mobile-high-dose": {
-      "hash": "e8a0a0d9c941c1ae",
+      "hash": "e8a0a0d8f4a184f0",
       "tolerance": 6
     },
     "mobile-note": {
@@ -36,7 +36,7 @@
       "tolerance": 6
     },
     "desktop-p4": {
-      "hash": "610d31617161430b",
+      "hash": "692161717903430b",
       "tolerance": 6
     },
     "desktop-hypo": {
