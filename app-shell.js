@@ -275,7 +275,6 @@
       decisionCard.insertAdjacentHTML("beforebegin", `
 <div id="best-professional-review" class="card compact-card best-card text-left">
           <p class="card-title text-center">Revisión profesional</p>
-          <p class="helper-text">Puede aceptar, modificar o reevaluar el plan.</p>
           <div class="best-review-actions">
             <button id="best-review-accept" type="button" class="btn btn-success" data-action="best-review-accept" aria-pressed="false">ACEPTAR RECOMENDACIÓN</button>
             <button id="best-review-reassess" type="button" class="btn" data-action="best-review-reassess" aria-pressed="false">MARCAR PARA REEVALUAR</button>
