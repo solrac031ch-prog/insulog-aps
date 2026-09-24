@@ -10,7 +10,7 @@ test("las pantallas de trabajo mantienen una interfaz limpia sin copy redundante
     await expect(label).toHaveClass(/sr-only/);
   }
 
-  await expect(page.locator("#p0 > .page-label")).toHaveCount(0);
+  await expect(page.locator("#p0 > .page-label")).toHaveClass(/sr-only/);
   await expect(page.locator("#p0 > .hero-note")).toHaveCount(0);
   await expect(page.locator("#p2 > .lead")).toHaveCount(0);
   await expect(page.locator("#p2 .action-caption")).toHaveCount(0);
