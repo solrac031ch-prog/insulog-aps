@@ -86,13 +86,17 @@ El médico no necesita acceso al Google Sheet ni iniciar sesión en la cuenta pr
 
 ### CasosRaw
 
-`CasosRaw` conserva una segunda traza destinada a reproducibilidad/auditoría. El payload se pseudonimiza en Apps Script antes de escribir: se eliminan nombre, fecha de nacimiento y RUT, se generan IDs HMAC estables de estudio y se guardan SHA-256 del payload más una cadena de hashes entre registros. La hoja se configura como protegida y el bridge solo agrega filas.
+`CasosRaw` conserva una segunda traza destinada a reproducibilidad/auditoría. Apps Script construye el registro desde una allowlist de variables estructuradas: no copia nombre, fecha de nacimiento, RUT ni texto libre potencialmente identificable. Genera IDs HMAC estables de estudio, guarda SHA-256 del payload y una cadena de hashes entre registros. También registra códigos estructurados de bloqueo e indicadores de que existió un motivo libre sin almacenar su contenido. La hoja se configura como protegida y el bridge solo agrega filas.
 
 La base operativa identificada continúa en `Pacientes`/`Controles`; `CasosRaw` no debe usarse como mecanismo de reidentificación.
 
 ## Comportamiento ante fallas
 
-El endpoint de producción de Drive viene configurado en la aplicación. Si se invalida o se reemplaza manualmente por un endpoint incorrecto, Insulog no guarda nombres en almacenamiento persistente local. Si falla la red durante una pestaña abierta, conserva temporalmente el registro solo en memoria y vuelve a intentar al recuperar conexión. Al cerrar la pestaña, ese buffer se pierde. El bridge actual usa `no-cors`, por lo que el navegador puede confirmar que el envío de red se inició, pero no demostrar por sí solo que Apps Script aceptó el payload. La confirmación fuerte de persistencia se resolverá junto con la futura autenticación/autorización del bridge antes de recolección prospectiva multiusuario.
+El endpoint de producción de Drive viene configurado en la aplicación. Si se invalida o se reemplaza manualmente por un endpoint incorrecto, Insulog no guarda nombres en almacenamiento persistente local. Si falla la red durante una pestaña abierta, conserva temporalmente el registro solo en memoria y vuelve a intentar al recuperar conexión. Al cerrar la pestaña, ese buffer se pierde.
+
+Los reintentos son idempotentes por `recordId`: si `Controles` ya existe, el bridge puede reparar un `CasosRaw` o evento automático faltante sin duplicarlos.
+
+El bridge actual usa `no-cors`, por lo que el navegador puede confirmar que el envío de red se inició, pero no demostrar por sí solo que Apps Script aceptó el payload. La confirmación fuerte de persistencia, autenticación/autorización, revocación y una cola durable de reintento siguen siendo requisitos obligatorios antes de recolección prospectiva multiusuario.
 
 ## Duplicados
 
