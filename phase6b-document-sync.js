@@ -242,6 +242,56 @@
     return professionalRutResult(value).formatted;
   }
 
+  function maskedProfessionalRut(value) {
+    const normalized = normalizeProfessionalRut(value);
+    if (!normalized) return "";
+    const compact = normalized.replace(/\./g, "");
+    const [body, verifier] = compact.split("-");
+    return `••.•••.${body.slice(-3)}-${verifier}`;
+  }
+
+  function hasActiveClinicalCase() {
+    return Boolean(String(rawClinicalNote()).trim()
+      || String(document.getElementById("nombre-paciente")?.value || "").trim());
+  }
+
+  function renderProfessionalIdentity() {
+    const home = document.getElementById("p0");
+    if (!home) return;
+    let node = document.getElementById("professional-identity-bar");
+    if (!node) {
+      node = document.createElement("div");
+      node.id = "professional-identity-bar";
+      node.className = "professional-identity-bar no-print";
+      const heroAction = home.querySelector(".hero-action");
+      if (heroAction) heroAction.insertAdjacentElement("afterend", node);
+      else home.prepend(node);
+    }
+    const rut = storedDailyProfessionalRut();
+    if (!rut) {
+      node.innerHTML = '<strong>Profesional:</strong> identificación pendiente';
+      return;
+    }
+    node.innerHTML = `
+      <span><strong>Profesional activo:</strong> ${maskedProfessionalRut(rut)}</span>
+      <span class="professional-identity-actions">
+        <button type="button" class="professional-identity-button" data-action="professional-rut-change">CAMBIAR</button>
+        <button type="button" class="professional-identity-button professional-identity-logout" data-action="professional-rut-logout">CERRAR SESIÓN</button>
+      </span>`;
+  }
+
+  function clearProfessionalRutAndPrompt(actionLabel) {
+    if (hasActiveClinicalCase()) {
+      alert(`Finalice el caso clínico actual antes de ${actionLabel} para evitar atribuir un registro al profesional equivocado.`);
+      return false;
+    }
+    localStorage.removeItem(PROFESSIONAL_RUT_STORAGE_KEY);
+    closeProfessionalRutGate();
+    renderProfessionalIdentity();
+    showProfessionalRutGate();
+    return true;
+  }
+
   function storedDailyProfessionalRut() {
     try {
       const stored = JSON.parse(localStorage.getItem(PROFESSIONAL_RUT_STORAGE_KEY) || "null");
@@ -308,6 +358,35 @@
         background: #0f766e;
         color: #fff;
       }
+      .professional-identity-bar {
+        width: min(100%, 560px);
+        margin: 12px auto 4px;
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        background: #f8fafc;
+        color: #334155;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        font-size: .9rem;
+      }
+      .professional-identity-actions { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+      .professional-identity-button {
+        min-height: 34px;
+        border: 1px solid #94a3b8;
+        border-radius: 8px;
+        padding: 5px 9px;
+        background: #fff;
+        color: #334155;
+        font: inherit;
+        font-size: .78rem;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .professional-identity-logout { color: #9f1239; border-color: #fda4af; }
     `;
     document.head.appendChild(style);
   }
@@ -358,6 +437,7 @@
       input.value = rut;
       localStorage.setItem(PROFESSIONAL_RUT_STORAGE_KEY, JSON.stringify({ date: localDateKey(), rut }));
       closeProfessionalRutGate();
+      renderProfessionalIdentity();
     });
 
     document.body.appendChild(gate);
@@ -431,6 +511,12 @@
       .filter(Number.isFinite);
   }
 
+  function selectedButtonValues(selector) {
+    return Array.from(document.querySelectorAll(selector))
+      .map((control) => String(control.dataset.value || "").trim())
+      .filter(Boolean);
+  }
+
   function minimum(values) {
     return values.length ? Math.min(...values) : null;
   }
@@ -486,6 +572,11 @@
     const initiationFasting = tipo === "inicio" ? safeNumber(document.getElementById("glicemia-ayunas-inicio")?.value) : null;
     const initiationCasual = tipo === "inicio" ? safeNumber(document.getElementById("glicemia-casual-inicio")?.value) : null;
     const egfr = tipo === "inicio" ? safeNumber(document.getElementById("vfg-inicio")?.value) : null;
+    const initiationAge = tipo === "inicio" ? safeNumber(document.getElementById("edad-inicio")?.value) : null;
+    const initiationBmi = tipo === "inicio" ? safeNumber(document.getElementById("imc-inicio")?.value) : null;
+    const initiationCriteria = tipo === "inicio" ? selectedButtonValues(".inicio-btn.seleccionada") : [];
+    const initiationCatabolic = tipo === "inicio" ? selectedButtonValues(".catabolico-btn.seleccionada") : [];
+    const initiationHypoRisk = tipo === "inicio" ? selectedButtonValues(".riesgo-hipo-btn.seleccionada") : [];
     const targetA1c = tipo === "seguimiento"
       ? safeNumber(document.getElementById("meta-hba1c-seguimiento")?.value) ?? safeNumber(data.targetA1c)
       : null;
@@ -527,7 +618,9 @@
       urgencyAcceptedWithoutDose ? "urgency-no-dose" : "",
       data.level3Timing || "", data.level3ReversibleCause || "",
       finalAm ?? "", finalPm ?? "", hba1c ?? "", targetA1c ?? "",
-      initiationFasting ?? "", initiationCasual ?? "", hyperglycemicEmergency ? "hyperglycemic-emergency" : "",
+      initiationFasting ?? "", initiationCasual ?? "", initiationAge ?? "", initiationBmi ?? "",
+      initiationCriteria.join(","), initiationCatabolic.join(","), initiationHypoRisk.join(","),
+      hyperglycemicEmergency ? "hyperglycemic-emergency" : "",
       fastingValues.join(","), preLunchValues.join(","),
       initiationSuggestedScheme, initiationSuggestedFactor ?? "",
       initiationAppliedScheme, initiationAppliedFactor ?? "",
@@ -552,6 +645,12 @@
       hba1c,
       initiationFasting,
       initiationCasual,
+      initiationAge,
+      initiationBmi,
+      initiationCriteria,
+      initiationCatabolic,
+      initiationHypoRisk,
+      initiationClinicalReason: String(data.motivoEsquemaInicio || "").trim(),
       egfr,
       targetA1c,
       initiationSuggestedScheme,
@@ -567,6 +666,15 @@
       currentTotal: totalDose(currentAm, currentPm),
       fastingAverage: safeNumber(data.promAy),
       preLunchAverage: safeNumber(data.promPre),
+      fastingMinimumUsed: minFasting,
+      preLunchMinimumUsed: minPreLunch,
+      currentDosePerKg: safeNumber(data.currentDosePerKg) ?? (weight ? totalDose(currentAm, currentPm) / weight : null),
+      recommendedDosePerKg: urgencyAcceptedWithoutDose || !weight ? null : totalDose(recommendedAm, recommendedPm) / weight,
+      finalDosePerKg: urgencyAcceptedWithoutDose || !weight ? null : totalDose(finalAm, finalPm) / weight,
+      doseSafetyLevel: String(data.doseSafetyLevel || "").trim(),
+      automaticEscalationBlocked: Boolean(data.automaticEscalationBlocked),
+      blocksAutomaticEscalation: Boolean(data.blocksAutomaticEscalation),
+      doseSafetyWarning: String(data.doseSafetyWarning || "").trim(),
       fastingValues,
       preLunchValues,
       hypoglycemia70: lowestGlucose !== null && lowestGlucose < 70,
@@ -692,7 +800,10 @@
   function init() {
     configureDriveEndpointFromQuery();
     renderDriveStatus();
+    actions.register("professional-rut-change", () => clearProfessionalRutAndPrompt("cambiar de profesional"), { replace: true });
+    actions.register("professional-rut-logout", () => clearProfessionalRutAndPrompt("cerrar la sesión profesional"), { replace: true });
     requestDailyProfessionalRut();
+    renderProfessionalIdentity();
     injectFollowupHbA1cField();
     registerProfessionalOverbasalizationOverride();
     registerDocumentSync();
@@ -703,7 +814,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.24-phase6b-document-sync-emergency-trace",
+    version: "2026.09.24-phase6b-document-sync-research-v4",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),
