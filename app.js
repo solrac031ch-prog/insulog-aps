@@ -98,9 +98,9 @@
     const caja = byId("sugerencia-esquema-inicio");
     if (caja) {
       const decisionMessage = professionalInitiation
-        ? "<br><br><strong>Nota:</strong> inicio por decisión clínica del profesional."
+        ? '<span class="initial-recommendation-note">Inicio por decisión clínica profesional.</span>'
         : "";
-      caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(decision.schemeText)}<br><br><strong>Factor sugerido:</strong> ${Number(decision.factor || 0.2).toFixed(1).replace(".", ",")} UI/kg<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(decision.reason)}${decisionMessage}`;
+      caja.innerHTML = `<strong>Insulog sugiere:</strong> ${notePresenter.escapeHTML(decision.schemeText)} · ${Number(decision.factor || 0.2).toFixed(1).replace(".", ",")} UI/kg<span class="initial-recommendation-reason">${notePresenter.escapeHTML(decision.reason)}</span>${decisionMessage}`;
       show(caja, true);
     }
 
@@ -113,7 +113,7 @@
     const data = state.snapshot();
     const caja = byId("resumen-esquema-inicio");
     if (!caja || !data.textoEsquemaInicio) return;
-    caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(data.textoEsquemaInicioSugerido || data.textoEsquemaInicio)}<br><br><strong>Factor sugerido:</strong> ${Number(data.factorInicioSugerido || 0.2).toFixed(1).replace(".", ",")} UI/kg<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(data.motivoEsquemaInicio)}`;
+    caja.innerHTML = `<strong>Insulog sugiere:</strong> ${notePresenter.escapeHTML(data.textoEsquemaInicioSugerido || data.textoEsquemaInicio)} · ${Number(data.factorInicioSugerido || 0.2).toFixed(1).replace(".", ",")} UI/kg<span class="initial-recommendation-reason">${notePresenter.escapeHTML(data.motivoEsquemaInicio)}</span>`;
     show(caja, true);
   }
 
