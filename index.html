@@ -47,9 +47,9 @@
     </section>
 
     <section id="p1" class="page page-center" aria-hidden="true">
-      <div class="page-label">Seguridad · antes de usar el algoritmo</div>
+      <div class="page-label sr-only">Seguridad · antes de usar el algoritmo</div>
       <h2>Confirme que el paciente puede manejarse en este flujo APS</h2>
-      <p class="lead">Si presenta cualquiera de las condiciones siguientes, este algoritmo de insulinización NPH no corresponde como ruta principal.</p>
+      <p class="lead">Si presenta alguna de estas condiciones, use otra ruta clínica.</p>
 
       <div class="clinical-check-card text-left">
         <ul class="condition-list">
@@ -77,15 +77,12 @@
     </section>
 
     <section id="p2" class="page page-center" aria-hidden="true">
-      <div class="page-label">Elegir flujo · inicio o seguimiento</div>
+      <div class="page-label sr-only">Elegir flujo · inicio o seguimiento</div>
       <h2>¿Qué necesita hacer hoy?</h2>
-      <p class="lead">Seleccione si va a iniciar NPH o ajustar un esquema que el paciente ya utiliza.</p>
 
       <div class="stack-actions narrow-actions route-actions">
         <button type="button" class="btn btn-main" data-action="show-initial-criteria">INICIO DE INSULINA</button>
-        <p class="action-caption">Para definir esquema y dosis inicial de NPH.</p>
         <button type="button" class="btn btn-success" data-action="navigate" data-page="35">SEGUIMIENTO DE INSULINA</button>
-        <p class="action-caption">Para revisar HGT recientes y ajustar dosis actuales.</p>
       </div>
 
       <div class="alert alert-warning compact-warning">
@@ -96,7 +93,7 @@
       <div id="criterios" class="is-hidden">
         <div class="card card-blue text-left criteria-card">
           <p class="card-title text-center">Datos para orientar el esquema inicial</p>
-          <p class="card-helper">Complete los datos disponibles. Si no cuenta con alguno, puede dejar ese campo vacío y registrar los criterios clínicos presentes.</p>
+          <p class="card-helper">Complete solo los datos disponibles.</p>
           <div class="form-grid">
             <div class="field">
               <label for="hba1c-inicio">HbA1c más reciente (%)</label>
@@ -129,7 +126,7 @@
 
         <div class="card card-red text-left">
           <p class="card-title text-center">Alto riesgo de hipoglicemia</p>
-          <p class="card-helper">Marque todas las condiciones presentes; se usarán para orientar un inicio más conservador.</p>
+          <p class="card-helper">Marque las condiciones presentes.</p>
           <div class="selection-grid">
             <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Adulto mayor frágil" data-action="toggle-selection">Adulto mayor frágil</button>
             <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Enfermedad renal crónica" data-action="toggle-selection">Enfermedad renal crónica</button>
@@ -151,7 +148,6 @@
     <section id="p3" class="page page-center" aria-hidden="true">
       <div class="page-label sr-only">Inicio · dosis NPH</div>
       <h2>Dosis inicial de insulina NPH</h2>
-      <p class="lead">Ingrese el peso y revise la sugerencia antes de calcular.</p>
 
       <div id="resumen-esquema-inicio" class="alert alert-info text-left is-hidden"></div>
 
@@ -197,7 +193,6 @@
     <section id="p35" class="page page-center" aria-hidden="true">
       <div class="page-label sr-only">Seguimiento · tratamiento actual</div>
       <h2>Tratamiento concomitante disponible en APS</h2>
-      <p class="lead">Marque los medicamentos que el paciente utiliza actualmente antes de registrar sus glicemias de seguimiento.</p>
 
       <div id="tratamiento-concomitante-seguimiento" class="card card-blue text-left aps-context-card">
         <div class="aps-med-grid">
@@ -240,7 +235,7 @@
     <section id="p4" class="page page-center" aria-hidden="true">
       <div class="page-label sr-only">Seguimiento · registro de HGT</div>
       <h2>Seguimiento y ajuste de insulina NPH</h2>
-      <p class="lead">Registre las dosis actuales y las glicemias disponibles. Para ajustar se requieren al menos 3 valores en ayunas.</p>
+      <p class="lead">Para ajustar: al menos 3 HGT en ayunas.</p>
 
       <div class="card followup-setup-card">
         <div class="p4-header-grid">
@@ -265,12 +260,12 @@
             <input type="text" inputmode="numeric" id="pm-actual" maxlength="3" placeholder="0" autocomplete="off">
           </div>
         </div>
-        <p class="helper-text followup-dose-help">Rango permitido por dosis activa: 1–150 UI.</p>
+        <p class="helper-text followup-dose-help">1–150 UI por dosis.</p>
       </div>
 
       <div class="table-guide text-left">
         <strong>Registro de glicemias</strong>
-        <span>Puede dejar días sin dato; el cálculo utiliza únicamente los valores ingresados.</span>
+        <span>Complete solo los días disponibles.</span>
       </div>
 
       <div class="table-wrap">
@@ -351,9 +346,8 @@
     </section>
 
     <section id="p41" class="page page-center" aria-hidden="true">
-      <div class="page-label">Seguridad · revisión de dosis alta</div>
+      <div class="page-label sr-only">Seguridad · revisión de dosis alta</div>
       <h2>Revise la dosis alta antes de continuar</h2>
-      <p class="lead">Seleccione las acciones que correspondan para dejar una conducta explícita en la nota clínica.</p>
 
       <div class="alert alert-danger text-left">
         <p><strong>⚠️ Dosis basal en umbral de seguridad (≥0,5 UI/kg/día)</strong></p>
@@ -375,7 +369,6 @@
     <section id="p5" class="page page-center" aria-hidden="true">
       <div class="page-label sr-only">Resultado · nota clínica</div>
       <h2>Nota clínica lista</h2>
-      <p class="lead small-lead">Revise el resumen y cópielo directamente a la ficha clínica APS.</p>
 
       <div id="nota-clinica" class="nota" role="region" aria-label="Nota clínica generada"></div>
       <button type="button" class="btn btn-success btn-narrow section-action" data-action="copy-note">COPIAR NOTA A FICHA CLÍNICA</button>
@@ -404,7 +397,7 @@
         <input type="date" id="fecha-nacimiento-paciente" autocomplete="off" required>
       </div>
 
-      <div class="date-row no-print">Fecha: <span id="fecha-hoy"></span></div>
+      <div class="date-row sr-only no-print">Fecha: <span id="fecha-hoy"></span></div>
 
       <div class="document-actions no-print">
         <button type="button" class="btn btn-main" data-action="show-document" data-document-type="inicio">INICIO DE INSULINA</button>
@@ -430,11 +423,6 @@
       </div>
     </section>
   </main>
-
-  <footer>
-    <p>Insulog APS - Herramienta de Apoyo Clínico</p>
-    <p>Basado en protocolos vigentes para el manejo de DM2 en Chile.</p>
-  </footer>
 
   <div id="pdf" class="imprimible-container pdf-render-staging" aria-hidden="true"></div>
 
