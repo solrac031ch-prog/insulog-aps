@@ -1,9 +1,9 @@
 {
-  "version": "prepilot-r6-professional-identity-20260924",
+  "version": "prepilot-r6-professional-operational-card-20260924",
   "hashBits": 64,
   "defaultTolerance": 6,
   "profiles": {
-    "mobile-p0": {"hash": "ece886cc93000000", "tolerance": 6},
+    "mobile-p0": {"hash": "ece886f0e4d20000", "tolerance": 6},
     "mobile-p2": {"hash": "d4daceaab0700000", "tolerance": 6},
     "mobile-p4": {"hash": "f4d0d0838113e4e0", "tolerance": 6},
     "mobile-hypo": {"hash": "9a4582a4b4dcd0f0", "tolerance": 6},
