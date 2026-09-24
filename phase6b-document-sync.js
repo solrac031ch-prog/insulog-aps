@@ -340,7 +340,7 @@
       node = document.createElement("section");
       node.id = "professional-identity-bar";
       node.className = "professional-identity-bar no-print";
-      node.setAttribute("aria-label", "Sesión profesional");
+      node.setAttribute("aria-label", "Profesional activo");
       const heroAction = home.querySelector(".hero-action");
       if (heroAction) heroAction.insertAdjacentElement("afterend", node);
       else home.prepend(node);
@@ -351,13 +351,13 @@
 
     if (!rut) {
       node.innerHTML = `
-        <div class="professional-card compact">
+        <div class="card professional-card professional-session-card compact">
           <div class="professional-card__main">
-            <div class="professional-card__title">Sesión profesional</div>
             <div class="professional-card__row">
+              <span class="professional-card__title">Profesional</span>
               <span class="professional-card__status warning">Pendiente</span>
             </div>
-            <div class="professional-card__message">Ingrese su RUT profesional.</div>
+            <div class="professional-card__message">Ingrese su RUT para continuar.</div>
           </div>
         </div>`;
       return;
@@ -365,18 +365,18 @@
 
     const showMessage = Boolean(status.message) && status.kind !== "ready";
     node.innerHTML = `
-      <div class="professional-card">
+      <div class="card professional-card professional-session-card">
         <div class="professional-card__main">
-          <div class="professional-card__title">Sesión profesional</div>
           <div class="professional-card__row">
+            <span class="professional-card__title">Profesional</span>
             <span class="professional-card__rut">${maskedProfessionalRut(rut)}</span>
             <span class="professional-card__status ${status.kind === "ready" ? "ok" : status.kind}">${status.badge}</span>
           </div>
           ${showMessage ? `<div class="professional-card__message" id="professional-operational-status" aria-live="polite">${status.message}</div>` : ""}
         </div>
         <div class="professional-card__actions">
-          <button type="button" class="professional-btn" data-action="professional-rut-change">Cambiar</button>
-          <button type="button" class="professional-btn danger" data-action="professional-rut-logout">Cerrar</button>
+          <button type="button" class="btn professional-btn" data-action="professional-rut-change">Cambiar</button>
+          <button type="button" class="btn professional-btn danger" data-action="professional-rut-logout">Cerrar</button>
         </div>
       </div>`;
   }
