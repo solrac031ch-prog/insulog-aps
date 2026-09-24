@@ -1,6 +1,6 @@
 {
   "protocolId": "insulog-aps-nph",
-  "version": "APS-NPH-2026.09.23-r5",
+  "version": "APS-NPH-2026.09.24-r6",
   "status": "active",
   "scope": "Insulinización con NPH en APS chilena: inicio, seguimiento, hipoglicemia, metas individualizadas y seguridad de dosis basal.",
   "engine": "clinical-engine.js",
@@ -15,7 +15,8 @@
     "No se autoriza autotitulación por el paciente; la dosis sugerida requiere revisión clínica.",
     "Hipoglicemia nivel 3: si el momento identifica una dosis NPH probablemente implicada, no hay causa reversible clara y no hubo pérdida de conciencia/convulsión, Insulog propone reducir 20% esa dosis; es una regla local de seguridad y no un porcentaje prescrito por ADA.",
     "Hipoglicemia nivel 3 con causa reversible, patrón temporal ambiguo o pérdida de conciencia/convulsión no recibe reducción porcentual automática y requiere ajuste médico o reevaluación.",
-    "Insulog sugiere el esquema y el factor inicial de NPH según los datos clínicos. El profesional puede seleccionar monodosis matinal, monodosis nocturna o doble dosis AM + PM y cualquiera de los tres factores definidos para el inicio: 0,1, 0,2 o 0,3 UI/kg. La recomendación original y la selección profesional se conservan por separado."
+    "Insulog sugiere el esquema y el factor inicial de NPH según los datos clínicos. La sugerencia automática de 0,3 UI/kg se limita al esquema de doble dosis AM + PM; en monodosis la sugerencia automática máxima es 0,2 UI/kg. El profesional puede seleccionar monodosis matinal, monodosis nocturna o doble dosis AM + PM y cualquiera de los tres factores definidos para el inicio: 0,1, 0,2 o 0,3 UI/kg. La recomendación original y la selección profesional se conservan por separado.",
+    "Las glicemias capilares de seguimiento se consideran numéricamente válidas entre 20 y 600 mg/dL; valores fuera de ese rango bloquean la titulación automática y requieren revisión clínica."
   ],
   "regressionMatrix": [
     "tests/clinical-engine.test.js",
@@ -24,7 +25,7 @@
     "tests/clinical-engine-hardening.test.js"
   ],
   "changePolicy": "Todo cambio intencional de dosis, umbral, criterio o conducta clínica en clinical-engine.js debe cambiar esta versión y mantener verde la matriz de regresión clínica.",
-  "hardeningRevision": "2026.09.23-initial-scheme-factor-professional-choice-r5",
+  "hardeningRevision": "2026.09.24-prepilot-audit-r6",
   "safetyGuards": [
     "El motor no titula con menos de 3 glicemias válidas del perfil requerido.",
     "Valores de glicemia inválidos bloquean la titulación automática en vez de ser ignorados silenciosamente.",
