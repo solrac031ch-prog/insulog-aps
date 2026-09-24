@@ -33,7 +33,13 @@ const sync = fs.readFileSync("phase6b-document-sync.js", "utf8");
   "appendAutomaticHyperglycemicEmergencyEvent_",
   "hyperglycemicEmergency",
   "initiationFasting",
-  "initiationCasual"
+  "initiationCasual",
+  "rawCasesSheet",
+  "appendRawCase_",
+  "pseudonymizedPayload_",
+  "patientStudyId",
+  "clinicianStudyId",
+  "researchHeaders"
 ].forEach((token) => assert.ok(bridge.includes(token), `Falta contrato Drive: ${token}`));
 
 [
@@ -57,7 +63,16 @@ const sync = fs.readFileSync("phase6b-document-sync.js", "utf8");
   "hyperglycemicEmergency,",
   "emergencyReason:",
   "initiationFasting,",
-  "initiationCasual,"
+  "initiationCasual,",
+  "initiationAge,",
+  "initiationBmi,",
+  "initiationCriteriaSelected,",
+  "initiationCatabolic,",
+  "initiationHypoRisk,",
+  "currentDosePerKg:",
+  "recommendedDosePerKg:",
+  "finalDosePerKg:",
+  "automaticEscalationBlocked:"
 ].forEach((token) => assert.ok(sync.includes(token), `Falta payload de validación: ${token}`));
 
 console.log("Drive validation schema contract checks passed");
