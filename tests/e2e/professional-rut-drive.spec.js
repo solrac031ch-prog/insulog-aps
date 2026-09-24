@@ -197,3 +197,29 @@ test("la sesión profesional expone estado operativo claro y responsive", async 
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(390);
 });
+
+
+test("la sesión profesional conserva estilo crítico aunque el RUT ya esté guardado", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => {
+    localStorage.setItem("insulog.professional.rut.daily.v1", JSON.stringify({
+      date: new Date().toISOString().slice(0, 10),
+      rut: "12.345.678-5"
+    }));
+  });
+  await page.reload({ waitUntil: "domcontentloaded" });
+
+  const fallbackStyles = page.locator("#insulog-professional-rut-styles");
+  await expect(fallbackStyles).toHaveCount(1);
+  await expect(fallbackStyles).toContainText(".professional-card");
+
+  const computed = await page.locator("#professional-identity-bar .professional-card").evaluate((node) => {
+    const style = getComputedStyle(node);
+    return {
+      display: style.display,
+      borderRadius: style.borderRadius
+    };
+  });
+  expect(computed.display).toBe("flex");
+  expect(parseFloat(computed.borderRadius)).toBeGreaterThanOrEqual(10);
+});
