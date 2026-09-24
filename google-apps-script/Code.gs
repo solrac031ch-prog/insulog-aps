@@ -43,6 +43,7 @@ function doPost(e) {
     const patient = upsertPatient_(patients, payload, timestamp);
     appendControl_(controls, patient, payload, timestamp);
     appendAutomaticHypoglycemiaEvent_(events, patient.patientId, payload, timestamp);
+    appendAutomaticHyperglycemicEmergencyEvent_(events, patient.patientId, payload, timestamp);
 
     return jsonResponse_({
       ok: true,
@@ -120,6 +121,20 @@ function validatePayload_(payload) {
   }
   if (payload.level3SevereNeurologic !== undefined && typeof payload.level3SevereNeurologic !== "boolean") {
     throw new Error("Indicador neurológico nivel 3 inválido.");
+  }
+  if (payload.hyperglycemicEmergency !== undefined && typeof payload.hyperglycemicEmergency !== "boolean") {
+    throw new Error("Indicador de crisis hiperglicémica inválido.");
+  }
+  if (payload.emergencyReason !== undefined && String(payload.emergencyReason).length > 2500) {
+    throw new Error("Motivo de urgencia demasiado extenso.");
+  }
+  if (payload.initiationFasting !== undefined && payload.initiationFasting !== null
+      && (!isFiniteNumber_(payload.initiationFasting) || Number(payload.initiationFasting) < 20 || Number(payload.initiationFasting) > 600)) {
+    throw new Error("Glicemia de ayuno de inicio inválida.");
+  }
+  if (payload.initiationCasual !== undefined && payload.initiationCasual !== null
+      && (!isFiniteNumber_(payload.initiationCasual) || Number(payload.initiationCasual) < 20 || Number(payload.initiationCasual) > 700)) {
+    throw new Error("Glicemia casual de inicio inválida.");
   }
   if (isFiniteNumber_(payload.level3ReductionPercent) && (Number(payload.level3ReductionPercent) < 0 || Number(payload.level3ReductionPercent) > 100)) {
     throw new Error("Porcentaje de reducción nivel 3 inválido.");
@@ -522,6 +537,35 @@ function appendAutomaticHypoglycemiaEvent_(sheet, patientId, payload, timestamp)
     "Revisión de dosis y conducta clínica según Insulog y decisión profesional.",
     "",
     "No",
+    "Generado automáticamente desde el control " + String(payload.recordId),
+    normalizeRut_(payload.professionalRut)
+  ]);
+}
+
+function appendAutomaticHyperglycemicEmergencyEvent_(sheet, patientId, payload, timestamp) {
+  if (!payload.hyperglycemicEmergency) return;
+
+  const fasting = nullableNumber_(payload.initiationFasting);
+  const casual = nullableNumber_(payload.initiationCasual);
+  const detail = [
+    "Posible crisis hiperglicémica/cetosis detectada por Insulog.",
+    fasting === null ? "" : "Glicemia de ayuno registrada: " + fasting + " mg/dL.",
+    casual === null ? "" : "Glicemia casual registrada: " + casual + " mg/dL.",
+    "Se bloqueó la titulación ambulatoria automática de NPH."
+  ].filter(Boolean).join(" ");
+
+  sheet.appendRow([
+    Utilities.getUuid(),
+    patientId,
+    cleanName_(payload.patientName),
+    timestamp,
+    "Crisis hiperglicémica / cetosis",
+    "Urgente",
+    detail,
+    "Sí",
+    "Derivación inmediata a Unidad de Emergencia Hospitalaria; sin pauta automática de NPH.",
+    "",
+    "",
     "Generado automáticamente desde el control " + String(payload.recordId),
     normalizeRut_(payload.professionalRut)
   ]);
