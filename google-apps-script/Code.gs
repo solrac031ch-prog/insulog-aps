@@ -6,9 +6,10 @@ const INSULOG_DRIVE_CONFIG = Object.freeze({
   patientsSheet: "Pacientes",
   controlsSheet: "Controles",
   eventsSheet: "Eventos",
+  rawCasesSheet: "CasosRaw",
   allowedOrigins: ["https://solrac031ch-prog.github.io"],
   bridgeVersion: "2026.09.23-drive-v3",
-  schemaVersion: "2026.09.23-schema-v9"
+  schemaVersion: "2026.09.24-schema-v10"
 });
 
 function doGet() {
@@ -33,13 +34,15 @@ function doPost(e) {
     const patients = requiredSheet_(spreadsheet, INSULOG_DRIVE_CONFIG.patientsSheet);
     const controls = requiredSheet_(spreadsheet, INSULOG_DRIVE_CONFIG.controlsSheet);
     const events = requiredSheet_(spreadsheet, INSULOG_DRIVE_CONFIG.eventsSheet);
-    ensureSchema_(patients, controls, events);
+    const rawCases = ensureRawCasesSheet_(spreadsheet);
+    ensureSchema_(patients, controls, events, rawCases);
 
     if (controlAlreadyExists_(controls, payload.recordId)) {
       return jsonResponse_({ ok: true, duplicate: true, recordId: payload.recordId });
     }
 
     const timestamp = safeDate_(payload.timestamp) || new Date();
+    appendRawCase_(rawCases, payload, timestamp);
     const patient = upsertPatient_(patients, payload, timestamp);
     appendControl_(controls, patient, payload, timestamp);
     appendAutomaticHypoglycemiaEvent_(events, patient.patientId, payload, timestamp);
@@ -136,6 +139,19 @@ function validatePayload_(payload) {
       && (!isFiniteNumber_(payload.initiationCasual) || Number(payload.initiationCasual) < 20 || Number(payload.initiationCasual) > 700)) {
     throw new Error("Glicemia casual de inicio inválida.");
   }
+  if (payload.initiationAge !== undefined && payload.initiationAge !== null
+      && (!isFiniteNumber_(payload.initiationAge) || Number(payload.initiationAge) < 18 || Number(payload.initiationAge) > 120)) {
+    throw new Error("Edad de inicio inválida.");
+  }
+  if (payload.initiationBmi !== undefined && payload.initiationBmi !== null
+      && (!isFiniteNumber_(payload.initiationBmi) || Number(payload.initiationBmi) < 10 || Number(payload.initiationBmi) > 80)) {
+    throw new Error("IMC de inicio inválido.");
+  }
+  ["initiationCriteriaSelected", "initiationCatabolic", "initiationHypoRisk"].forEach(function(key) {
+    if (payload[key] !== undefined && (!Array.isArray(payload[key]) || payload[key].length > 20)) {
+      throw new Error("Lista clínica de inicio inválida: " + key + ".");
+    }
+  });
   if (isFiniteNumber_(payload.level3ReductionPercent) && (Number(payload.level3ReductionPercent) < 0 || Number(payload.level3ReductionPercent) > 100)) {
     throw new Error("Porcentaje de reducción nivel 3 inválido.");
   }
@@ -192,7 +208,7 @@ function requiredSheet_(spreadsheet, name) {
   return sheet;
 }
 
-function ensureSchema_(patients, controls, events) {
+function ensureSchema_(patients, controls, events, rawCases) {
   const properties = PropertiesService.getScriptProperties();
   if (properties.getProperty("INSULOG_SCHEMA_VERSION") === INSULOG_DRIVE_CONFIG.schemaVersion) return;
 
@@ -254,7 +270,26 @@ function ensureSchema_(patients, controls, events) {
     "Inicio esquema modificado por médico",
     "Inicio factor modificado por médico"
   ];
-  const requiredControlColumns = 24 + medicationHeaders.length + safetyHeaders.length + professionalHeaders.length + validationHeaders.length + initiationHeaders.length;
+  const researchHeaders = [
+    "Inicio glicemia ayuno (mg/dL)",
+    "Inicio glicemia casual (mg/dL)",
+    "Inicio edad (años)",
+    "Inicio IMC (kg/m²)",
+    "Inicio criterios seleccionados",
+    "Inicio criterios resueltos",
+    "Inicio síntomas/descompensación",
+    "Inicio riesgo hipoglicemia",
+    "HGT mínimo utilizado (mg/dL)",
+    "Dosis actual (UI/kg/día)",
+    "Dosis recomendada (UI/kg/día)",
+    "Dosis final (UI/kg/día)",
+    "Nivel seguridad dosis",
+    "Bloqueo escalamiento automático",
+    "Escalamiento bloqueado en este control",
+    "Motivo seguridad/bloqueo",
+    "Motivo ruta urgencia"
+  ];
+  const requiredControlColumns = 24 + medicationHeaders.length + safetyHeaders.length + professionalHeaders.length + validationHeaders.length + initiationHeaders.length + researchHeaders.length;
   if (controls.getMaxColumns() < requiredControlColumns) {
     controls.insertColumnsAfter(controls.getMaxColumns(), requiredControlColumns - controls.getMaxColumns());
   }
@@ -263,6 +298,7 @@ function ensureSchema_(patients, controls, events) {
   controls.getRange(1, 38, 1, professionalHeaders.length).setValues([professionalHeaders]);
   controls.getRange(1, 39, 1, validationHeaders.length).setValues([validationHeaders]);
   controls.getRange(1, 46, 1, initiationHeaders.length).setValues([initiationHeaders]);
+  controls.getRange(1, 54, 1, researchHeaders.length).setValues([researchHeaders]);
 
   if (events.getMaxColumns() < 13) {
     events.insertColumnsAfter(events.getMaxColumns(), 13 - events.getMaxColumns());
@@ -276,8 +312,84 @@ function ensureSchema_(patients, controls, events) {
   controls.getRange(2, 27, Math.max(1, controls.getMaxRows() - 1), 5).setDataValidation(yesNoControlRule);
   controls.getRange(2, 34, Math.max(1, controls.getMaxRows() - 1), 2).setDataValidation(yesNoControlRule);
   controls.getRange(2, 52, Math.max(1, controls.getMaxRows() - 1), 2).setDataValidation(yesNoControlRule);
+  controls.getRange(2, 67, Math.max(1, controls.getMaxRows() - 1), 2).setDataValidation(yesNoControlRule);
 
+  ensureRawCasesSchema_(rawCases);
   properties.setProperty("INSULOG_SCHEMA_VERSION", INSULOG_DRIVE_CONFIG.schemaVersion);
+}
+
+function ensureRawCasesSheet_(spreadsheet) {
+  let sheet = spreadsheet.getSheetByName(INSULOG_DRIVE_CONFIG.rawCasesSheet);
+  if (!sheet) sheet = spreadsheet.insertSheet(INSULOG_DRIVE_CONFIG.rawCasesSheet);
+  return sheet;
+}
+
+function ensureRawCasesSchema_(sheet) {
+  const headers = [
+    "raw_id", "record_id", "Fecha/hora recepción", "patient_study_id",
+    "clinician_study_id", "Tipo documento", "Versión motor clínico",
+    "Versión bridge", "Versión sync", "Payload pseudonimizado JSON"
+  ];
+  if (sheet.getMaxColumns() < headers.length) {
+    sheet.insertColumnsAfter(sheet.getMaxColumns(), headers.length - sheet.getMaxColumns());
+  }
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sheet.setFrozenRows(1);
+  const protections = sheet.getProtections(SpreadsheetApp.ProtectionType.SHEET);
+  if (!protections.length) {
+    const protection = sheet.protect().setDescription("Insulog CasosRaw append-only audit log");
+    protection.setWarningOnly(true);
+  }
+}
+
+function pseudonymSalt_() {
+  const properties = PropertiesService.getScriptProperties();
+  let salt = properties.getProperty("INSULOG_PSEUDONYM_SALT");
+  if (!salt) {
+    salt = Utilities.getUuid() + Utilities.getUuid();
+    properties.setProperty("INSULOG_PSEUDONYM_SALT", salt);
+  }
+  return salt;
+}
+
+function pseudonym_(value, namespace) {
+  const signature = Utilities.computeHmacSha256Signature(
+    String(namespace || "insulog") + "|" + String(value || ""),
+    pseudonymSalt_(),
+    Utilities.Charset.UTF_8
+  );
+  return signature.map(function(byte) {
+    const normalized = byte < 0 ? byte + 256 : byte;
+    return ("0" + normalized.toString(16)).slice(-2);
+  }).join("").slice(0, 32);
+}
+
+function pseudonymizedPayload_(payload) {
+  const copy = JSON.parse(JSON.stringify(payload || {}));
+  const normalizedBirth = normalizeBirthDate_(copy.patientBirthDate);
+  const patientKey = normalizeName_(copy.patientName) + "|" + normalizedBirth;
+  copy.patientStudyId = pseudonym_(patientKey, "patient");
+  copy.clinicianStudyId = pseudonym_(normalizeRut_(copy.professionalRut), "clinician");
+  delete copy.patientName;
+  delete copy.patientBirthDate;
+  delete copy.professionalRut;
+  return copy;
+}
+
+function appendRawCase_(sheet, payload, timestamp) {
+  const redacted = pseudonymizedPayload_(payload);
+  sheet.appendRow([
+    Utilities.getUuid(),
+    String(payload.recordId || ""),
+    timestamp,
+    redacted.patientStudyId,
+    redacted.clinicianStudyId,
+    String(payload.documentType || ""),
+    String(payload.clinicalEngineVersion || ""),
+    String(payload.bridgeVersion || ""),
+    String(payload.documentSyncVersion || ""),
+    JSON.stringify(redacted)
+  ]);
 }
 
 function controlAlreadyExists_(sheet, recordId) {
@@ -440,6 +552,9 @@ function appendControl_(sheet, patient, payload, timestamp) {
   const medicationFlags = medicationClassFlags_(medications);
   const treatmentText = cleanMedicationText_(payload.concomitantTreatment, medications);
   const medicationKeys = medications.map(function(item) { return item.key; }).filter(Boolean).join("; ");
+  const initiationCriteriaSelected = serializeTextValues_(payload.initiationCriteriaSelected);
+  const initiationCatabolic = serializeTextValues_(payload.initiationCatabolic);
+  const initiationHypoRisk = serializeTextValues_(payload.initiationHypoRisk);
   const version = [
     String(payload.clinicalEngineVersion || "").trim(),
     String(payload.documentModuleVersion || "").trim(),
@@ -500,7 +615,24 @@ function appendControl_(sheet, patient, payload, timestamp) {
     initiationAppliedScheme,
     initiationAppliedFactor,
     initiationSchemeModified,
-    initiationFactorModified
+    initiationFactorModified,
+    numberOrBlank_(payload.initiationFasting),
+    numberOrBlank_(payload.initiationCasual),
+    numberOrBlank_(payload.initiationAge),
+    numberOrBlank_(payload.initiationBmi),
+    initiationCriteriaSelected,
+    String(payload.initiationCriteriaResolved || "").trim(),
+    initiationCatabolic,
+    initiationHypoRisk,
+    numberOrBlank_(payload.lowestGlucose),
+    numberOrBlank_(payload.currentDosePerKg),
+    numberOrBlank_(payload.recommendedDosePerKg),
+    numberOrBlank_(payload.finalDosePerKg),
+    String(payload.doseSafetyLevel || "").trim(),
+    payload.blocksAutomaticEscalation ? "Sí" : "No",
+    payload.automaticEscalationBlocked ? "Sí" : "No",
+    String(payload.doseSafetyReason || "").trim(),
+    String(payload.emergencyReason || "").trim()
   ]);
 }
 
@@ -569,6 +701,11 @@ function appendAutomaticHyperglycemicEmergencyEvent_(sheet, patientId, payload, 
     "Generado automáticamente desde el control " + String(payload.recordId),
     normalizeRut_(payload.professionalRut)
   ]);
+}
+
+function serializeTextValues_(value) {
+  if (!Array.isArray(value) || !value.length) return "";
+  return value.map(function(item) { return String(item || "").trim(); }).filter(Boolean).join("; ");
 }
 
 function serializeGlucoseValues_(value) {
