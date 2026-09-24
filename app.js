@@ -97,10 +97,12 @@
 
     const caja = byId("sugerencia-esquema-inicio");
     if (caja) {
-      const decisionMessage = professionalInitiation
-        ? "<br><br><strong>Nota:</strong> inicio por decisión clínica del profesional."
-        : "";
-      caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(decision.schemeText)}<br><br><strong>Factor sugerido:</strong> ${Number(decision.factor || 0.2).toFixed(1).replace(".", ",")} UI/kg<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(decision.reason)}${decisionMessage}`;
+      caja.innerHTML = initiationSuggestionMarkup({
+        schemeText: decision.schemeText,
+        factor: decision.factor,
+        reason: decision.reason,
+        professionalInitiation
+      });
       show(caja, true);
     }
 
@@ -109,11 +111,35 @@
     return decision;
   }
 
+  function initiationSuggestionMarkup({ schemeText, factor, reason, professionalInitiation = false }) {
+    const scheme = notePresenter.escapeHTML(schemeText || "");
+    const formattedFactor = Number(factor || 0.2).toFixed(1).replace(".", ",");
+    const rationale = notePresenter.escapeHTML(reason || "");
+    const professionalNote = professionalInitiation
+      ? '<p class="init-suggestion-note">Inicio por decisión clínica del profesional.</p>'
+      : "";
+    return `
+      <div class="init-suggestion-main">
+        <span><strong>Esquema:</strong> ${scheme}</span>
+        <span><strong>Factor:</strong> ${formattedFactor} UI/kg</span>
+      </div>
+      <details class="init-suggestion-details">
+        <summary>Ver criterio clínico</summary>
+        <p>${rationale}</p>
+        ${professionalNote}
+      </details>`;
+  }
+
   function mostrarResumenEsquemaInicio() {
     const data = state.snapshot();
     const caja = byId("resumen-esquema-inicio");
     if (!caja || !data.textoEsquemaInicio) return;
-    caja.innerHTML = `<strong>Esquema sugerido:</strong> ${notePresenter.escapeHTML(data.textoEsquemaInicioSugerido || data.textoEsquemaInicio)}<br><br><strong>Factor sugerido:</strong> ${Number(data.factorInicioSugerido || 0.2).toFixed(1).replace(".", ",")} UI/kg<br><br><strong>Motivo:</strong> ${notePresenter.escapeHTML(data.motivoEsquemaInicio)}`;
+    caja.innerHTML = initiationSuggestionMarkup({
+      schemeText: data.textoEsquemaInicioSugerido || data.textoEsquemaInicio,
+      factor: data.factorInicioSugerido,
+      reason: data.motivoEsquemaInicio,
+      professionalInitiation: Boolean(data.inicioPorDecisionProfesional)
+    });
     show(caja, true);
   }
 
