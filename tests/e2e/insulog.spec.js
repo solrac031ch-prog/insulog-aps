@@ -59,7 +59,7 @@ test("arranca sin errores JavaScript y monta las APIs explícitas", async ({ pag
     shell: Boolean(window.InsulogShell),
     version: window.InsulogApp?.version
   }));
-  expect(architecture).toEqual({ runtime: true, engine: true, app: true, shell: true, version: "2026.09.23-clinical-r5" });
+  expect(architecture).toEqual({ runtime: true, engine: true, app: true, shell: true, version: "2026.09.24-clinical-r6" });
   expect(pageErrors).toEqual([]);
 });
 
@@ -71,7 +71,7 @@ test("la exclusión clínica mantiene al paciente fuera del algoritmo APS", asyn
   await expect(page.locator("#alerta")).toBeVisible();
 });
 
-test("HbA1c 11% puede sugerir 0,3 UI/kg y doble dosis en Clinical r5", async ({ page }) => {
+test("HbA1c 11% puede sugerir 0,3 UI/kg y doble dosis en Clinical r6", async ({ page }) => {
   await openDefinition(page);
   await page.locator("#p2").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
   await page.locator("#hba1c-inicio").fill("11");
