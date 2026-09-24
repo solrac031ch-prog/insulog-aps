@@ -1130,3 +1130,264 @@ footer p {
     transition: none;
   }
 }
+
+/* Sesión profesional: estilos permanentes para evitar FOUC/fallback sin formato. */
+#professional-rut-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+#professional-rut-gate[hidden] {
+  display: none !important;
+}
+
+#professional-rut-gate .professional-rut-card {
+  width: min(100%, 430px);
+  padding: 24px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+}
+
+#professional-rut-gate h2 {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+}
+
+#professional-rut-gate p {
+  margin: 0 0 16px;
+  line-height: 1.45;
+}
+
+#professional-rut-gate label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+#professional-rut-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid #94a3b8;
+  border-radius: 10px;
+  font: inherit;
+}
+
+#professional-rut-error {
+  min-height: 1.3em;
+  margin: 8px 0 12px;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+#professional-rut-submit {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 10px;
+  background: #0f766e;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
+.professional-identity-bar {
+  width: min(calc(100% - 24px), 560px);
+  margin: 12px auto 4px;
+}
+
+.professional-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid #d9e4f2;
+  border-radius: 15px;
+  background: #f8fbff;
+  box-shadow: 0 5px 16px rgba(20, 67, 126, 0.055);
+  text-align: left;
+}
+
+.professional-card-pending {
+  justify-content: flex-start;
+}
+
+.professional-card-main {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.professional-card-title {
+  color: #667b98;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.professional-card-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.professional-card-rut {
+  color: var(--primary-strong);
+  font-size: 0.98rem;
+  font-weight: 850;
+  letter-spacing: 0.015em;
+}
+
+.professional-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid #b9dfc8;
+  border-radius: 999px;
+  background: #edf9f1;
+  color: #187548;
+  font-size: 0.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.professional-card-badge.is-sent {
+  border-color: #bfd9f5;
+  background: #eef6ff;
+  color: #155a9c;
+}
+
+.professional-card-badge.is-warning,
+.professional-card-badge.is-error {
+  border-color: #efcf9d;
+  background: #fff8e9;
+  color: #956315;
+}
+
+.professional-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+
+.professional-card-message {
+  color: #516a89;
+  font-size: 0.76rem;
+  line-height: 1.3;
+}
+
+.professional-card-actions {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.professional-card-button {
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid #c7d8ec;
+  border-radius: 9px;
+  background: #fff;
+  color: #185699;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+  transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.professional-card-button:hover {
+  transform: translateY(-1px);
+  border-color: #9ebee4;
+  background: #f2f7fd;
+}
+
+.professional-card-button:focus-visible {
+  outline: 3px solid rgba(29, 111, 217, 0.22);
+  outline-offset: 2px;
+}
+
+.professional-card-button.is-danger {
+  border-color: #efc7c7;
+  color: #a33636;
+}
+
+.professional-card-button.is-danger:hover {
+  border-color: #e3aaaa;
+  background: #fff5f5;
+}
+
+.insulog-operational-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 100001;
+  max-width: min(420px, calc(100vw - 40px));
+  padding: 12px 15px;
+  border-radius: 12px;
+  background: #173d73;
+  color: #fff;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22);
+  font-size: 0.84rem;
+  font-weight: 750;
+  line-height: 1.35;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.insulog-operational-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.insulog-operational-toast.is-success {
+  background: #176b45;
+}
+
+.insulog-operational-toast.is-warning {
+  background: #966114;
+}
+
+.insulog-operational-toast.is-error {
+  background: #a33636;
+}
+
+#best-review-status:empty {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .professional-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .professional-card-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .professional-card-button {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
