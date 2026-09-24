@@ -323,7 +323,7 @@
 
   function handleInput(event) {
     const target = event.target;
-    if (target.matches(".glicemia")) sanitizeNumericInput(target, 3, 600);
+    if (target.matches(".glicemia")) target.value = target.value.replace(/[^0-9]/g, "").slice(0, 4);
     if (target.id === "am-actual" || target.id === "pm-actual") sanitizeNumericInput(target, 3, 150);
     if (target.id === "peso-paciente" || target.id === "peso-seguimiento") { if (Number(target.value) > 300) target.value = "300"; }
   }
