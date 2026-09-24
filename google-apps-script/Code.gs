@@ -6,9 +6,10 @@ const INSULOG_DRIVE_CONFIG = Object.freeze({
   patientsSheet: "Pacientes",
   controlsSheet: "Controles",
   eventsSheet: "Eventos",
+  rawCasesSheet: "CasosRaw",
   allowedOrigins: ["https://solrac031ch-prog.github.io"],
-  bridgeVersion: "2026.09.23-drive-v3",
-  schemaVersion: "2026.09.23-schema-v9"
+  bridgeVersion: "2026.09.24-drive-v4",
+  schemaVersion: "2026.09.24-schema-v10"
 });
 
 function doGet() {
@@ -33,7 +34,8 @@ function doPost(e) {
     const patients = requiredSheet_(spreadsheet, INSULOG_DRIVE_CONFIG.patientsSheet);
     const controls = requiredSheet_(spreadsheet, INSULOG_DRIVE_CONFIG.controlsSheet);
     const events = requiredSheet_(spreadsheet, INSULOG_DRIVE_CONFIG.eventsSheet);
-    ensureSchema_(patients, controls, events);
+    const rawCases = ensureRawCasesSheet_(spreadsheet);
+    ensureSchema_(patients, controls, events, rawCases);
 
     if (controlAlreadyExists_(controls, payload.recordId)) {
       return jsonResponse_({ ok: true, duplicate: true, recordId: payload.recordId });
@@ -44,6 +46,7 @@ function doPost(e) {
     appendControl_(controls, patient, payload, timestamp);
     appendAutomaticHypoglycemiaEvent_(events, patient.patientId, payload, timestamp);
     appendAutomaticHyperglycemicEmergencyEvent_(events, patient.patientId, payload, timestamp);
+    appendRawCase_(rawCases, patient.patientId, payload, timestamp);
 
     return jsonResponse_({
       ok: true,
@@ -184,6 +187,24 @@ function validatePayload_(payload) {
       throw new Error("Indicador de modificación de inicio inválido: " + key + ".");
     }
   });
+
+  ["initiationCriteriaSelected", "catabolicSymptomsSelected", "hypoglycemiaRiskSelected"].forEach(function(key) {
+    if (payload[key] === undefined) return;
+    if (!Array.isArray(payload[key]) || payload[key].length > 20) {
+      throw new Error("Lista clínica inválida: " + key + ".");
+    }
+  });
+  ["automaticEscalationBlocked"].forEach(function(key) {
+    if (payload[key] !== undefined && typeof payload[key] !== "boolean") {
+      throw new Error("Indicador de seguridad inválido: " + key + ".");
+    }
+  });
+  ["initiationAge", "initiationBmi", "currentDosePerKg", "finalDosePerKg"].forEach(function(key) {
+    if (payload[key] === undefined || payload[key] === null || payload[key] === "") return;
+    if (!isFiniteNumber_(payload[key]) || Number(payload[key]) < 0 || Number(payload[key]) > 500) {
+      throw new Error("Valor clínico inválido: " + key + ".");
+    }
+  });
 }
 
 function requiredSheet_(spreadsheet, name) {
@@ -192,7 +213,13 @@ function requiredSheet_(spreadsheet, name) {
   return sheet;
 }
 
-function ensureSchema_(patients, controls, events) {
+function ensureRawCasesSheet_(spreadsheet) {
+  let sheet = spreadsheet.getSheetByName(INSULOG_DRIVE_CONFIG.rawCasesSheet);
+  if (!sheet) sheet = spreadsheet.insertSheet(INSULOG_DRIVE_CONFIG.rawCasesSheet);
+  return sheet;
+}
+
+function ensureSchema_(patients, controls, events, rawCases) {
   const properties = PropertiesService.getScriptProperties();
   if (properties.getProperty("INSULOG_SCHEMA_VERSION") === INSULOG_DRIVE_CONFIG.schemaVersion) return;
 
@@ -254,7 +281,22 @@ function ensureSchema_(patients, controls, events) {
     "Inicio esquema modificado por médico",
     "Inicio factor modificado por médico"
   ];
-  const requiredControlColumns = 24 + medicationHeaders.length + safetyHeaders.length + professionalHeaders.length + validationHeaders.length + initiationHeaders.length;
+  const researchHeaders = [
+    "Inicio glicemia ayuno (mg/dL)",
+    "Inicio glicemia casual (mg/dL)",
+    "Inicio edad (años)",
+    "Inicio IMC (kg/m²)",
+    "Criterios inicio seleccionados",
+    "Síntomas/descompensación seleccionados",
+    "Factores riesgo hipoglicemia",
+    "Dosis actual (UI/kg/día)",
+    "Dosis final (UI/kg/día)",
+    "Nivel seguridad dosis",
+    "Escalamiento automático bloqueado",
+    "Motivo bloqueo/seguridad",
+    "Motivo ruta urgencia"
+  ];
+  const requiredControlColumns = 24 + medicationHeaders.length + safetyHeaders.length + professionalHeaders.length + validationHeaders.length + initiationHeaders.length + researchHeaders.length;
   if (controls.getMaxColumns() < requiredControlColumns) {
     controls.insertColumnsAfter(controls.getMaxColumns(), requiredControlColumns - controls.getMaxColumns());
   }
@@ -263,6 +305,7 @@ function ensureSchema_(patients, controls, events) {
   controls.getRange(1, 38, 1, professionalHeaders.length).setValues([professionalHeaders]);
   controls.getRange(1, 39, 1, validationHeaders.length).setValues([validationHeaders]);
   controls.getRange(1, 46, 1, initiationHeaders.length).setValues([initiationHeaders]);
+  controls.getRange(1, 54, 1, researchHeaders.length).setValues([researchHeaders]);
 
   if (events.getMaxColumns() < 13) {
     events.insertColumnsAfter(events.getMaxColumns(), 13 - events.getMaxColumns());
@@ -276,6 +319,25 @@ function ensureSchema_(patients, controls, events) {
   controls.getRange(2, 27, Math.max(1, controls.getMaxRows() - 1), 5).setDataValidation(yesNoControlRule);
   controls.getRange(2, 34, Math.max(1, controls.getMaxRows() - 1), 2).setDataValidation(yesNoControlRule);
   controls.getRange(2, 52, Math.max(1, controls.getMaxRows() - 1), 2).setDataValidation(yesNoControlRule);
+  controls.getRange(2, 64, Math.max(1, controls.getMaxRows() - 1), 1).setDataValidation(yesNoControlRule);
+
+  const rawHeaders = [
+    "raw_case_id",
+    "control_id",
+    "research_patient_id",
+    "research_professional_id",
+    "fecha_hora",
+    "tipo_documento",
+    "version_clinica",
+    "version_schema",
+    "payload_sha256",
+    "payload_json_pseudonimizado"
+  ];
+  if (rawCases.getMaxColumns() < rawHeaders.length) {
+    rawCases.insertColumnsAfter(rawCases.getMaxColumns(), rawHeaders.length - rawCases.getMaxColumns());
+  }
+  rawCases.getRange(1, 1, 1, rawHeaders.length).setValues([rawHeaders]);
+  rawCases.setFrozenRows(1);
 
   properties.setProperty("INSULOG_SCHEMA_VERSION", INSULOG_DRIVE_CONFIG.schemaVersion);
 }
@@ -431,6 +493,19 @@ function appendControl_(sheet, patient, payload, timestamp) {
   const initiationAppliedFactor = numberOrBlank_(payload.initiationAppliedFactor);
   const initiationSchemeModified = payload.documentType === "inicio" ? (payload.initiationSchemeModified ? "Sí" : "No") : "";
   const initiationFactorModified = payload.documentType === "inicio" ? (payload.initiationFactorModified ? "Sí" : "No") : "";
+  const initiationFasting = numberOrBlank_(payload.initiationFasting);
+  const initiationCasual = numberOrBlank_(payload.initiationCasual);
+  const initiationAge = numberOrBlank_(payload.initiationAge);
+  const initiationBmi = numberOrBlank_(payload.initiationBmi);
+  const initiationCriteriaSelected = serializeTextList_(payload.initiationCriteriaSelected);
+  const catabolicSymptomsSelected = serializeTextList_(payload.catabolicSymptomsSelected);
+  const hypoglycemiaRiskSelected = serializeTextList_(payload.hypoglycemiaRiskSelected);
+  const currentDosePerKg = numberOrBlank_(payload.currentDosePerKg);
+  const finalDosePerKg = numberOrBlank_(payload.finalDosePerKg);
+  const doseSafetyLevel = String(payload.doseSafetyLevel || "").trim();
+  const automaticEscalationBlocked = payload.automaticEscalationBlocked ? "Sí" : "No";
+  const doseSafetyReason = String(payload.doseSafetyReason || "").trim().slice(0, 1200);
+  const emergencyReason = String(payload.emergencyReason || "").trim().slice(0, 2500);
   const hba1c = numberOrBlank_(payload.hba1c);
   const egfr = numberOrBlank_(payload.egfr);
   const weight = numberOrBlank_(payload.weightKg);
@@ -500,7 +575,20 @@ function appendControl_(sheet, patient, payload, timestamp) {
     initiationAppliedScheme,
     initiationAppliedFactor,
     initiationSchemeModified,
-    initiationFactorModified
+    initiationFactorModified,
+    initiationFasting,
+    initiationCasual,
+    initiationAge,
+    initiationBmi,
+    initiationCriteriaSelected,
+    catabolicSymptomsSelected,
+    hypoglycemiaRiskSelected,
+    currentDosePerKg,
+    finalDosePerKg,
+    doseSafetyLevel,
+    automaticEscalationBlocked,
+    doseSafetyReason,
+    emergencyReason
   ]);
 }
 
@@ -569,6 +657,59 @@ function appendAutomaticHyperglycemicEmergencyEvent_(sheet, patientId, payload, 
     "Generado automáticamente desde el control " + String(payload.recordId),
     normalizeRut_(payload.professionalRut)
   ]);
+}
+
+function researchSalt_() {
+  const properties = PropertiesService.getScriptProperties();
+  let salt = properties.getProperty("INSULOG_RESEARCH_SALT");
+  if (!salt) {
+    salt = Utilities.getUuid() + Utilities.getUuid();
+    properties.setProperty("INSULOG_RESEARCH_SALT", salt);
+  }
+  return salt;
+}
+
+function sha256Hex_(value) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(value), Utilities.Charset.UTF_8)
+    .map(function(byte) { return ("0" + ((byte + 256) % 256).toString(16)).slice(-2); })
+    .join("");
+}
+
+function researchId_(kind, value) {
+  return kind + "_" + sha256Hex_(researchSalt_() + "|" + kind + "|" + String(value || "")).slice(0, 24);
+}
+
+function sanitizedResearchPayload_(payload, patientId) {
+  const clean = {};
+  Object.keys(payload || {}).sort().forEach(function(key) {
+    if (["patientName", "patientBirthDate", "professionalRut"].indexOf(key) !== -1) return;
+    clean[key] = payload[key];
+  });
+  clean.researchPatientId = researchId_("pt", patientId);
+  clean.researchProfessionalId = researchId_("pro", normalizeRut_(payload.professionalRut));
+  return clean;
+}
+
+function appendRawCase_(sheet, patientId, payload, timestamp) {
+  const clean = sanitizedResearchPayload_(payload, patientId);
+  const json = JSON.stringify(clean);
+  sheet.appendRow([
+    Utilities.getUuid(),
+    String(payload.recordId),
+    clean.researchPatientId,
+    clean.researchProfessionalId,
+    timestamp,
+    String(payload.documentType || ""),
+    String(payload.clinicalEngineVersion || ""),
+    INSULOG_DRIVE_CONFIG.schemaVersion,
+    sha256Hex_(json),
+    json
+  ]);
+}
+
+function serializeTextList_(value) {
+  if (!Array.isArray(value) || !value.length) return "";
+  return value.map(function(item) { return String(item || "").trim(); }).filter(Boolean).join("; ");
 }
 
 function serializeGlucoseValues_(value) {
