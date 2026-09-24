@@ -210,6 +210,7 @@ function requiredSheet_(spreadsheet, name) {
 
 function ensureSchema_(patients, controls, events, rawCases) {
   const properties = PropertiesService.getScriptProperties();
+  ensureRawCasesSchema_(rawCases);
   if (properties.getProperty("INSULOG_SCHEMA_VERSION") === INSULOG_DRIVE_CONFIG.schemaVersion) return;
 
   const patientHeaders = [
@@ -314,7 +315,6 @@ function ensureSchema_(patients, controls, events, rawCases) {
   controls.getRange(2, 52, Math.max(1, controls.getMaxRows() - 1), 2).setDataValidation(yesNoControlRule);
   controls.getRange(2, 67, Math.max(1, controls.getMaxRows() - 1), 2).setDataValidation(yesNoControlRule);
 
-  ensureRawCasesSchema_(rawCases);
   properties.setProperty("INSULOG_SCHEMA_VERSION", INSULOG_DRIVE_CONFIG.schemaVersion);
 }
 
