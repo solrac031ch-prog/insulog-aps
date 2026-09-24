@@ -574,7 +574,7 @@
     const egfr = tipo === "inicio" ? safeNumber(document.getElementById("vfg-inicio")?.value) : null;
     const initiationAge = tipo === "inicio" ? safeNumber(document.getElementById("edad-inicio")?.value) : null;
     const initiationBmi = tipo === "inicio" ? safeNumber(document.getElementById("imc-inicio")?.value) : null;
-    const initiationCriteria = tipo === "inicio" ? selectedButtonValues(".inicio-btn.seleccionada") : [];
+    const initiationCriteria = tipo === "inicio" ? selectedButtonValues(".inicio-btn.seleccionada, .aceptacion-btn.seleccionada") : [];
     const initiationCatabolic = tipo === "inicio" ? selectedButtonValues(".catabolico-btn.seleccionada") : [];
     const initiationHypoRisk = tipo === "inicio" ? selectedButtonValues(".riesgo-hipo-btn.seleccionada") : [];
     const targetA1c = tipo === "seguimiento"
