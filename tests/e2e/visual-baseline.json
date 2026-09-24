@@ -1,5 +1,5 @@
 {
-  "version": "prepilot-r6-professional-operational-card-20260924",
+  "version": "prepilot-r8-minimal-clinical-ui-20260924",
   "hashBits": 64,
   "defaultTolerance": 6,
   "profiles": {
@@ -8,12 +8,12 @@
     "mobile-p4": {"hash": "f4d0d0838113e4e0", "tolerance": 6},
     "mobile-hypo": {"hash": "9a4582a4b4dcd0f0", "tolerance": 6},
     "mobile-high-dose": {"hash": "c8d0e0c2a043dcd9", "tolerance": 6},
-    "mobile-note": {"hash": "d4c8d6ac47fada92", "tolerance": 6},
+    "mobile-note": {"hash": "d4d69e47eaeab249", "tolerance": 6},
     "desktop-p0": {"hash": "3333332323033300", "tolerance": 6},
     "desktop-p2": {"hash": "3333336133033300", "tolerance": 6},
     "desktop-p4": {"hash": "7123257133710b03", "tolerance": 6},
     "desktop-hypo": {"hash": "4b43433361616133", "tolerance": 6},
     "desktop-high-dose": {"hash": "3331416163633333", "tolerance": 6},
-    "desktop-note": {"hash": "33e0e8f8f8f03361", "tolerance": 6}
+    "desktop-note": {"hash": "70f8f0f8f8717163", "tolerance": 6}
   }
 }
