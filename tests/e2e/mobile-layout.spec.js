@@ -23,7 +23,7 @@ test("portada 7B prioriza la acción clínica y oculta códigos internos", async
 
   await expect(page.locator("#p0 .page-label")).toHaveText("Apoyo clínico · DM2 en APS");
   await expect(page.locator("#p0")).not.toContainText("[P0]");
-  await expect(page.locator("#p0 .hero-note")).toBeVisible();
+  await expect(page.locator("#p0 .hero-note")).toHaveCount(0);
   await expect(page.locator("#p0 .evidence-card")).not.toHaveAttribute("open", "");
   await expect(page.locator("#p0").getByRole("button", { name: "INICIAR ALGORITMO", exact: true })).toBeVisible();
 });
