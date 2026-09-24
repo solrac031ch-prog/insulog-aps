@@ -75,7 +75,7 @@ function parsePayload_(e) {
 function validatePayload_(payload) {
   if (!payload || typeof payload !== "object") throw new Error("Payload inválido.");
   const bridgeVersion = String(payload.bridgeVersion || "");
-  const compatibleVersions = ["2026.09.21-drive-v2", INSULOG_DRIVE_CONFIG.bridgeVersion];
+  const compatibleVersions = ["2026.09.21-drive-v2", "2026.09.23-drive-v3", INSULOG_DRIVE_CONFIG.bridgeVersion];
   if (compatibleVersions.indexOf(bridgeVersion) === -1) {
     throw new Error("Versión del puente no compatible.");
   }
@@ -88,7 +88,7 @@ function validatePayload_(payload) {
   const recordId = String(payload.recordId || "").trim();
   if (recordId.length < 8 || recordId.length > 120) throw new Error("recordId inválido.");
 
-  if (bridgeVersion === INSULOG_DRIVE_CONFIG.bridgeVersion && !validRut_(payload.professionalRut)) {
+  if (bridgeVersion !== "2026.09.21-drive-v2" && !validRut_(payload.professionalRut)) {
     throw new Error("RUT profesional inválido.");
   }
 
