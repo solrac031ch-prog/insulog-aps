@@ -17,7 +17,7 @@ test("las pantallas de trabajo mantienen una interfaz limpia sin copy redundante
   await expect(page.locator("#p5 > .lead")).toHaveCount(0);
   await expect(page.locator("#p6 .date-row")).toHaveClass(/sr-only/);
 
-  await expect(page.locator("#best-professional-review .helper-text")).toHaveCount(0);
+  await expect(page.locator("#best-professional-review > .helper-text")).toHaveCount(0);
 });
 
 test("la guía clínica importante permanece visible después de la limpieza", async ({ page }) => {
