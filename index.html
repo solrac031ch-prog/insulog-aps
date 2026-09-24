@@ -79,13 +79,10 @@
     <section id="p2" class="page page-center" aria-hidden="true">
       <div class="page-label">Elegir flujo · inicio o seguimiento</div>
       <h2>¿Qué necesita hacer hoy?</h2>
-      <p class="lead">Seleccione si va a iniciar NPH o ajustar un esquema que el paciente ya utiliza.</p>
 
       <div class="stack-actions narrow-actions route-actions">
         <button type="button" class="btn btn-main" data-action="show-initial-criteria">INICIO DE INSULINA</button>
-        <p class="action-caption">Para definir esquema y dosis inicial de NPH.</p>
         <button type="button" class="btn btn-success" data-action="navigate" data-page="35">SEGUIMIENTO DE INSULINA</button>
-        <p class="action-caption">Para revisar HGT recientes y ajustar dosis actuales.</p>
       </div>
 
       <div class="alert alert-warning compact-warning">
@@ -151,7 +148,6 @@
     <section id="p3" class="page page-center" aria-hidden="true">
       <div class="page-label sr-only">Inicio · dosis NPH</div>
       <h2>Dosis inicial de insulina NPH</h2>
-      <p class="lead">Ingrese el peso y revise la sugerencia antes de calcular.</p>
 
       <div id="resumen-esquema-inicio" class="alert alert-info text-left is-hidden"></div>
 
@@ -375,14 +371,12 @@
     <section id="p5" class="page page-center" aria-hidden="true">
       <div class="page-label sr-only">Resultado · nota clínica</div>
       <h2>Nota clínica lista</h2>
-      <p class="lead small-lead">Revise el resumen y cópielo directamente a la ficha clínica APS.</p>
 
       <div id="nota-clinica" class="nota" role="region" aria-label="Nota clínica generada"></div>
       <button type="button" class="btn btn-success btn-narrow section-action" data-action="copy-note">COPIAR NOTA A FICHA CLÍNICA</button>
       <div id="copy-status" class="copy-status" role="status" aria-live="polite"></div>
 
       <div class="card decision-card">
-        <p class="card-title">Siguiente paso</p>
         <div class="decision-actions">
           <button type="button" class="btn btn-main" data-action="open-document" data-document-type="seguimiento">SEGUIMIENTO Y AJUSTE</button>
           <button type="button" class="btn btn-success" data-action="open-document" data-document-type="pscv">CONTROL EN PROGRAMA CV</button>
