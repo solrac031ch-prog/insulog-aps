@@ -543,8 +543,7 @@
       lastDriveRecordId = "";
       operationalSyncState = Object.freeze({
         kind: "ready",
-        message: "Registro operativo activo",
-        detail: "Base clínica habilitada para esta sesión."
+        message: ""
       });
       closeProfessionalRutGate();
       renderProfessionalIdentity();
