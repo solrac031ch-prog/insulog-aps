@@ -340,7 +340,7 @@
       node = document.createElement("section");
       node.id = "professional-identity-bar";
       node.className = "professional-identity-bar no-print";
-      node.setAttribute("aria-label", "Sesión profesional");
+      node.setAttribute("aria-label", "Profesional activo");
       const heroAction = home.querySelector(".hero-action");
       if (heroAction) heroAction.insertAdjacentElement("afterend", node);
       else home.prepend(node);
@@ -352,27 +352,26 @@
     if (!rut) {
       node.innerHTML = `
         <div class="professional-card compact">
-          <div class="professional-card__main">
-            <div class="professional-card__title">Sesión profesional</div>
-            <div class="professional-card__row">
-              <span class="professional-card__status warning">Pendiente</span>
-            </div>
-            <div class="professional-card__message">Ingrese su RUT profesional.</div>
+          <div class="professional-card__identity">
+            <span class="professional-card__label">Profesional</span>
+            <span class="professional-card__status warning">Pendiente</span>
           </div>
         </div>`;
       return;
     }
 
-    const showMessage = Boolean(status.message) && status.kind !== "ready";
+    const statusClass = status.kind === "ready" ? "ok" : status.kind;
+    const statusText = status.kind === "ready"
+      ? '<span class="sr-only">Registro operativo activo</span>'
+      : notePresenter.escapeHTML(status.badge);
     node.innerHTML = `
       <div class="professional-card">
-        <div class="professional-card__main">
-          <div class="professional-card__title">Sesión profesional</div>
-          <div class="professional-card__row">
-            <span class="professional-card__rut">${maskedProfessionalRut(rut)}</span>
-            <span class="professional-card__status ${status.kind === "ready" ? "ok" : status.kind}">${status.badge}</span>
-          </div>
-          ${showMessage ? `<div class="professional-card__message" id="professional-operational-status" aria-live="polite">${status.message}</div>` : ""}
+        <div class="professional-card__identity">
+          <span class="professional-card__status ${statusClass}" title="${status.kind === "ready" ? "Registro operativo activo" : notePresenter.escapeHTML(status.badge)}">
+            <span class="professional-card__dot" aria-hidden="true"></span>${statusText}
+          </span>
+          <span class="professional-card__label">Profesional</span>
+          <span class="professional-card__rut">${maskedProfessionalRut(rut)}</span>
         </div>
         <div class="professional-card__actions">
           <button type="button" class="professional-btn" data-action="professional-rut-change">Cambiar</button>
@@ -490,6 +489,77 @@
         background: #0f766e;
         color: #fff;
       }
+
+      /* Fallback crítico para evitar una sesión sin estilo si la PWA cruza versiones. */
+      .professional-identity-bar {
+        width: min(calc(100% - 24px), 520px);
+        margin: 10px auto 6px;
+      }
+      .professional-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 10px;
+        border: 1px solid #d9e4f2;
+        border-radius: 14px;
+        background: #f8fbff;
+        text-align: left;
+      }
+      .professional-card__identity,
+      .professional-card__actions {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+      }
+      .professional-card__label {
+        color: #5f7392;
+        font-size: .74rem;
+        font-weight: 750;
+      }
+      .professional-card__rut {
+        padding: 4px 8px;
+        border: 1px solid #d5e2f1;
+        border-radius: 9px;
+        background: #fff;
+        color: #0f4c97;
+        font-size: .83rem;
+        font-weight: 800;
+      }
+      .professional-card__status {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        min-height: 22px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        font-size: .68rem;
+        font-weight: 800;
+      }
+      .professional-card__status.ok { color: #18794e; background: #eaf8ef; }
+      .professional-card__status.warning { color: #9a6a14; background: #fff7e8; }
+      .professional-card__status.error { color: #a33636; background: #fff1f1; }
+      .professional-card__status.sent { color: #185699; background: #eef5ff; }
+      .professional-card__dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      .professional-btn {
+        min-height: 30px;
+        padding: 5px 8px;
+        border: 1px solid #c8d8ec;
+        border-radius: 9px;
+        background: #fff;
+        color: #185699;
+        font: inherit;
+        font-size: .7rem;
+        font-weight: 750;
+        cursor: pointer;
+      }
+      .professional-btn.danger { color: #a33636; border-color: #efc8c8; }
     `;
     document.head.appendChild(style);
   }
@@ -516,11 +586,11 @@
     gate.innerHTML = `
       <form class="professional-rut-card" id="professional-rut-form" novalidate>
         <h2 id="professional-rut-title">Identificación profesional</h2>
-        <p>Ingrese su RUT profesional para registrar los controles de hoy. Se solicitará una sola vez al día en este computador.</p>
+        <p>Ingrese su RUT. Se solicitará una vez al día en este equipo.</p>
         <label for="professional-rut-input">RUT profesional</label>
         <input id="professional-rut-input" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" placeholder="12.345.678-5 o 1.234.567-K" aria-describedby="professional-rut-error">
         <div id="professional-rut-error" role="alert" aria-live="polite"></div>
-        <button id="professional-rut-submit" type="submit">CONTINUAR A INSULOG</button>
+        <button id="professional-rut-submit" type="submit">CONTINUAR</button>
       </form>
     `;
 
@@ -943,6 +1013,7 @@
   }
 
   function init() {
+    ensureProfessionalRutStyles();
     configureDriveEndpointFromQuery();
     renderDriveStatus();
     actions.register("professional-rut-change", () => clearProfessionalRutAndPrompt("cambiar de profesional"), { replace: true });
@@ -963,7 +1034,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.24-phase6b-document-sync-prepilot-v7",
+    version: "2026.09.24-phase6b-document-sync-clean-ui-v8",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),
