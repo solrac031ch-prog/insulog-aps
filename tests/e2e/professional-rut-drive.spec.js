@@ -97,3 +97,28 @@ test("explica si falla el largo o el dígito verificador", async ({ page }) => {
   await page.locator("#professional-rut-submit").click();
   await expect(page.locator("#professional-rut-error")).toContainText("DV correcto es 4");
 });
+
+
+test("Inicio muestra el profesional activo enmascarado y permite cambiarlo", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => {
+    localStorage.setItem("insulog.professional.rut.daily.v1", JSON.stringify({
+      date: new Date().toISOString().slice(0, 10),
+      rut: "12.345.678-5"
+    }));
+  });
+  await page.reload({ waitUntil: "domcontentloaded" });
+
+  const identity = page.locator("#professional-identity-bar");
+  await expect(identity).toBeVisible();
+  await expect(identity).toContainText("Profesional activo");
+  await expect(identity).not.toContainText("12.345.678-5");
+  await expect(identity).toContainText("678-5");
+
+  await page.getByRole("button", { name: "CAMBIAR", exact: true }).click();
+  await expect(page.locator("#professional-rut-gate")).toBeVisible();
+  await page.locator("#professional-rut-input").fill("1.234.567-4");
+  await page.locator("#professional-rut-submit").click();
+  await expect(identity).toContainText("567-4");
+  await expect(identity).not.toContainText("1.234.567-4");
+});
