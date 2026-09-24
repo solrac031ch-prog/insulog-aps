@@ -151,7 +151,7 @@
     <section id="p3" class="page page-center" aria-hidden="true">
       <div class="page-label">Inicio · dosis NPH</div>
       <h2>Dosis inicial de insulina NPH</h2>
-      <p class="lead">Ingrese el peso. Insulog sugiere el esquema y el factor de inicio según la evaluación clínica previa; el profesional puede modificar ambos antes de calcular.</p>
+      <p class="lead">Ingrese el peso y revise la propuesta antes de calcular.</p>
 
       <div id="resumen-esquema-inicio" class="alert alert-info text-left is-hidden"></div>
 
@@ -179,7 +179,7 @@
       </div>
 
       <details class="card card-blue text-left compact-card guidance-details">
-        <summary>Ver referencia de factores 0,1–0,3 UI/kg</summary>
+        <summary>Ver factores 0,1–0,3 UI/kg</summary>
         <div class="guidance-content">
           <ul class="compact-list">
             <li><strong>0,1 UI/kg:</strong> mayor riesgo de hipoglicemia o mayor sensibilidad a insulina</li>
@@ -375,7 +375,6 @@
     <section id="p5" class="page page-center" aria-hidden="true">
       <div class="page-label">Resultado · nota clínica</div>
       <h2>Nota clínica lista</h2>
-      <p class="lead small-lead">Revise el resumen y cópielo directamente a la ficha clínica APS.</p>
 
       <div id="nota-clinica" class="nota" role="region" aria-label="Nota clínica generada"></div>
       <button type="button" class="btn btn-success btn-narrow section-action" data-action="copy-note">COPIAR NOTA A FICHA CLÍNICA</button>
@@ -383,7 +382,6 @@
 
       <div class="card decision-card">
         <p class="card-title">Siguiente paso</p>
-        <p class="helper-text">Seleccione el documento que corresponde al plan del paciente.</p>
         <div class="decision-actions">
           <button type="button" class="btn btn-main" data-action="open-document" data-document-type="seguimiento">SEGUIMIENTO Y AJUSTE</button>
           <button type="button" class="btn btn-success" data-action="open-document" data-document-type="pscv">CONTROL EN PROGRAMA CV</button>
@@ -392,9 +390,7 @@
     </section>
 
     <section id="p6" class="page page-center pdf-preparation-page" aria-hidden="true">
-      <div class="page-label no-print">Documento · datos del paciente</div>
-      <h2 class="no-print">Prepare el documento para entregar</h2>
-      <p class="lead small-lead no-print">Ingrese el nombre y seleccione el tipo de documento que desea generar.</p>
+      <h2 class="no-print">Datos del paciente</h2>
 
       <div class="field patient-field no-print">
         <label for="nombre-paciente">Nombre del paciente</label>
@@ -404,7 +400,6 @@
       <div class="field patient-field no-print">
         <label for="fecha-nacimiento-paciente">Fecha de nacimiento</label>
         <input type="date" id="fecha-nacimiento-paciente" autocomplete="off" required>
-        <p class="helper-text">Se usa junto con el nombre para vincular correctamente los controles longitudinales.</p>
       </div>
 
       <div class="date-row no-print">Fecha: <span id="fecha-hoy"></span></div>
