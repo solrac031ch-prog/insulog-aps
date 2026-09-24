@@ -37,11 +37,38 @@ function doPost(e) {
     const rawCases = getOrCreateSheet_(spreadsheet, INSULOG_DRIVE_CONFIG.rawCasesSheet);
     ensureSchema_(patients, controls, events, rawCases);
 
-    if (controlAlreadyExists_(controls, payload.recordId)) {
-      return jsonResponse_({ ok: true, duplicate: true, recordId: payload.recordId });
+    const existingControl = findControl_(controls, payload.recordId);
+    const timestamp = safeDate_(payload.timestamp) || new Date();
+
+    if (existingControl) {
+      if (!existingControl.patientId) throw new Error("Control duplicado sin patientId; requiere revisión manual.");
+      const repairPayload = Object.assign({}, payload, {
+        controlKind: existingControl.controlKind || payload.controlKind
+      });
+      const patient = {
+        patientId: existingControl.patientId,
+        row: existingControl.row,
+        created: false,
+        cohortEntryType: ""
+      };
+      const researchIds = researchIdentifiers_(patient.patientId, payload.professionalRut);
+      const repairedHypoglycemiaEvent = appendAutomaticHypoglycemiaEvent_(events, patient.patientId, repairPayload, timestamp);
+      const repairedHyperglycemiaEvent = appendAutomaticHyperglycemicEmergencyEvent_(events, patient.patientId, repairPayload, timestamp);
+      const repairedRawCase = appendRawCase_(rawCases, patient, repairPayload, timestamp, researchIds);
+
+      return jsonResponse_({
+        ok: true,
+        duplicate: true,
+        recordId: payload.recordId,
+        patientId: patient.patientId,
+        repaired: {
+          rawCase: Boolean(repairedRawCase),
+          hypoglycemiaEvent: Boolean(repairedHypoglycemiaEvent),
+          hyperglycemiaEvent: Boolean(repairedHyperglycemiaEvent)
+        }
+      });
     }
 
-    const timestamp = safeDate_(payload.timestamp) || new Date();
     const patient = upsertPatient_(patients, payload, timestamp);
     const researchIds = researchIdentifiers_(patient.patientId, payload.professionalRut);
     appendControl_(controls, patient, payload, timestamp, researchIds);
@@ -372,13 +399,24 @@ function ensureSchema_(patients, controls, events, rawCases) {
   properties.setProperty("INSULOG_SCHEMA_VERSION", INSULOG_DRIVE_CONFIG.schemaVersion);
 }
 
+function findControl_(sheet, recordId) {
+  if (sheet.getLastRow() < 2) return null;
+  const target = String(recordId || "");
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 5).getValues();
+  for (let index = 0; index < rows.length; index += 1) {
+    if (String(rows[index][0] || "") !== target) continue;
+    return {
+      row: index + 2,
+      patientId: String(rows[index][1] || "").trim(),
+      timestamp: rows[index][3],
+      controlKind: String(rows[index][4] || "").trim()
+    };
+  }
+  return null;
+}
+
 function controlAlreadyExists_(sheet, recordId) {
-  if (sheet.getLastRow() < 2) return false;
-  const finder = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1)
-    .createTextFinder(String(recordId))
-    .matchEntireCell(true)
-    .matchCase(true);
-  return Boolean(finder.findNext());
+  return Boolean(findControl_(sheet, recordId));
 }
 
 function cohortEntryType_(payload) {
@@ -617,8 +655,19 @@ function appendControl_(sheet, patient, payload, timestamp, researchIds) {
   ]);
 }
 
+function automaticEventAlreadyExists_(sheet, recordId, eventType) {
+  if (sheet.getLastRow() < 2) return false;
+  const sourceMarker = "Generado automáticamente desde el control " + String(recordId || "");
+  const rows = sheet.getRange(2, 5, sheet.getLastRow() - 1, 8).getValues();
+  return rows.some(function(row) {
+    return String(row[0] || "") === String(eventType || "")
+      && String(row[7] || "") === sourceMarker;
+  });
+}
+
 function appendAutomaticHypoglycemiaEvent_(sheet, patientId, payload, timestamp) {
-  if (!payload.hypoglycemia70 && !payload.hypoglycemiaLevel3) return;
+  if (!payload.hypoglycemia70 && !payload.hypoglycemiaLevel3) return false;
+  if (automaticEventAlreadyExists_(sheet, payload.recordId, "Hipoglicemia")) return false;
 
   const lowest = nullableNumber_(payload.lowestGlucose);
   const level3 = Boolean(payload.hypoglycemiaLevel3);
@@ -653,10 +702,12 @@ function appendAutomaticHypoglycemiaEvent_(sheet, patientId, payload, timestamp)
     "Generado automáticamente desde el control " + String(payload.recordId),
     normalizeRut_(payload.professionalRut)
   ]);
+  return true;
 }
 
 function appendAutomaticHyperglycemicEmergencyEvent_(sheet, patientId, payload, timestamp) {
-  if (!payload.hyperglycemicEmergency) return;
+  if (!payload.hyperglycemicEmergency) return false;
+  if (automaticEventAlreadyExists_(sheet, payload.recordId, "Crisis hiperglicémica / cetosis")) return false;
 
   const fasting = nullableNumber_(payload.initiationFasting);
   const casual = nullableNumber_(payload.initiationCasual);
@@ -682,6 +733,7 @@ function appendAutomaticHyperglycemicEmergencyEvent_(sheet, patientId, payload, 
     "Generado automáticamente desde el control " + String(payload.recordId),
     normalizeRut_(payload.professionalRut)
   ]);
+  return true;
 }
 
 function researchSecret_() {
@@ -726,17 +778,113 @@ function researchIdentifiers_(patientId, professionalRut) {
 }
 
 function pseudonymizedPayload_(payload, researchIds) {
-  const clean = JSON.parse(JSON.stringify(payload || {}));
-  delete clean.patientName;
-  delete clean.patientBirthDate;
-  delete clean.professionalRut;
-  delete clean.sourceOrigin;
+  const source = payload || {};
+  const scalarKeys = [
+    "recordId",
+    "timestamp",
+    "documentType",
+    "controlKind",
+    "weightKg",
+    "hba1c",
+    "initiationFasting",
+    "initiationCasual",
+    "initiationAge",
+    "initiationBmi",
+    "egfr",
+    "targetA1c",
+    "initiationSuggestedScheme",
+    "initiationSuggestedFactor",
+    "initiationSuggestedAm",
+    "initiationSuggestedPm",
+    "initiationAppliedScheme",
+    "initiationAppliedFactor",
+    "initiationSchemeModified",
+    "initiationFactorModified",
+    "currentAm",
+    "currentPm",
+    "currentTotal",
+    "fastingAverage",
+    "preLunchAverage",
+    "fastingMinimumUsed",
+    "preLunchMinimumUsed",
+    "currentDosePerKg",
+    "recommendedDosePerKg",
+    "finalDosePerKg",
+    "doseSafetyLevel",
+    "automaticEscalationBlocked",
+    "blocksAutomaticEscalation",
+    "hypoglycemia70",
+    "hypoglycemia54",
+    "hypoglycemiaLevel3",
+    "lowestGlucose",
+    "recommendedAm",
+    "recommendedPm",
+    "recommendedTotal",
+    "finalAm",
+    "finalPm",
+    "finalTotal",
+    "professionalDecision",
+    "urgencyRoute",
+    "hyperglycemicEmergency",
+    "level3Timing",
+    "level3SevereNeurologic",
+    "level3AutomaticRecommendation",
+    "level3ImplicatedDose",
+    "level3ReductionPercent",
+    "clinicalEngineVersion",
+    "documentModuleVersion",
+    "appRuntimeVersion",
+    "documentSyncVersion"
+  ];
+  const clean = {};
+  scalarKeys.forEach(function(key) {
+    if (source[key] !== undefined) clean[key] = source[key];
+  });
+
+  clean.fastingValues = Array.isArray(source.fastingValues)
+    ? source.fastingValues.map(Number).filter(Number.isFinite)
+    : [];
+  clean.preLunchValues = Array.isArray(source.preLunchValues)
+    ? source.preLunchValues.map(Number).filter(Number.isFinite)
+    : [];
+  ["initiationCriteria", "initiationCatabolic", "initiationHypoRisk"].forEach(function(key) {
+    clean[key] = Array.isArray(source[key])
+      ? source[key].map(function(value) { return String(value || "").trim(); }).filter(Boolean)
+      : [];
+  });
+  clean.concomitantMedicationKeys = Array.isArray(source.concomitantMedications)
+    ? source.concomitantMedications
+        .map(function(item) { return String(item && item.key || "").trim(); })
+        .filter(Boolean)
+    : [];
+
+  clean.professionalReasonProvided = Boolean(String(source.professionalReason || "").trim());
+  clean.initiationClinicalReasonProvided = Boolean(String(source.initiationClinicalReason || "").trim());
+  clean.level3ReversibleCauseProvided = Boolean(String(source.level3ReversibleCause || "").trim());
+  clean.emergencyReasonProvided = Boolean(String(source.emergencyReason || "").trim());
+
+  const blockReasons = [];
+  if (source.hyperglycemicEmergency) blockReasons.push("hyperglycemic_emergency_or_ketosis");
+  if (source.hypoglycemiaLevel3 && !source.level3AutomaticRecommendation) blockReasons.push("hypoglycemia_level3_requires_professional_review");
+  if (source.automaticEscalationBlocked || source.blocksAutomaticEscalation) blockReasons.push("dose_safety_block");
+  clean.blockReasons = blockReasons;
+
   clean.patientStudyId = researchIds.patientStudyId;
   clean.professionalStudyId = researchIds.professionalStudyId;
   return clean;
 }
 
+function rawCaseAlreadyExists_(sheet, recordId) {
+  if (sheet.getLastRow() < 2) return false;
+  const finder = sheet.getRange(2, 2, sheet.getLastRow() - 1, 1)
+    .createTextFinder(String(recordId || ""))
+    .matchEntireCell(true)
+    .matchCase(true);
+  return Boolean(finder.findNext());
+}
+
 function appendRawCase_(sheet, patient, payload, timestamp, researchIds) {
+  if (rawCaseAlreadyExists_(sheet, payload.recordId)) return false;
   const cleanPayload = pseudonymizedPayload_(payload, researchIds);
   cleanPayload.patientStudyId = researchIds.patientStudyId;
   const json = JSON.stringify(cleanPayload);
@@ -767,6 +915,7 @@ function appendRawCase_(sheet, patient, payload, timestamp, researchIds) {
     chainHash,
     new Date()
   ]);
+  return true;
 }
 
 function serializeStringList_(value) {
