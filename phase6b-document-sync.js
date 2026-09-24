@@ -12,7 +12,7 @@
   const DRIVE_ENDPOINT_STORAGE_KEY = "insulog.drive.bridge.endpoint.v1";
   const DRIVE_ENDPOINT_PARAM = "driveEndpoint";
   const PRODUCTION_DRIVE_ENDPOINT = "https://script.google.com/macros/s/AKfycbx203QzIWqGmeTh_p1XjjmADWBuu_L3RJmUoV9A1fk12_OEtnhkSLq62bgup0ERe3IlBw/exec";
-  const DRIVE_BRIDGE_VERSION = "2026.09.23-drive-v3";
+  const DRIVE_BRIDGE_VERSION = "2026.09.24-drive-v4";
   const PROFESSIONAL_RUT_STORAGE_KEY = "insulog.professional.rut.daily.v1";
   const EXPECTED_DRIVE_HOST = /(^|\.)script\.google\.com$/i;
   const transientRetryQueue = [];
