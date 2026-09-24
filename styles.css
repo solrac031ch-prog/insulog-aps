@@ -1327,3 +1327,161 @@ footer p {
     margin-left: auto;
   }
 }
+
+
+/* Minimal clinical polish — keep the interface focused on actions and safety */
+#p0 .brand-title {
+  margin-top: 18px;
+}
+
+#p0 .brand-subtitle {
+  margin-bottom: 26px;
+}
+
+.author-signature {
+  max-width: 520px;
+  margin-top: 18px;
+  padding-top: 15px;
+}
+
+.author-signature .author-name {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.author-signature .author-separator {
+  color: #a1aec0;
+  font-weight: 500;
+}
+
+.author-signature .author-role {
+  color: #60748f;
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+#p0 .evidence-card {
+  max-width: 520px;
+  margin-top: 14px;
+  padding: 11px 14px;
+  border-color: #e1e9f3;
+  border-radius: 13px;
+  background: #fbfcfe;
+}
+
+#p0 .evidence-card summary {
+  color: #536983;
+  font-size: .78rem;
+  font-weight: 750;
+}
+
+#p0 .evidence-content {
+  margin-top: 10px;
+  padding-top: 10px;
+  font-size: .82rem;
+}
+
+.professional-identity-bar {
+  max-width: 460px;
+  margin-top: 10px;
+}
+
+.professional-card {
+  padding: 7px 9px;
+  border-radius: 13px;
+  box-shadow: none;
+}
+
+.professional-card__rut {
+  font-size: .8rem;
+}
+
+.professional-btn {
+  min-height: 29px;
+  padding: 4px 8px;
+  font-size: .68rem;
+}
+
+#p3 .guidance-details {
+  max-width: 520px;
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+#p3 .guidance-details > summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 24px 6px 8px;
+  color: #60748f;
+  font-size: .8rem;
+  font-weight: 750;
+}
+
+#p3 .guidance-content {
+  margin-top: 8px;
+  padding: 12px 14px;
+  border: 1px solid #dbe6f4;
+  border-radius: 12px;
+  background: #f8fbff;
+}
+
+#p4 .table-guide {
+  margin-bottom: 10px;
+}
+
+#p5 .decision-card {
+  max-width: 760px;
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+#p5 .decision-card .decision-actions {
+  margin-top: 0;
+}
+
+.best-review-status:empty {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  #p0 .brand-title {
+    margin-top: 24px;
+  }
+
+  .author-signature {
+    margin-top: 16px;
+    padding-top: 14px;
+  }
+
+  .author-signature .author-separator {
+    display: none;
+  }
+
+  .author-signature .author-role {
+    flex-basis: 100%;
+    text-align: center;
+  }
+
+  #p0 .evidence-card {
+    margin-top: 12px;
+  }
+
+  .professional-identity-bar {
+    width: min(calc(100% - 8px), 460px);
+  }
+
+  .professional-card {
+    gap: 7px;
+  }
+}
