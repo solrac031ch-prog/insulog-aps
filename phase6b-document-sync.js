@@ -363,11 +363,11 @@
     const statusClass = status.kind === "ready" ? "ok" : status.kind;
     const statusText = status.kind === "ready"
       ? '<span class="sr-only">Registro operativo activo</span>'
-      : notePresenter.escapeHTML(status.badge);
+      : status.badge;
     node.innerHTML = `
       <div class="professional-card">
         <div class="professional-card__identity">
-          <span class="professional-card__status ${statusClass}" title="${status.kind === "ready" ? "Registro operativo activo" : notePresenter.escapeHTML(status.badge)}">
+          <span class="professional-card__status ${statusClass}" title="${status.kind === "ready" ? "Registro operativo activo" : status.badge}">
             <span class="professional-card__dot" aria-hidden="true"></span>${statusText}
           </span>
           <span class="professional-card__label">Profesional</span>
