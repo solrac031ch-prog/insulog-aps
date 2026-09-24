@@ -210,6 +210,11 @@
       amActual: resultado.amActual, pmActual: resultado.pmActual, am: resultado.am, pm: resultado.pm,
       promAy: resultado.promAy, promPre: resultado.promPre, minAy: resultado.minAy, minPre: resultado.minPre,
       promedioGlobal: resultado.promedioGlobal, dosisKg: resultado.dosisKg, targetA1c: resultado.targetA1c,
+      currentDosePerKg: resultado.currentDosePerKg,
+      doseSafetyLevel: resultado.doseSafety?.level || "",
+      doseSafetyWarning: resultado.doseSafety?.warning || "",
+      automaticEscalationBlocked: Boolean(resultado.automaticEscalationBlocked),
+      blocksAutomaticEscalation: Boolean(resultado.blocksAutomaticEscalation),
       acciones: "", explicacion: resultado.explicacion
     });
 
@@ -300,7 +305,7 @@
 
   function handleInput(event) {
     const target = event.target;
-    if (target.matches(".glicemia")) sanitizeNumericInput(target, 3, 999);
+    if (target.matches(".glicemia")) sanitizeNumericInput(target, 3, 600);
     if (target.id === "am-actual" || target.id === "pm-actual") sanitizeNumericInput(target, 3, 150);
     if (target.id === "peso-paciente" || target.id === "peso-seguimiento") { if (Number(target.value) > 300) target.value = "300"; }
   }
