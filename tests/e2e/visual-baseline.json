@@ -1,5 +1,5 @@
 {
-  "version": "prepilot-r6-professional-operational-card-20260924",
+  "version": "prepilot-r6-cleaner-ui-20260924",
   "hashBits": 64,
   "defaultTolerance": 6,
   "profiles": {
@@ -8,7 +8,7 @@
     "mobile-p4": {"hash": "f4d0d0838113e4e0", "tolerance": 6},
     "mobile-hypo": {"hash": "9a4582a4b4dcd0f0", "tolerance": 6},
     "mobile-high-dose": {"hash": "c8d0e0c2a043dcd9", "tolerance": 6},
-    "mobile-note": {"hash": "d4c8d6ac47fada92", "tolerance": 6},
+    "mobile-note": {"hash": "f4fefaeaaabeaa92", "tolerance": 6},
     "desktop-p0": {"hash": "3333332323033300", "tolerance": 6},
     "desktop-p2": {"hash": "3333336133033300", "tolerance": 6},
     "desktop-p4": {"hash": "7123257133710b03", "tolerance": 6},
