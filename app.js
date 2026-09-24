@@ -210,6 +210,11 @@
       amActual: resultado.amActual, pmActual: resultado.pmActual, am: resultado.am, pm: resultado.pm,
       promAy: resultado.promAy, promPre: resultado.promPre, minAy: resultado.minAy, minPre: resultado.minPre,
       promedioGlobal: resultado.promedioGlobal, dosisKg: resultado.dosisKg, targetA1c: resultado.targetA1c,
+      currentDosePerKg: resultado.currentDosePerKg,
+      doseSafetyLevel: resultado.doseSafety?.level || "",
+      blocksAutomaticEscalation: Boolean(resultado.blocksAutomaticEscalation),
+      automaticEscalationBlocked: Boolean(resultado.automaticEscalationBlocked),
+      doseSafetyReason: String(resultado.doseSafety?.warning || ""),
       acciones: "", explicacion: resultado.explicacion
     });
 
