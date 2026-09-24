@@ -8,7 +8,7 @@ Registrar automáticamente cada documento clínico emitido por Insulog en la bas
 
 - Propietario: `mdcarlosherrera@gmail.com`
 - Spreadsheet ID: `1WTDqnaHgwX_7OdgxW0C7WIC6Up3dcxOcmKhObHw9La4`
-- Hojas utilizadas: `Pacientes`, `Controles`, `Eventos`, `Diccionario`
+- Hojas utilizadas: `Pacientes`, `Controles`, `Eventos`, `Diccionario`, `CasosRaw`
 - Carpeta del proyecto: `Insulog APS - Seguimiento y Validación`
 - Los identificadores `patient_id`, `control_id` y `event_id` son generados automáticamente.
 
@@ -49,7 +49,9 @@ El parámetro `?driveEndpoint=` y la clave local del endpoint se conservan únic
 
 Al abrir Insulog, el sistema solicita el **RUT profesional**. Se valida el dígito verificador y se guarda en el navegador asociado a la fecha local del día. Mientras siga siendo el mismo día, no vuelve a solicitarse en ese computador.
 
-Al cambiar de día, la identificación diaria expira y el RUT se solicita nuevamente. Cada control y evento de hipoglicemia queda asociado al RUT profesional que emitió la decisión clínica.
+Al cambiar de día, la identificación diaria expira y el RUT se solicita nuevamente. Cada control y evento queda asociado al RUT profesional que emitió la decisión clínica.
+
+En la pantalla de inicio se muestra el profesional activo con RUT enmascarado y existen acciones para **CAMBIAR** o **CERRAR SESIÓN**. Insulog bloquea ese cambio si existe un caso clínico activo para evitar atribuciones cruzadas en computadores compartidos.
 
 El médico no necesita acceso al Google Sheet ni iniciar sesión en la cuenta propietaria del Drive. El Apps Script escribe en la base utilizando la cuenta propietaria del puente.
 
@@ -76,10 +78,21 @@ El médico no necesita acceso al Google Sheet ni iniciar sesión en la cuenta pr
 - Tratamiento concomitante del día con medicamento y dosis.
 - Claves estructuradas de medicamentos y marcadores por clase: metformina, iSGLT2 y DPP-4/vildagliptina.
 - Versiones del motor clínico/documento/runtime.
+- Mínimos HGT realmente usados por el algoritmo.
+- Dosis actual, recomendada y final en UI/kg/día.
+- Nivel de seguridad de dosis basal, bloqueo de escalamiento y motivo.
+- En inicio: glicemias, edad, IMC, criterios, síntomas/descompensación y factores de riesgo de hipoglicemia.
+- Identificadores pseudonimizados de estudio para paciente y profesional.
+
+### CasosRaw
+
+`CasosRaw` conserva una segunda traza destinada a reproducibilidad/auditoría. El payload se pseudonimiza en Apps Script antes de escribir: se eliminan nombre, fecha de nacimiento y RUT, se generan IDs HMAC estables de estudio y se guardan SHA-256 del payload más una cadena de hashes entre registros. La hoja se configura como protegida y el bridge solo agrega filas.
+
+La base operativa identificada continúa en `Pacientes`/`Controles`; `CasosRaw` no debe usarse como mecanismo de reidentificación.
 
 ## Comportamiento ante fallas
 
-El endpoint de producción de Drive viene configurado en la aplicación. Si se invalida o se reemplaza manualmente por un endpoint incorrecto, Insulog no guarda nombres en almacenamiento persistente local. Si falla la red durante una pestaña abierta, conserva temporalmente el registro solo en memoria y vuelve a intentar al recuperar conexión. Al cerrar la pestaña, ese buffer se pierde; por eso la implementación de Apps Script debe verificarse con un paciente ficticio antes del uso prospectivo.
+El endpoint de producción de Drive viene configurado en la aplicación. Si se invalida o se reemplaza manualmente por un endpoint incorrecto, Insulog no guarda nombres en almacenamiento persistente local. Si falla la red durante una pestaña abierta, conserva temporalmente el registro solo en memoria y vuelve a intentar al recuperar conexión. Al cerrar la pestaña, ese buffer se pierde. El bridge actual usa `no-cors`, por lo que el navegador puede confirmar que el envío de red se inició, pero no demostrar por sí solo que Apps Script aceptó el payload. La confirmación fuerte de persistencia se resolverá junto con la futura autenticación/autorización del bridge antes de recolección prospectiva multiusuario.
 
 ## Duplicados
 
