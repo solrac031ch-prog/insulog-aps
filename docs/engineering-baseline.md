@@ -471,3 +471,21 @@ Un cambio intencional de redacción de las notas base debe actualizar deliberada
 - **Fase 10C:** cerrada; README operativo y comandos reproducibles de mantenimiento integrados.
 - **Fase 11A:** cerrada; protocolo clínico versionado y cambios del motor gobernados por CI.
 - **Fase 11B:** cerrada; notas base generadas fuera del DOM con regresión exacta y release técnico `239bc6b77d3afe3d`.
+
+
+## Estado pre-piloto — 2026-09-24
+
+Versión clínica vigente: `APS-NPH-2026.09.24-r6`.
+
+Cambios incorporados desde la auditoría final:
+
+- sugerencia automática de 0,3 UI/kg restringida a doble dosis; 0,3 permanece disponible como elección profesional documentada en monodosis;
+- rango numérico único de HGT de seguimiento: 20–600 mg/dL en UI, motor y bridge;
+- profesional activo visible de forma enmascarada en P0, con cambio de profesional y cierre de sesión para equipos compartidos;
+- `Controles` amplía trazabilidad con inputs de inicio, HGT mínimo, UI/kg y razones de bloqueo/seguridad;
+- `CasosRaw` conserva un payload pseudonimizado append-only para reproducibilidad;
+- backup pre-piloto de la base creado antes de migrar el esquema;
+- Fase 9B continúa abierta hasta completar evidencia en iPhone y Android físicos;
+- autenticación real del bridge y allowlist de profesionales continúan pendientes hasta disponer de la nómina de participantes.
+
+El endpoint anónimo se mantiene temporalmente para no interrumpir el funcionamiento actual durante pruebas internas. No debe interpretarse como el diseño final de seguridad para un estudio prospectivo multicéntrico o multiusuario.
