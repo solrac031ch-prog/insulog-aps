@@ -308,6 +308,31 @@
         background: #0f766e;
         color: #fff;
       }
+      #professional-active-panel {
+        margin: 12px auto 18px;
+        max-width: 760px;
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        background: #f8fafc;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        font-size: .92rem;
+      }
+      #professional-active-panel .professional-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+      #professional-active-panel button {
+        min-height: 38px;
+        border: 1px solid #94a3b8;
+        border-radius: 9px;
+        padding: 6px 10px;
+        background: #fff;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -316,10 +341,53 @@
     document.getElementById("professional-rut-gate")?.remove();
   }
 
-  function showProfessionalRutGate() {
+  function maskedProfessionalRut(rut) {
+    const normalized = normalizeProfessionalRut(rut);
+    if (!normalized) return "";
+    const verifier = normalized.split("-").pop();
+    return `••••••••-${verifier}`;
+  }
+
+  function renderProfessionalIdentity() {
+    const home = document.getElementById("p0");
+    if (!home) return;
+    let panel = document.getElementById("professional-active-panel");
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.id = "professional-active-panel";
+      panel.className = "no-print";
+      const lead = home.querySelector(".lead");
+      (lead || home.firstElementChild)?.insertAdjacentElement("afterend", panel);
+    }
+    const rut = storedDailyProfessionalRut();
+    if (!rut) {
+      panel.innerHTML = `<strong>Profesional activo:</strong> sin identificación`;
+      return;
+    }
+    panel.innerHTML = `
+      <span><strong>Profesional activo:</strong> ${maskedProfessionalRut(rut)}</span>
+      <span class="professional-actions">
+        <button type="button" id="professional-change-btn">CAMBIAR PROFESIONAL</button>
+        <button type="button" id="professional-logout-btn">CERRAR SESIÓN</button>
+      </span>`;
+    panel.querySelector("#professional-change-btn")?.addEventListener("click", () => {
+      localStorage.removeItem(PROFESSIONAL_RUT_STORAGE_KEY);
+      renderProfessionalIdentity();
+      showProfessionalRutGate(true);
+    });
+    panel.querySelector("#professional-logout-btn")?.addEventListener("click", () => {
+      localStorage.removeItem(PROFESSIONAL_RUT_STORAGE_KEY);
+      state.reset();
+      renderProfessionalIdentity();
+      showProfessionalRutGate(true);
+    });
+  }
+
+  function showProfessionalRutGate(force = false) {
     const current = storedDailyProfessionalRut();
-    if (current) {
+    if (current && !force) {
       closeProfessionalRutGate();
+      renderProfessionalIdentity();
       return current;
     }
 
@@ -358,6 +426,7 @@
       input.value = rut;
       localStorage.setItem(PROFESSIONAL_RUT_STORAGE_KEY, JSON.stringify({ date: localDateKey(), rut }));
       closeProfessionalRutGate();
+      renderProfessionalIdentity();
     });
 
     document.body.appendChild(gate);
@@ -485,6 +554,17 @@
       : safeNumber(document.getElementById("hba1c-control")?.value);
     const initiationFasting = tipo === "inicio" ? safeNumber(document.getElementById("glicemia-ayunas-inicio")?.value) : null;
     const initiationCasual = tipo === "inicio" ? safeNumber(document.getElementById("glicemia-casual-inicio")?.value) : null;
+    const initiationAge = tipo === "inicio" ? safeNumber(document.getElementById("edad-inicio")?.value) : null;
+    const initiationBmi = tipo === "inicio" ? safeNumber(document.getElementById("imc-inicio")?.value) : null;
+    const initiationCriteriaSelected = tipo === "inicio"
+      ? Array.from(document.querySelectorAll(".inicio-btn.seleccionada, .aceptacion-btn.seleccionada")).map((node) => String(node.dataset.value || "").trim()).filter(Boolean)
+      : [];
+    const initiationCatabolic = tipo === "inicio"
+      ? Array.from(document.querySelectorAll(".catabolico-btn.seleccionada")).map((node) => String(node.dataset.value || "").trim()).filter(Boolean)
+      : [];
+    const initiationHypoRisk = tipo === "inicio"
+      ? Array.from(document.querySelectorAll(".riesgo-hipo-btn.seleccionada")).map((node) => String(node.dataset.value || "").trim()).filter(Boolean)
+      : [];
     const egfr = tipo === "inicio" ? safeNumber(document.getElementById("vfg-inicio")?.value) : null;
     const targetA1c = tipo === "seguimiento"
       ? safeNumber(document.getElementById("meta-hba1c-seguimiento")?.value) ?? safeNumber(data.targetA1c)
@@ -552,6 +632,12 @@
       hba1c,
       initiationFasting,
       initiationCasual,
+      initiationAge,
+      initiationBmi,
+      initiationCriteriaSelected,
+      initiationCriteriaResolved: tipo === "inicio" ? String(data.criteria || "").trim() : "",
+      initiationCatabolic,
+      initiationHypoRisk,
       egfr,
       targetA1c,
       initiationSuggestedScheme,
@@ -587,6 +673,17 @@
       professionalDecision: decision,
       professionalReason: String(data.professionalReason || "").trim(),
       professionalDosePerKg: urgencyAcceptedWithoutDose ? null : safeNumber(data.professionalDosePerKg),
+      currentDosePerKg: safeNumber(data.currentDosePerKg),
+      recommendedDosePerKg: (!urgencyAcceptedWithoutDose && weight && weight > 0)
+        ? totalDose(recommendedAm, recommendedPm) / weight
+        : null,
+      finalDosePerKg: (!urgencyAcceptedWithoutDose && weight && weight > 0)
+        ? totalDose(finalAm, finalPm) / weight
+        : null,
+      doseSafetyLevel: String(data.doseSafetyLevel || ""),
+      blocksAutomaticEscalation: Boolean(data.blocksAutomaticEscalation),
+      automaticEscalationBlocked: Boolean(data.automaticEscalationBlocked),
+      doseSafetyReason: String(data.doseSafetyReason || "").trim(),
       concomitantTreatment: medication.text,
       concomitantMedications: medication.medications,
       urgencyRoute,
@@ -693,6 +790,7 @@
     configureDriveEndpointFromQuery();
     renderDriveStatus();
     requestDailyProfessionalRut();
+    renderProfessionalIdentity();
     injectFollowupHbA1cField();
     registerProfessionalOverbasalizationOverride();
     registerDocumentSync();
@@ -703,7 +801,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.24-phase6b-document-sync-emergency-trace",
+    version: "2026.09.24-phase6b-document-sync-research-v2",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),
