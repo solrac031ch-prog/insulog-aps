@@ -1,19 +1,19 @@
 {
-  "version": "prepilot-r8-compact-ui-20260924",
+  "version": "prepilot-r8-decluttered-ui-20260924",
   "hashBits": 64,
   "defaultTolerance": 6,
   "profiles": {
-    "mobile-p0": {"hash": "ece886f0e4d20000", "tolerance": 6},
-    "mobile-p2": {"hash": "d4daceaab0700000", "tolerance": 6},
+    "mobile-p0": {"hash": "ece886e4e8800000", "tolerance": 6},
+    "mobile-p2": {"hash": "d496829460000000", "tolerance": 6},
     "mobile-p4": {"hash": "d4e081838084f191", "tolerance": 6},
     "mobile-hypo": {"hash": "9a4582a4b4dcd0f0", "tolerance": 6},
     "mobile-high-dose": {"hash": "c8d0e0c2a043dcd9", "tolerance": 6},
-    "mobile-note": {"hash": "d4f29a2daab6dab2", "tolerance": 6},
+    "mobile-note": {"hash": "d4d69e47eaeab249", "tolerance": 6},
     "desktop-p0": {"hash": "3333332323033300", "tolerance": 6},
-    "desktop-p2": {"hash": "3333336133033300", "tolerance": 6},
+    "desktop-p2": {"hash": "3333613303033300", "tolerance": 6},
     "desktop-p4": {"hash": "6921636171610b0b", "tolerance": 6},
     "desktop-hypo": {"hash": "4b43433361616133", "tolerance": 6},
     "desktop-high-dose": {"hash": "3331416163633333", "tolerance": 6},
-    "desktop-note": {"hash": "33e0e8f8f8f03361", "tolerance": 6}
+    "desktop-note": {"hash": "70f8f0f8f8717161", "tolerance": 6}
   }
 }
