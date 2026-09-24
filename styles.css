@@ -1157,17 +1157,20 @@ footer p {
 
 .professional-card__main {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
+  flex-wrap: wrap;
 }
 
 .professional-card__title {
   color: #6b7f9e;
-  font-size: .7rem;
+  font-size: .68rem;
   font-weight: 800;
-  letter-spacing: .06em;
+  letter-spacing: .055em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .professional-card__row {
@@ -1222,6 +1225,7 @@ footer p {
 }
 
 .professional-card__message {
+  flex-basis: 100%;
   color: #4b6487;
   font-size: .76rem;
   font-weight: 650;
@@ -1309,5 +1313,167 @@ footer p {
 
   .professional-card__actions {
     margin-left: auto;
+  }
+}
+
+
+/* Compact initiation recommendation: essential facts first, rationale on demand */
+.init-suggestion-main {
+  display: flex;
+  align-items: center;
+  gap: 10px 18px;
+  flex-wrap: wrap;
+  font-size: .92rem;
+  line-height: 1.35;
+}
+
+.init-suggestion-main > span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.init-suggestion-details {
+  margin-top: 9px;
+  border-top: 1px solid rgba(11, 99, 206, .14);
+  padding-top: 8px;
+}
+
+.init-suggestion-details summary {
+  width: fit-content;
+  color: var(--primary-dark);
+  cursor: pointer;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.init-suggestion-details p {
+  margin: 8px 0 0;
+  color: #49617f;
+  font-size: .82rem;
+  line-height: 1.45;
+}
+
+.init-suggestion-note {
+  font-weight: 700;
+}
+
+/* Compatibility: keep the previous session markup presentable during PWA updates. */
+.professional-session-main {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.professional-session-eyebrow {
+  color: #6b7f9e;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.professional-session-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.professional-session-label {
+  color: var(--text-strong);
+  font-size: .82rem;
+  font-weight: 800;
+}
+
+.professional-session-rut {
+  padding: 6px 10px;
+  border: 1px solid #d5e2f1;
+  border-radius: 10px;
+  background: #fff;
+  color: #0f4c97;
+  font-size: .92rem;
+  font-weight: 800;
+}
+
+.professional-session-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 25px;
+  padding: 3px 8px;
+  border: 1px solid #bfe3cb;
+  border-radius: 999px;
+  background: #eaf8ef;
+  color: #18794e;
+  font-size: .7rem;
+  font-weight: 800;
+}
+
+.professional-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.professional-session-message,
+.professional-session-detail {
+  display: none;
+}
+
+.professional-identity-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.professional-identity-button {
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid #c8d8ec;
+  border-radius: 10px;
+  background: #fff;
+  color: #185699;
+  font: inherit;
+  font-size: .75rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.professional-identity-logout {
+  color: #a33636;
+  border-color: #efc8c8;
+}
+
+@media (max-width: 640px) {
+  .professional-card__main,
+  .professional-session-main {
+    align-items: flex-start;
+  }
+
+  .professional-card__title,
+  .professional-session-eyebrow {
+    flex-basis: 100%;
+  }
+
+  .professional-identity-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .professional-identity-button {
+    flex: 1 1 0;
+  }
+
+  .init-suggestion-main {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
   }
 }
