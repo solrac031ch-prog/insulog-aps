@@ -12,7 +12,7 @@
   const DRIVE_ENDPOINT_STORAGE_KEY = "insulog.drive.bridge.endpoint.v1";
   const DRIVE_ENDPOINT_PARAM = "driveEndpoint";
   const PRODUCTION_DRIVE_ENDPOINT = "https://script.google.com/macros/s/AKfycbx203QzIWqGmeTh_p1XjjmADWBuu_L3RJmUoV9A1fk12_OEtnhkSLq62bgup0ERe3IlBw/exec";
-  const DRIVE_BRIDGE_VERSION = "2026.09.23-drive-v3";
+  const DRIVE_BRIDGE_VERSION = "2026.09.24-drive-v4";
   const PROFESSIONAL_RUT_STORAGE_KEY = "insulog.professional.rut.daily.v1";
   const EXPECTED_DRIVE_HOST = /(^|\.)script\.google\.com$/i;
   const transientRetryQueue = [];
@@ -308,12 +308,64 @@
         background: #0f766e;
         color: #fff;
       }
+      #professional-identity-status {
+        max-width: 520px;
+        margin: 12px auto 20px;
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 0.88rem;
+      }
+      #professional-identity-status .professional-identity-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      #professional-identity-status button {
+        width: auto;
+        min-height: 38px;
+        padding: 8px 12px;
+        border: 1px solid #94a3b8;
+        border-radius: 9px;
+        background: #fff;
+        color: #0f172a;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 800;
+      }
     `;
     document.head.appendChild(style);
   }
 
   function closeProfessionalRutGate() {
     document.getElementById("professional-rut-gate")?.remove();
+  }
+
+  function maskedProfessionalRut(rut) {
+    const normalized = normalizeProfessionalRut(rut);
+    if (!normalized) return "";
+    const verifier = normalized.slice(-1);
+    return `••.•••.•••-${verifier}`;
+  }
+
+  function renderProfessionalIdentityStatus() {
+    const home = document.getElementById("p0");
+    if (!home) return;
+    let node = document.getElementById("professional-identity-status");
+    if (!node) {
+      node = document.createElement("div");
+      node.id = "professional-identity-status";
+      node.className = "no-print";
+      const anchor = home.querySelector(".brand-subtitle") || home.querySelector("h1");
+      anchor?.insertAdjacentElement("afterend", node);
+    }
+    const rut = storedDailyProfessionalRut();
+    node.innerHTML = rut
+      ? `<div class="professional-identity-row"><span><strong>Profesional activo:</strong> ${maskedProfessionalRut(rut)}</span><button type="button" data-action="change-professional">CAMBIAR PROFESIONAL</button></div>`
+      : `<div class="professional-identity-row"><span><strong>Profesional:</strong> identificación pendiente</span><button type="button" data-action="change-professional">IDENTIFICAR</button></div>`;
   }
 
   function showProfessionalRutGate() {
@@ -358,6 +410,7 @@
       input.value = rut;
       localStorage.setItem(PROFESSIONAL_RUT_STORAGE_KEY, JSON.stringify({ date: localDateKey(), rut }));
       closeProfessionalRutGate();
+      renderProfessionalIdentityStatus();
     });
 
     document.body.appendChild(gate);
@@ -367,6 +420,21 @@
 
   function requestDailyProfessionalRut() {
     return storedDailyProfessionalRut() || showProfessionalRutGate();
+  }
+
+  function registerProfessionalIdentityActions() {
+    actions.register("change-professional", () => {
+      const active = storedDailyProfessionalRut();
+      const message = active
+        ? "¿Cambiar el profesional activo en este equipo? Los próximos controles quedarán asociados al nuevo RUT."
+        : "¿Ingresar identificación profesional?";
+      if (!window.confirm(message)) return undefined;
+      localStorage.removeItem(PROFESSIONAL_RUT_STORAGE_KEY);
+      lastDriveFingerprint = "";
+      lastDriveRecordId = "";
+      renderProfessionalIdentityStatus();
+      return showProfessionalRutGate();
+    }, { replace: true });
   }
 
   function renderDriveStatus() {
@@ -431,6 +499,12 @@
       .filter(Number.isFinite);
   }
 
+  function selectedValues(selector) {
+    return Array.from(document.querySelectorAll(selector))
+      .map((control) => String(control.dataset.value || "").trim())
+      .filter(Boolean);
+  }
+
   function minimum(values) {
     return values.length ? Math.min(...values) : null;
   }
@@ -485,6 +559,13 @@
       : safeNumber(document.getElementById("hba1c-control")?.value);
     const initiationFasting = tipo === "inicio" ? safeNumber(document.getElementById("glicemia-ayunas-inicio")?.value) : null;
     const initiationCasual = tipo === "inicio" ? safeNumber(document.getElementById("glicemia-casual-inicio")?.value) : null;
+    const initiationAge = tipo === "inicio" ? safeNumber(document.getElementById("edad-inicio")?.value) : null;
+    const initiationBmi = tipo === "inicio" ? safeNumber(document.getElementById("imc-inicio")?.value) : null;
+    const initiationCriteriaSelected = tipo === "inicio"
+      ? selectedValues(".inicio-btn.seleccionada, .aceptacion-btn.seleccionada")
+      : [];
+    const catabolicSymptomsSelected = tipo === "inicio" ? selectedValues(".catabolico-btn.seleccionada") : [];
+    const hypoglycemiaRiskSelected = tipo === "inicio" ? selectedValues(".riesgo-hipo-btn.seleccionada") : [];
     const egfr = tipo === "inicio" ? safeNumber(document.getElementById("vfg-inicio")?.value) : null;
     const targetA1c = tipo === "seguimiento"
       ? safeNumber(document.getElementById("meta-hba1c-seguimiento")?.value) ?? safeNumber(data.targetA1c)
@@ -522,21 +603,32 @@
     const finalPm = urgencyAcceptedWithoutDose ? null : numberOrZero(data.professionalPm);
     const decision = data.professionalDecision === "modificada" ? "Modificada" : "Aceptada";
     const medication = concomitantMedicationSnapshot(tipo, data);
+    const professionalRut = storedDailyProfessionalRut();
+    const currentTotal = totalDose(currentAm, currentPm);
+    const finalTotalForTrace = urgencyAcceptedWithoutDose ? null : totalDose(finalAm, finalPm);
+    const currentDosePerKg = weight && weight > 0 ? currentTotal / weight : null;
+    const finalDosePerKg = weight && weight > 0 && finalTotalForTrace !== null ? finalTotalForTrace / weight : null;
+    const doseSafetyLevel = String(data.doseSafetyLevel || "");
+    const automaticEscalationBlocked = Boolean(data.automaticEscalationBlocked);
+    const doseSafetyReason = String(data.doseSafetyWarning || (automaticEscalationBlocked
+      ? "Aumento automático bloqueado por umbral de seguridad de dosis basal."
+      : "")).trim();
     const fingerprint = [
       patientName, birthDate, tipo, note, decision,
       urgencyAcceptedWithoutDose ? "urgency-no-dose" : "",
       data.level3Timing || "", data.level3ReversibleCause || "",
       finalAm ?? "", finalPm ?? "", hba1c ?? "", targetA1c ?? "",
-      initiationFasting ?? "", initiationCasual ?? "", hyperglycemicEmergency ? "hyperglycemic-emergency" : "",
+      initiationFasting ?? "", initiationCasual ?? "", initiationAge ?? "", initiationBmi ?? "",
+      initiationCriteriaSelected.join(","), catabolicSymptomsSelected.join(","), hypoglycemiaRiskSelected.join(","),
+      hyperglycemicEmergency ? "hyperglycemic-emergency" : "",
+      currentDosePerKg ?? "", finalDosePerKg ?? "", doseSafetyLevel, automaticEscalationBlocked ? "escalation-blocked" : "",
       fastingValues.join(","), preLunchValues.join(","),
       initiationSuggestedScheme, initiationSuggestedFactor ?? "",
       initiationAppliedScheme, initiationAppliedFactor ?? "",
       initiationSchemeModified ? "scheme-modified" : "",
       initiationFactorModified ? "factor-modified" : "",
-      medication.text
+      medication.text, professionalRut
     ].join("|");
-
-    const professionalRut = storedDailyProfessionalRut();
 
     return {
       bridgeVersion: DRIVE_BRIDGE_VERSION,
@@ -552,6 +644,11 @@
       hba1c,
       initiationFasting,
       initiationCasual,
+      initiationAge,
+      initiationBmi,
+      initiationCriteriaSelected,
+      catabolicSymptomsSelected,
+      hypoglycemiaRiskSelected,
       egfr,
       targetA1c,
       initiationSuggestedScheme,
@@ -564,7 +661,8 @@
       initiationFactorModified,
       currentAm,
       currentPm,
-      currentTotal: totalDose(currentAm, currentPm),
+      currentTotal,
+      currentDosePerKg,
       fastingAverage: safeNumber(data.promAy),
       preLunchAverage: safeNumber(data.promPre),
       fastingValues,
@@ -583,7 +681,11 @@
           : doseLabel(recommendedAm, recommendedPm)),
       finalAm,
       finalPm,
-      finalTotal: urgencyAcceptedWithoutDose ? null : totalDose(finalAm, finalPm),
+      finalTotal: finalTotalForTrace,
+      finalDosePerKg,
+      doseSafetyLevel,
+      automaticEscalationBlocked,
+      doseSafetyReason,
       professionalDecision: decision,
       professionalReason: String(data.professionalReason || "").trim(),
       professionalDosePerKg: urgencyAcceptedWithoutDose ? null : safeNumber(data.professionalDosePerKg),
@@ -692,7 +794,9 @@
   function init() {
     configureDriveEndpointFromQuery();
     renderDriveStatus();
+    registerProfessionalIdentityActions();
     requestDailyProfessionalRut();
+    renderProfessionalIdentityStatus();
     injectFollowupHbA1cField();
     registerProfessionalOverbasalizationOverride();
     registerDocumentSync();
@@ -703,7 +807,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.24-phase6b-document-sync-emergency-trace",
+    version: "2026.09.24-phase6b-document-sync-research-v4",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),
