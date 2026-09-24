@@ -2,10 +2,10 @@
 const assert = require("node:assert/strict");
 const engine = require("../clinical-engine.js");
 
-assert.equal(engine.version, "APS-NPH-2026.09.23-r5");
+assert.equal(engine.version, "APS-NPH-2026.09.24-r6");
 assert.equal(engine.MIN_REQUIRED_READINGS, 3);
-assert.equal(engine.GLUCOSE_MIN_MGDL, 1);
-assert.equal(engine.GLUCOSE_MAX_MGDL, 700);
+assert.equal(engine.GLUCOSE_MIN_MGDL, 20);
+assert.equal(engine.GLUCOSE_MAX_MGDL, 600);
 
 const incomplete = engine.assessInsulinSensitivity({ age: 60, bmi: 25 });
 assert.equal(incomplete.factor, 0.1);
@@ -20,7 +20,7 @@ assert.equal(r.dataSufficient, false);
 assert.equal(r.pm, 20);
 assert.equal(r.blocksDoseChange, true);
 
-r = engine.calculateFollowup({ weightKg: 70, regimenType: "pm", amDose: 0, pmDose: 20, fastingValues: [160, 170, 999], targetA1c: 7 });
+r = engine.calculateFollowup({ weightKg: 70, regimenType: "pm", amDose: 0, pmDose: 20, fastingValues: [160, 170, 601], targetA1c: 7 });
 assert.equal(r.inputValid, false);
 assert.equal(r.pm, 20);
 assert.ok(r.validationErrors.some((item) => /inválid/i.test(item)));
