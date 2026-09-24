@@ -122,3 +122,44 @@ test("Inicio muestra el profesional activo enmascarado y permite cambiarlo", asy
   await expect(identity).toContainText("567-4");
   await expect(identity).not.toContainText("1.234.567-4");
 });
+
+
+test("no reutiliza identidad profesional cuando existe un caso clínico parcialmente completado", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => {
+    localStorage.setItem("insulog.professional.rut.daily.v1", JSON.stringify({
+      date: new Date().toISOString().slice(0, 10),
+      rut: "12.345.678-5"
+    }));
+  });
+  await page.reload({ waitUntil: "domcontentloaded" });
+
+  await page.evaluate(() => {
+    const input = document.getElementById("peso-paciente");
+    input.value = "82";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+
+  let message = "";
+  page.once("dialog", async (dialog) => {
+    message = dialog.message();
+    await dialog.accept();
+  });
+  await page.getByRole("button", { name: "CAMBIAR", exact: true }).click();
+
+  expect(message).toContain("Finalice el caso clínico actual");
+  await expect(page.locator("#professional-rut-gate")).toHaveCount(0);
+  await expect(page.locator("#professional-identity-bar")).toContainText("678-5");
+});
+
+test("HGT mayor a 600 no se recorta silenciosamente antes de la validación clínica", async ({ page }) => {
+  await page.goto("/");
+  const value = await page.evaluate(() => {
+    const input = document.createElement("input");
+    input.className = "glicemia";
+    input.value = "601";
+    window.InsulogApp.inputs.handle({ target: input });
+    return input.value;
+  });
+  expect(value).toBe("601");
+});
