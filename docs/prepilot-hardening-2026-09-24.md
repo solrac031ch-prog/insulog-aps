@@ -77,7 +77,7 @@ No iniciar una cohorte prospectiva hasta contar con CEC favorable y autorizació
 
 ## Backups y acceso
 
-Revisión 24-09-2026: la base operativa de Drive está privada, sin permisos `anyone`, dominio ni editores adicionales; el único permiso visible es el propietario. Existen dos copias prepiloto fechadas 24-09-2026 y la base activa conserva historial de revisiones. No se elimina ninguna copia automáticamente.
+Revisión 24-09-2026: la base operativa de Drive está privada, sin permisos `anyone`, dominio ni editores adicionales; el único permiso visible es el propietario. Existen tres copias prepiloto fechadas 24-09-2026 y la base activa conserva historial de revisiones. No se elimina ninguna copia automáticamente.
 
 GitHub: el repositorio no expone rulesets configurados. La consulta de branch protection clásica devuelve 403 para la integración actual, por lo que no puede verificarse ni modificarse desde este flujo. Issue #73 permanece como gate de plataforma hasta configurarlo y probar que un check rojo bloquea el merge.
 
