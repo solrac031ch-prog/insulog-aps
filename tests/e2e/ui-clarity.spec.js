@@ -10,11 +10,19 @@ test("las pantallas de trabajo mantienen una interfaz limpia sin copy redundante
     await expect(label).toHaveClass(/sr-only/);
   }
 
+  await expect(page.locator("#p0 > .page-label")).toHaveClass(/sr-only/);
+  await expect(page.locator("#p0 > .hero-note")).toHaveCount(0);
   await expect(page.locator("#p2 > .lead")).toHaveCount(0);
   await expect(page.locator("#p2 .action-caption")).toHaveCount(0);
+  await expect(page.locator("#p2 .card-helper")).toHaveCount(0);
   await expect(page.locator("#p3 > .lead")).toHaveCount(0);
   await expect(page.locator("#p35 > .lead")).toHaveCount(0);
+  await expect(page.locator("#p35 .aps-context-helper")).toHaveCount(0);
+  await expect(page.locator("#p4 > .lead")).toHaveCount(0);
+  await expect(page.locator("#p4 .followup-dose-help")).toHaveCount(0);
+  await expect(page.locator("#p4 .table-guide span")).toHaveCount(0);
   await expect(page.locator("#p5 > .lead")).toHaveCount(0);
+  await expect(page.locator("#p5 .decision-card .card-title")).toHaveCount(0);
   await expect(page.locator("#p6 .date-row")).toHaveClass(/sr-only/);
 
   await expect(page.locator("#best-professional-review > .helper-text")).toHaveCount(0);
@@ -25,7 +33,7 @@ test("la guía clínica importante permanece visible después de la limpieza", a
 
   await expect(page.locator("#p1")).toContainText("Si presenta alguna de estas condiciones");
   await expect(page.locator("#p2 .alert-warning")).toContainText("glibenclamida");
-  await expect(page.locator("#p4 > .lead")).toContainText("al menos 3 HGT en ayunas");
+  await expect(page.locator("#p4 .table-guide")).toContainText("Registro de glicemias");
   await expect(page.locator("#p41 .alert-danger")).toContainText("≥0,5 UI/kg/día");
-  await expect(page.locator("#p0 .evidence-card")).toContainText("Fuentes clínicas y versión");
+  await expect(page.locator("#p0 .evidence-card")).toContainText("Fuentes y versión");
 });

@@ -10,32 +10,29 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Insulog APS">
-  <link rel="manifest" href="./manifest.webmanifest?v=c90fdf75f6f642ff">
-  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/icon-32.png?v=c90fdf75f6f642ff">
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/icon-180.png?v=c90fdf75f6f642ff">
-  <link rel="stylesheet" href="./styles.css?v=c90fdf75f6f642ff">
-  <link rel="stylesheet" href="./document-flow.css?v=c90fdf75f6f642ff">
-  <link rel="stylesheet" href="./aps-safety-2026.css?v=c90fdf75f6f642ff">
-  <link rel="stylesheet" href="./farmacia-popular.css?v=c90fdf75f6f642ff">
+  <link rel="manifest" href="./manifest.webmanifest?v=beceb072f8462345">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/icon-32.png?v=beceb072f8462345">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/icon-180.png?v=beceb072f8462345">
+  <link rel="stylesheet" href="./styles.css?v=beceb072f8462345">
+  <link rel="stylesheet" href="./document-flow.css?v=beceb072f8462345">
+  <link rel="stylesheet" href="./aps-safety-2026.css?v=beceb072f8462345">
+  <link rel="stylesheet" href="./farmacia-popular.css?v=beceb072f8462345">
   <title>Insulog APS | Insulinización en APS</title>
 </head>
 <body>
   <main class="container" id="app" aria-live="polite">
     <section id="p0" class="page active page-center" aria-hidden="false">
-      <div class="page-label">Apoyo clínico · DM2 en APS</div>
+      <div class="page-label sr-only">Apoyo clínico · DM2 en APS</div>
       <h1 class="brand-title">Insulog APS</h1>
       <p class="brand-subtitle">Insulinización en Atención Primaria de Salud</p>
-      <p class="hero-note">Inicio, seguimiento y ajuste de insulina NPH con una nota clínica lista para la ficha.</p>
-
       <button type="button" class="btn btn-main btn-narrow hero-action" data-action="navigate" data-page="1">INICIAR ALGORITMO</button>
 
-      <div class="author-block">
-        <p class="author-name">Dr. Carlos Herrera Malaver</p>
-        <p class="author-role">Médico Internista</p>
+      <div class="author-block author-signature">
+        <p class="author-name">Dr. Carlos Herrera Malaver <span class="author-separator" aria-hidden="true">·</span> <span class="author-role">Médico Internista</span></p>
       </div>
 
       <details class="card bibliography-card evidence-card">
-        <summary>Fuentes clínicas y versión</summary>
+        <summary>Fuentes y versión</summary>
         <div class="evidence-content">
           <ul>
             <li>Guía ALAD 2019: Diagnóstico y tratamiento de DM2</li>
@@ -93,7 +90,6 @@
       <div id="criterios" class="is-hidden">
         <div class="card card-blue text-left criteria-card">
           <p class="card-title text-center">Datos para orientar el esquema inicial</p>
-          <p class="card-helper">Complete solo los datos disponibles.</p>
           <div class="form-grid">
             <div class="field">
               <label for="hba1c-inicio">HbA1c más reciente (%)</label>
@@ -126,7 +122,6 @@
 
         <div class="card card-red text-left">
           <p class="card-title text-center">Alto riesgo de hipoglicemia</p>
-          <p class="card-helper">Marque las condiciones presentes.</p>
           <div class="selection-grid">
             <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Adulto mayor frágil" data-action="toggle-selection">Adulto mayor frágil</button>
             <button type="button" class="btn selection-btn riesgo-hipo-btn" data-value="Enfermedad renal crónica" data-action="toggle-selection">Enfermedad renal crónica</button>
@@ -175,7 +170,7 @@
       </div>
 
       <details class="card card-blue text-left compact-card guidance-details">
-        <summary>Ver factores</summary>
+        <summary>Factores 0,1–0,3 UI/kg</summary>
         <div class="guidance-content">
           <ul class="compact-list">
             <li><strong>0,1 UI/kg:</strong> mayor riesgo de hipoglicemia o mayor sensibilidad a insulina</li>
@@ -225,7 +220,6 @@
             <span>Vildagliptina 50 mg</span>
           </label>
         </div>
-        <p class="aps-context-helper">Este registro se incorpora a la nota clínica y no modifica automáticamente el cálculo de NPH.</p>
       </div>
 
       <button type="button" class="btn btn-main btn-narrow section-action" data-action="prepare-followup">CONTINUAR AL REGISTRO DE GLICEMIAS</button>
@@ -235,8 +229,6 @@
     <section id="p4" class="page page-center" aria-hidden="true">
       <div class="page-label sr-only">Seguimiento · registro de HGT</div>
       <h2>Seguimiento y ajuste de insulina NPH</h2>
-      <p class="lead">Para ajustar: al menos 3 HGT en ayunas.</p>
-
       <div class="card followup-setup-card">
         <div class="p4-header-grid">
           <div class="field">
@@ -260,12 +252,10 @@
             <input type="text" inputmode="numeric" id="pm-actual" maxlength="3" placeholder="0" autocomplete="off">
           </div>
         </div>
-        <p class="helper-text followup-dose-help">1–150 UI por dosis.</p>
       </div>
 
       <div class="table-guide text-left">
         <strong>Registro de glicemias</strong>
-        <span>Complete solo los días disponibles.</span>
       </div>
 
       <div class="table-wrap">
@@ -352,13 +342,12 @@
       <div class="alert alert-danger text-left">
         <p><strong>⚠️ Dosis basal en umbral de seguridad (≥0,5 UI/kg/día)</strong></p>
         <p>Mantener controles y seguimiento por medicina interna APS.</p>
-        <p><strong>Acciones sugeridas:</strong></p>
         <div class="stack-actions">
-          <button type="button" class="btn action-btn" data-value="Evaluar por nutricionista" data-action="toggle-high-dose-action">1. Evaluar por nutricionista</button>
-          <button type="button" class="btn action-btn" data-value="Evaluar técnica de administración de insulina por enfermería" data-action="toggle-high-dose-action">2. Evaluar técnica de administración de insulina por enfermería</button>
-          <button type="button" class="btn action-btn" data-value="Evaluar uso y almacenamiento de insulina por químico farmacéutico" data-action="toggle-high-dose-action">3. Evaluar uso y almacenamiento de insulina por químico farmacéutico</button>
-          <button type="button" class="btn action-btn" data-value="Derivar a Telediabetología" data-action="toggle-high-dose-action">4. Derivar a Telediabetología</button>
-          <button type="button" class="btn action-btn" data-value="Derivar a diabetología nivel secundario" data-action="toggle-high-dose-action">5. Derivar a diabetología nivel secundario</button>
+          <button type="button" class="btn action-btn" data-value="Evaluar por nutricionista" data-action="toggle-high-dose-action">Evaluar por nutricionista</button>
+          <button type="button" class="btn action-btn" data-value="Evaluar técnica de administración de insulina por enfermería" data-action="toggle-high-dose-action">Evaluar técnica de administración de insulina por enfermería</button>
+          <button type="button" class="btn action-btn" data-value="Evaluar uso y almacenamiento de insulina por químico farmacéutico" data-action="toggle-high-dose-action">Evaluar uso y almacenamiento de insulina por químico farmacéutico</button>
+          <button type="button" class="btn action-btn" data-value="Derivar a Telediabetología" data-action="toggle-high-dose-action">Derivar a Telediabetología</button>
+          <button type="button" class="btn action-btn" data-value="Derivar a diabetología nivel secundario" data-action="toggle-high-dose-action">Derivar a diabetología nivel secundario</button>
         </div>
       </div>
 
@@ -375,7 +364,6 @@
       <div id="copy-status" class="copy-status" role="status" aria-live="polite"></div>
 
       <div class="card decision-card">
-        <p class="card-title">Siguiente paso</p>
         <div class="decision-actions">
           <button type="button" class="btn btn-main" data-action="open-document" data-document-type="seguimiento">SEGUIMIENTO Y AJUSTE</button>
           <button type="button" class="btn btn-success" data-action="open-document" data-document-type="pscv">CONTROL EN PROGRAMA CV</button>
@@ -385,7 +373,7 @@
 
     <section id="p6" class="page page-center pdf-preparation-page" aria-hidden="true">
       <div class="page-label sr-only no-print">Documento · datos del paciente</div>
-      <h2 class="no-print">Prepare el documento para entregar</h2>
+      <h2 class="no-print">Documento para el paciente</h2>
 
       <div class="field patient-field no-print">
         <label for="nombre-paciente">Nombre del paciente</label>
@@ -410,7 +398,7 @@
 
     <section id="p7" class="page pdf-preview-page" aria-hidden="true">
       <div class="page-label sr-only no-print">Documento · vista previa</div>
-      <h2 class="no-print text-center">Documento listo para imprimir</h2>
+      <h2 class="no-print text-center">Vista previa del documento</h2>
 
       <div class="pdf-preview-toolbar no-print">
         <button type="button" class="btn" data-action="back-document">VOLVER / CAMBIAR DATOS</button>
@@ -419,26 +407,26 @@
       </div>
 
       <div class="pdf-preview-frame-shell no-print">
-        <iframe id="pdf-preview-frame" class="pdf-preview-frame" src="./pdf-preview.html?v=c90fdf75f6f642ff" title="Vista previa del documento del paciente" aria-busy="true"></iframe>
+        <iframe id="pdf-preview-frame" class="pdf-preview-frame" src="./pdf-preview.html?v=beceb072f8462345" title="Vista previa del documento del paciente" aria-busy="true"></iframe>
       </div>
     </section>
   </main>
 
   <div id="pdf" class="imprimible-container pdf-render-staging" aria-hidden="true"></div>
 
-  <script src="./app-runtime.js?v=c90fdf75f6f642ff"></script>
-  <script src="./clinical-engine.js?v=c90fdf75f6f642ff"></script>
-  <script src="./clinical-copy.js?v=c90fdf75f6f642ff"></script>
-  <script src="./note-presenter.js?v=c90fdf75f6f642ff"></script>
-  <script src="./app.js?v=c90fdf75f6f642ff"></script>
-  <script src="./safety-guard.js?v=c90fdf75f6f642ff"></script>
-  <script src="./patient-document.js?v=c90fdf75f6f642ff"></script>
-  <script src="./pdf-enhancements.js?v=c90fdf75f6f642ff"></script>
-  <script src="./aps-safety-2026.js?v=c90fdf75f6f642ff"></script>
-  <script src="./farmacia-popular.js?v=c90fdf75f6f642ff"></script>
-  <script src="./document-flow.js?v=c90fdf75f6f642ff"></script>
-  <script src="./app-shell.js?v=c90fdf75f6f642ff"></script>
-  <script src="./phase6b-professional-decision.js?v=c90fdf75f6f642ff"></script>
-  <script src="./phase6b-document-sync.js?v=c90fdf75f6f642ff"></script>
+  <script src="./app-runtime.js?v=beceb072f8462345"></script>
+  <script src="./clinical-engine.js?v=beceb072f8462345"></script>
+  <script src="./clinical-copy.js?v=beceb072f8462345"></script>
+  <script src="./note-presenter.js?v=beceb072f8462345"></script>
+  <script src="./app.js?v=beceb072f8462345"></script>
+  <script src="./safety-guard.js?v=beceb072f8462345"></script>
+  <script src="./patient-document.js?v=beceb072f8462345"></script>
+  <script src="./pdf-enhancements.js?v=beceb072f8462345"></script>
+  <script src="./aps-safety-2026.js?v=beceb072f8462345"></script>
+  <script src="./farmacia-popular.js?v=beceb072f8462345"></script>
+  <script src="./document-flow.js?v=beceb072f8462345"></script>
+  <script src="./app-shell.js?v=beceb072f8462345"></script>
+  <script src="./phase6b-professional-decision.js?v=beceb072f8462345"></script>
+  <script src="./phase6b-document-sync.js?v=beceb072f8462345"></script>
 </body>
 </html>
