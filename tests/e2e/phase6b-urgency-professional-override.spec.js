@@ -149,3 +149,51 @@ test("nivel 3 con causa reversible deja la dosis a ajuste médico y deshabilita 
   expect(state.level3AutomaticRecommendation).toBe(false);
   expect(state.level3RequiresMedicalAdjustment).toBe(true);
 });
+
+
+test("crisis hiperglicémica permite documentar derivación sin inventar una dosis de NPH", async ({ page }) => {
+  await page.goto("/?driveEndpoint=https%3A%2F%2Fscript.google.com%2Fmacros%2Fs%2FTEST-ENDPOINT-123456%2Fexec");
+  await page.locator("#p0").getByRole("button", { name: "INICIAR ALGORITMO", exact: true }).click();
+  await page.locator("#p1").getByRole("button", { name: "NO", exact: true }).click();
+  await page.locator("#p2").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
+
+  await page.locator("#hba1c-inicio").fill("12");
+  await page.locator("#glicemia-ayunas-inicio").fill("280");
+  await page.locator("#glicemia-casual-inicio").fill("350");
+  await page.locator("#vfg-inicio").fill("90");
+  await page.locator('.catabolico-btn[data-value*="cetosis"]').click();
+  await page.locator("#p2").getByRole("button", { name: "SIGUIENTE: DOSIFICACIÓN", exact: true }).click();
+
+  await expectActivePage(page, "p5");
+  await expect(page.locator("#nota-clinica")).toContainText("POSIBLE CRISIS HIPERGLICÉMICA / CETOSIS");
+  await expect(page.locator("#best-review-accept")).toHaveText("DERIVAR A URGENCIA SIN PAUTA");
+  await expect(page.locator("#best-review-accept")).toBeEnabled();
+
+  await page.locator("#best-review-accept").click();
+  const state = await page.evaluate(() => window.InsulogRuntime.state.snapshot());
+  expect(state.professionalDecision).toBe("aceptada");
+  expect(state.professionalAm).toBeNull();
+  expect(state.professionalPm).toBeNull();
+  await expect(page.locator("#nota-clinica")).toContainText("No se emite una nueva pauta ambulatoria de NPH");
+
+  await page.locator("#p5").getByRole("button", { name: "SEGUIMIENTO Y AJUSTE", exact: true }).click();
+  await expectActivePage(page, "p6");
+  await page.locator("#nombre-paciente").fill("Paciente crisis QA");
+  await page.locator("#fecha-nacimiento-paciente").fill("1980-10-10");
+
+  const requestPromise = page.waitForRequest((request) =>
+    request.method() === "POST" && request.url().includes("script.google.com/macros/s/TEST-ENDPOINT-123456/exec")
+  );
+  await page.locator("#p6").getByRole("button", { name: "INICIO DE INSULINA", exact: true }).click();
+  const request = await requestPromise;
+  const payload = JSON.parse(request.postData());
+
+  expect(payload.hyperglycemicEmergency).toBe(true);
+  expect(payload.urgencyRoute).toBe(true);
+  expect(payload.professionalDecision).toBe("Aceptada");
+  expect(payload.recommendationText).toBe("Ruta de urgencia: sin titulación automática de NPH");
+  expect(payload.recommendedTotal).toBeNull();
+  expect(payload.finalTotal).toBeNull();
+  expect(payload.initiationFasting).toBe(280);
+  expect(payload.initiationCasual).toBe(350);
+});

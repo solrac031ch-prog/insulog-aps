@@ -38,6 +38,10 @@
     return /HIPOGLICEMIA NIVEL 3|CRISIS HIPERGLIC[EÉ]MICA|CETOSIS/i.test(rawClinicalNote());
   }
 
+  function isHyperglycemicEmergency() {
+    return /CRISIS HIPERGLIC[EÉ]MICA|CETOSIS/i.test(rawClinicalNote());
+  }
+
   function currentWeightInput() {
     const inicio = document.getElementById("peso-paciente");
     const seguimiento = document.getElementById("peso-seguimiento");
@@ -479,6 +483,8 @@
     const hba1c = tipo === "inicio"
       ? safeNumber(document.getElementById("hba1c-inicio")?.value)
       : safeNumber(document.getElementById("hba1c-control")?.value);
+    const initiationFasting = tipo === "inicio" ? safeNumber(document.getElementById("glicemia-ayunas-inicio")?.value) : null;
+    const initiationCasual = tipo === "inicio" ? safeNumber(document.getElementById("glicemia-casual-inicio")?.value) : null;
     const egfr = tipo === "inicio" ? safeNumber(document.getElementById("vfg-inicio")?.value) : null;
     const targetA1c = tipo === "seguimiento"
       ? safeNumber(document.getElementById("meta-hba1c-seguimiento")?.value) ?? safeNumber(data.targetA1c)
@@ -506,6 +512,7 @@
     }
     const note = rawClinicalNote();
     const urgencyRoute = isUrgencyRoute();
+    const hyperglycemicEmergency = isHyperglycemicEmergency();
     const urgencyAccepted = urgencyRoute && data.professionalDecision === "aceptada";
     const level3Automatic = urgencyRoute && data.level3AutomaticRecommendation === true;
     const urgencyAcceptedWithoutDose = urgencyAccepted && !level3Automatic;
@@ -520,6 +527,7 @@
       urgencyAcceptedWithoutDose ? "urgency-no-dose" : "",
       data.level3Timing || "", data.level3ReversibleCause || "",
       finalAm ?? "", finalPm ?? "", hba1c ?? "", targetA1c ?? "",
+      initiationFasting ?? "", initiationCasual ?? "", hyperglycemicEmergency ? "hyperglycemic-emergency" : "",
       fastingValues.join(","), preLunchValues.join(","),
       initiationSuggestedScheme, initiationSuggestedFactor ?? "",
       initiationAppliedScheme, initiationAppliedFactor ?? "",
@@ -542,6 +550,8 @@
       controlKind: controlKind(tipo, data),
       weightKg: weight,
       hba1c,
+      initiationFasting,
+      initiationCasual,
       egfr,
       targetA1c,
       initiationSuggestedScheme,
@@ -580,6 +590,8 @@
       concomitantTreatment: medication.text,
       concomitantMedications: medication.medications,
       urgencyRoute,
+      hyperglycemicEmergency,
+      emergencyReason: hyperglycemicEmergency ? note : "",
       level3Timing: String(data.level3Timing || ""),
       level3ReversibleCause: String(data.level3ReversibleCause || ""),
       level3SevereNeurologic: Boolean(data.level3SevereNeurologic),
@@ -691,7 +703,7 @@
   }
 
   window.InsulogPhase6BDocumentSync = Object.freeze({
-    version: "2026.09.23-phase6b-document-sync-initiation-trace",
+    version: "2026.09.24-phase6b-document-sync-emergency-trace",
     configureDriveEndpoint,
     driveStatus: () => Object.freeze({
       configured: Boolean(configuredDriveEndpoint()),
