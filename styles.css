@@ -1130,3 +1130,184 @@ footer p {
     transition: none;
   }
 }
+
+
+/* Professional session — compact operational identity */
+.professional-identity-bar {
+  width: min(calc(100% - 24px), 620px);
+  margin: 14px auto 8px;
+}
+
+.professional-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 13px 15px;
+  border: 1px solid #d9e4f2;
+  border-radius: 16px;
+  background: #f8fbff;
+  box-shadow: 0 6px 18px rgba(20, 67, 126, .06);
+  text-align: left;
+}
+
+.professional-card.compact {
+  justify-content: flex-start;
+}
+
+.professional-card__main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.professional-card__title {
+  color: #6b7f9e;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.professional-card__row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.professional-card__rut {
+  padding: 6px 10px;
+  border: 1px solid #d5e2f1;
+  border-radius: 10px;
+  background: #fff;
+  color: #0f4c97;
+  font-size: .95rem;
+  font-weight: 800;
+}
+
+.professional-card__status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.professional-card__status.ok {
+  border: 1px solid #bfe3cb;
+  background: #eaf8ef;
+  color: #18794e;
+}
+
+.professional-card__status.warning {
+  border: 1px solid #ecd29a;
+  background: #fff7e8;
+  color: #9a6a14;
+}
+
+.professional-card__status.error {
+  border: 1px solid #efc6c6;
+  background: #fff1f1;
+  color: #a33636;
+}
+
+.professional-card__status.sent {
+  border: 1px solid #cbdcf6;
+  background: #eef5ff;
+  color: #185699;
+}
+
+.professional-card__message {
+  color: #4b6487;
+  font-size: .76rem;
+  font-weight: 650;
+}
+
+.professional-card__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.professional-btn {
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid #c8d8ec;
+  border-radius: 10px;
+  background: #fff;
+  color: #185699;
+  font: inherit;
+  font-size: .75rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, transform .15s ease;
+}
+
+.professional-btn:hover {
+  background: #f2f7fd;
+  border-color: #a9c5e6;
+  transform: translateY(-1px);
+}
+
+.professional-btn:focus-visible {
+  outline: 3px solid rgba(29,111,217,.2);
+  outline-offset: 2px;
+}
+
+.professional-btn.danger {
+  color: #a33636;
+  border-color: #efc8c8;
+}
+
+.professional-btn.danger:hover {
+  background: #fff4f4;
+  border-color: #e3aaaa;
+}
+
+.insulog-operational-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 100001;
+  max-width: min(420px, calc(100vw - 40px));
+  padding: 12px 15px;
+  border-radius: 12px;
+  background: #173d73;
+  color: #fff;
+  box-shadow: 0 16px 40px rgba(15,23,42,.22);
+  font-size: .84rem;
+  font-weight: 750;
+  line-height: 1.35;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.insulog-operational-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.insulog-operational-toast.is-success { background: #176b45; }
+.insulog-operational-toast.is-warning { background: #966114; }
+.insulog-operational-toast.is-error { background: #a33636; }
+
+@media (max-width: 640px) {
+  .professional-identity-bar {
+    width: min(calc(100% - 24px), 560px);
+  }
+
+  .professional-card {
+    gap: 10px;
+    padding: 12px 13px;
+  }
+
+  .professional-card__actions {
+    margin-left: auto;
+  }
+}
