@@ -41,9 +41,27 @@
     const catabolicos = all(".catabolico-btn.seleccionada").map((control) => control.dataset.value);
     const riesgoHipo = all(".riesgo-hipo-btn.seleccionada").map((control) => control.dataset.value);
 
+    if (Number.isFinite(ayunas) && (ayunas < 20 || ayunas > 600)) {
+      alert("La glicemia de ayuno debe estar entre 20 y 600 mg/dL.");
+      return undefined;
+    }
+    if (Number.isFinite(casual) && (casual < 20 || casual > 700)) {
+      alert("La glicemia casual debe estar entre 20 y 700 mg/dL.");
+      return undefined;
+    }
+
     const decision = clinicalEngine.suggestInitialScheme({
       hba1c, fasting: ayunas, casual, initiationCriteria: inicio, catabolic: catabolicos,
       hypoRisk: riesgoHipo, age, bmi, egfr
+    });
+
+    state.patch({
+      edadInicio: Number.isFinite(age) ? age : null,
+      imcInicio: Number.isFinite(bmi) ? bmi : null,
+      vfgInicio: Number.isFinite(egfr) ? egfr : null,
+      inicioCriteriosSeleccionados: [...inicio],
+      catabolicosSeleccionados: [...catabolicos],
+      riesgoHipoSeleccionado: [...riesgoHipo]
     });
 
     if (decision.emergency) {
@@ -210,6 +228,11 @@
       amActual: resultado.amActual, pmActual: resultado.pmActual, am: resultado.am, pm: resultado.pm,
       promAy: resultado.promAy, promPre: resultado.promPre, minAy: resultado.minAy, minPre: resultado.minPre,
       promedioGlobal: resultado.promedioGlobal, dosisKg: resultado.dosisKg, targetA1c: resultado.targetA1c,
+      currentDosePerKg: resultado.currentDosePerKg,
+      doseSafetyLevel: resultado.doseSafety?.level || "",
+      doseSafetyWarning: resultado.doseSafety?.warning || "",
+      automaticEscalationBlocked: Boolean(resultado.automaticEscalationBlocked),
+      blocksAutomaticEscalation: Boolean(resultado.blocksAutomaticEscalation),
       acciones: "", explicacion: resultado.explicacion
     });
 
@@ -300,7 +323,7 @@
 
   function handleInput(event) {
     const target = event.target;
-    if (target.matches(".glicemia")) sanitizeNumericInput(target, 3, 999);
+    if (target.matches(".glicemia")) sanitizeNumericInput(target, 3, 600);
     if (target.id === "am-actual" || target.id === "pm-actual") sanitizeNumericInput(target, 3, 150);
     if (target.id === "peso-paciente" || target.id === "peso-seguimiento") { if (Number(target.value) > 300) target.value = "300"; }
   }
@@ -319,8 +342,8 @@
   actions.register("finish", finalizar);
 
   window.InsulogApp = Object.freeze({
-    version: "2026.09.23-clinical-r5",
-    clinicalVersion: "APS-NPH-2026.09.23-r5",
+    version: "2026.09.24-clinical-r6",
+    clinicalVersion: "APS-NPH-2026.09.24-r6",
     notes: Object.freeze({ render: renderNotaClinica }),
     inputs: Object.freeze({ handle: handleInput }),
     text: Object.freeze({ escapeHTML: notePresenter.escapeHTML })
