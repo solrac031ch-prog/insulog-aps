@@ -12,10 +12,10 @@
     8.5: Object.freeze({ hba1c: 8.5, lower: 100, upper: 160, high10: 220 })
   });
 
-  const CLINICAL_ENGINE_VERSION = "APS-NPH-2026.09.23-r5";
+  const CLINICAL_ENGINE_VERSION = "APS-NPH-2026.09.24-r6";
   const MIN_REQUIRED_READINGS = 3;
-  const GLUCOSE_MIN_MGDL = 1;
-  const GLUCOSE_MAX_MGDL = 700;
+  const GLUCOSE_MIN_MGDL = 20;
+  const GLUCOSE_MAX_MGDL = 600;
 
   function normalizeGlucoseValues(values = []) {
     const valid = [];
@@ -123,7 +123,7 @@
       reason = "Alto riesgo o mayor sensibilidad a insulina; se sugiere dosis menor, ajuste progresivo y control precoz.";
     }
 
-    const suggestedFactor = conservativeStart ? 0.1 : (markedHyperglycemia ? 0.3 : 0.2);
+    const suggestedFactor = conservativeStart ? 0.1 : (markedHyperglycemia && scheme === "doble_dosis" ? 0.3 : 0.2);
 
     return Object.freeze({
       emergency: false, emergencyReason: "", criteria, criteriaText: criteria.join(", "), patientPreference,
