@@ -1,7 +1,7 @@
 "use strict";
 
 (() => {
-  const EXPECTED_CLINICAL_VERSION = "APS-NPH-2026.09.23-r5";
+  const EXPECTED_CLINICAL_VERSION = "APS-NPH-2026.09.24-r6";
   const CRITICAL_ACTIONS = new Set([
     "define-initial-scheme", "calculate-initial", "calculate-followup", "generate-high-dose-note",
     "best-review-accept", "best-review-modify-save", "best-review-reassess",
@@ -80,7 +80,7 @@
   }
 
   window.InsulogSafetyGuard = Object.freeze({
-    version: "2026.09.23-safety3-r5",
+    version: "2026.09.24-safety4-r6",
     expectedClinicalVersion: EXPECTED_CLINICAL_VERSION,
     selfTest, reportActionError,
     isLocked: () => locked,
