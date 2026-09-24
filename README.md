@@ -96,7 +96,7 @@ npm run verify
 
 El service worker no usa `skipWaiting()` ni `clients.claim()`: una atención ya abierta conserva un release coherente hasta que el worker anterior deja de controlar clientes.
 
-Release técnico vigente para Clinical r2: **`37f338f5e4547993`**.
+El fingerprint técnico vigente se genera automáticamente con `npm run release:write` y debe coincidir entre `index.html`, `pdf-preview.html` y `sw.js`.
 
 ## Cambios visuales
 
@@ -104,9 +104,9 @@ Release técnico vigente para Clinical r2: **`37f338f5e4547993`**.
 
 ## Cambios clínicos
 
-La versión clínica vigente es **`APS-NPH-2026.09.14-r2`** y vive en `clinical-protocol.json`.
+La versión clínica vigente es **`APS-NPH-2026.09.24-r6`** y vive en `clinical-protocol.json`.
 
-El baseline r2 alinea el motor con la Vía Clínica DM2 MINSAL 2026, el protocolo MINSAL de insulinización NPH y la capa de seguridad/hipoglicemia ADA 2026. Las adaptaciones locales deliberadas están declaradas en `clinical-protocol.json`.
+El baseline r6 alinea el motor con la Vía Clínica DM2 MINSAL 2026, el protocolo MINSAL de insulinización NPH y la capa de seguridad/hipoglicemia ADA 2026. Las adaptaciones locales deliberadas están declaradas en `clinical-protocol.json`.
 
 No modificar de forma incidental `clinical-engine.js`, umbrales o resultados esperados. Un cambio clínico debe:
 
@@ -134,6 +134,8 @@ La emulación cross-browser no reemplaza dispositivos físicos. El protocolo de 
 - Fase 10C: reproducibilidad de mantenimiento y documentación operativa.
 - Fase 11A: versionado explícito y gobernanza del protocolo clínico.
 - Fase 11B: generación de notas clínicas separada del DOM con regresión exacta.
-- Clinical r2: alineación MINSAL 2026/ADA 2026, titulación porcentual, metas individualizadas y guardrails de urgencia/dosis basal.
+- Clinical r6: alineación MINSAL 2026/ADA 2026, titulación porcentual, metas individualizadas, guardrails de urgencia/dosis basal y sugerencia automática de 0,3 UI/kg reservada a doble dosis.
+- Prepiloto: identificación visible/cambiable del profesional en equipos compartidos y dataset pseudonimizado `CasosRaw` append-only por aplicación.
+- Fase 9B: sigue pendiente la aceptación en iPhone y Android físicos; CI móvil no reemplaza esa evidencia.
 
 Para el detalle y la deuda técnica vigente, revisar [`docs/engineering-baseline.md`](docs/engineering-baseline.md), [`docs/phase11a-clinical-protocol-versioning.md`](docs/phase11a-clinical-protocol-versioning.md) y [`docs/phase11b-clinical-copy.md`](docs/phase11b-clinical-copy.md).
