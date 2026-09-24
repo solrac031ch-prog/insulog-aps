@@ -12,7 +12,8 @@ Versión clínica objetivo de esta fase: `APS-NPH-2026.09.24-r6`.
 
 - La pantalla de inicio muestra el profesional activo con RUT enmascarado.
 - Existen acciones explícitas `CAMBIAR` y `CERRAR SESIÓN`.
-- No se permite cambiar de profesional cuando existe un caso clínico activo; primero debe finalizarse el caso.
+- No se permite cambiar de profesional cuando existe un caso clínico activo, incluso si solo hay campos o selecciones parcialmente completados; primero debe finalizarse o descartarse el caso.
+- Al cambiar/cerrar profesional se invalida también el identificador de registro en memoria, evitando reutilizar un `recordId` entre identidades.
 - El RUT diario sigue siendo identificación operativa, no autenticación criptográfica.
 
 ### Dataset de investigación y auditoría
@@ -26,10 +27,13 @@ Versión clínica objetivo de esta fase: `APS-NPH-2026.09.24-r6`.
 - identificadores de estudio pseudonimizados de paciente y profesional.
 
 Se añade `CasosRaw`, destinado a una traza append-only del payload clínico pseudonimizado:
-- no contiene nombre, fecha de nacimiento ni RUT;
+- se construye desde una allowlist de variables estructuradas, no desde una copia del payload identificable;
+- no contiene nombre, fecha de nacimiento, RUT ni texto libre clínico/profesional;
+- conserva indicadores estructurados de si existió motivo libre y códigos de razones de bloqueo;
 - usa IDs de estudio HMAC estables generados en servidor;
 - conserva versiones del motor/sincronización;
-- registra SHA-256 del payload y una cadena de hashes entre filas para detectar alteraciones posteriores.
+- registra SHA-256 del payload y una cadena de hashes entre filas para detectar alteraciones posteriores;
+- un reintento de un `recordId` existente puede reparar `CasosRaw` o eventos automáticos faltantes sin duplicarlos.
 
 `Pacientes` y `Controles` continúan siendo las tablas operativas identificadas. `CasosRaw` no reemplaza la gobernanza de acceso ni un plan formal de investigación.
 
@@ -42,7 +46,7 @@ La recomendación automática queda alineada con la matriz MINSAL:
 
 ### Rango de glicemias de seguimiento
 
-UI, motor y backend usan 20–600 mg/dL para las series de seguimiento. Un valor fuera de rango bloquea la titulación automática en vez de ser ignorado silenciosamente.
+UI, motor y backend usan 20–600 mg/dL para las series de seguimiento. La interfaz conserva el valor digitado fuera de rango (por ejemplo 601) para que el motor lo rechace explícitamente; no lo recorta silenciosamente a 600.
 
 ## Pendientes deliberados
 
@@ -62,13 +66,20 @@ La compatibilidad automatizada WebKit/Chromium sigue siendo un guardrail, no una
 - offline tras cierre/reapertura;
 - al menos una transición real entre releases.
 
-### Ética y gobernanza
+### Ética, consentimiento, gobernanza y regulación
 
-No iniciar una cohorte prospectiva identificable hasta definir protocolo/CEC, consentimiento o dispensa que corresponda, roles de acceso, retención, exportación pseudonimizada y encuadre regulatorio institucional.
+El gate prospectivo se formaliza en:
+- `docs/prospective-research-gate-2026-09-24.md`;
+- `docs/consentimiento-investigacion-template.md`;
+- `docs/regulatory-position-chile-2026-09-24.md`.
+
+No iniciar una cohorte prospectiva hasta contar con CEC favorable y autorización institucional, consentimiento final aprobado cuando corresponda, gobernanza de acceso/retención, 9B físico PASS, bridge autenticado para los participantes y criterio regulatorio documentado.
 
 ## Backups y acceso
 
-La base operativa debe mantenerse privada en Drive. Antes de esta fase se realiza una copia de respaldo pre-piloto. Las copias no reemplazan el historial de versiones de Drive ni una política periódica de respaldo.
+Revisión 24-09-2026: la base operativa de Drive está privada, sin permisos `anyone`, dominio ni editores adicionales; el único permiso visible es el propietario. Existen dos copias prepiloto fechadas 24-09-2026 y la base activa conserva historial de revisiones. No se elimina ninguna copia automáticamente.
+
+GitHub: el repositorio no expone rulesets configurados. La consulta de branch protection clásica devuelve 403 para la integración actual, por lo que no puede verificarse ni modificarse desde este flujo. Issue #73 permanece como gate de plataforma hasta configurarlo y probar que un check rojo bloquea el merge.
 
 ## Regla de interpretación
 
