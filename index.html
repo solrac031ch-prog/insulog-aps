@@ -381,18 +381,15 @@
       <button type="button" class="btn btn-success btn-narrow section-action" data-action="copy-note">COPIAR NOTA A FICHA CLÍNICA</button>
       <div id="copy-status" class="copy-status" role="status" aria-live="polite"></div>
 
-      <div class="card decision-card">
-        <p class="card-title">Siguiente paso</p>
-        <div class="decision-actions">
-          <button type="button" class="btn btn-main" data-action="open-document" data-document-type="seguimiento">SEGUIMIENTO Y AJUSTE</button>
-          <button type="button" class="btn btn-success" data-action="open-document" data-document-type="pscv">CONTROL EN PROGRAMA CV</button>
-        </div>
+      <div class="decision-actions note-next-actions">
+        <button type="button" class="btn btn-main" data-action="open-document" data-document-type="seguimiento">SEGUIMIENTO Y AJUSTE</button>
+        <button type="button" class="btn btn-success" data-action="open-document" data-document-type="pscv">CONTROL EN PROGRAMA CV</button>
       </div>
     </section>
 
     <section id="p6" class="page page-center pdf-preparation-page" aria-hidden="true">
       <div class="page-label sr-only no-print">Documento · datos del paciente</div>
-      <h2 class="no-print">Prepare el documento para entregar</h2>
+      <h2 class="no-print">Datos del paciente</h2>
 
       <div class="field patient-field no-print">
         <label for="nombre-paciente">Nombre del paciente</label>
