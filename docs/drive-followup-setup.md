@@ -8,7 +8,7 @@ Registrar automáticamente cada documento clínico emitido por Insulog en la bas
 
 - Propietario: `mdcarlosherrera@gmail.com`
 - Spreadsheet ID: `1WTDqnaHgwX_7OdgxW0C7WIC6Up3dcxOcmKhObHw9La4`
-- Hojas utilizadas: `Pacientes`, `Controles`, `Eventos`, `Diccionario`
+- Hojas utilizadas: `Pacientes`, `Controles`, `Eventos`, `Diccionario`, `CasosRaw`
 - Carpeta del proyecto: `Insulog APS - Seguimiento y Validación`
 - Los identificadores `patient_id`, `control_id` y `event_id` son generados automáticamente.
 
@@ -88,3 +88,12 @@ Cada emisión clínica tiene un `recordId` técnico. El backend rechaza reintent
 ## Identidad y análisis longitudinal
 
 La identificación clínica utiliza nombre normalizado + fecha de nacimiento y el backend asigna un `patient_id` interno. Los medicamentos concomitantes se guardan en `Controles`, no como atributo fijo de `Pacientes`, porque pueden cambiar entre visitas. Esto permite reconstruir la exposición terapéutica de cada control sin perder la situación basal.
+
+
+## Auditoría pre-piloto 2026-09-24
+
+- `CasosRaw` es un registro append-only para reproducibilidad. Guarda un payload pseudonimizado por control y no conserva nombre, fecha de nacimiento ni RUT profesional en el JSON crudo.
+- Los identificadores de estudio de paciente y profesional se derivan en el servidor con HMAC-SHA256 y una sal secreta mantenida en Script Properties.
+- `Controles` incorpora variables estructuradas de investigación: glicemias iniciales, edad, IMC, criterios/síntomas/riesgo de hipoglicemia, HGT mínimo, UI/kg y trazabilidad de bloqueos de escalamiento.
+- En equipos compartidos, Inicio muestra el profesional activo enmascarado y permite `CAMBIAR PROFESIONAL` o `CERRAR SESIÓN`.
+- La autorización por lista de RUT y la sustitución del endpoint anónimo se implementarán cuando esté definida la nómina de profesionales participantes.
