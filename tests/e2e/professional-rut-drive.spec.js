@@ -111,7 +111,7 @@ test("Inicio muestra el profesional activo enmascarado y permite cambiarlo", asy
 
   const identity = page.locator("#professional-identity-bar");
   await expect(identity).toBeVisible();
-  await expect(identity).toContainText("Sesión profesional");
+  await expect(identity).toContainText("Profesional");
   await expect(identity).toContainText("Activo");
   await expect(identity).not.toContainText("Profesional activo");
   await expect(identity).not.toContainText("Registro operativo activo");
@@ -185,6 +185,8 @@ test("la sesión profesional expone estado operativo claro y responsive", async 
   await expect(identity).toBeVisible();
   await expect(identity.locator(".professional-card__rut")).toContainText("678-5");
   await expect(identity.locator(".professional-card__status")).toContainText("Activo");
+  await expect(identity.locator(".professional-card")).toHaveClass(/card/);
+  await expect(identity.getByRole("button", { name: "Cambiar", exact: true })).toHaveClass(/btn/);
   await expect(identity.locator("#professional-operational-status")).toHaveCount(0);
   await expect(identity).not.toContainText("Base clínica habilitada");
 
