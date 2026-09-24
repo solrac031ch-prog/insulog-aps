@@ -88,3 +88,20 @@ Cada emisión clínica tiene un `recordId` técnico. El backend rechaza reintent
 ## Identidad y análisis longitudinal
 
 La identificación clínica utiliza nombre normalizado + fecha de nacimiento y el backend asigna un `patient_id` interno. Los medicamentos concomitantes se guardan en `Controles`, no como atributo fijo de `Pacientes`, porque pueden cambiar entre visitas. Esto permite reconstruir la exposición terapéutica de cada control sin perder la situación basal.
+
+
+## Prepiloto 2026-09-24 — trazabilidad de investigación
+
+La versión de bridge `2026.09.24-drive-v4` / schema `2026.09.24-schema-v10` añade:
+
+- identificación visible del profesional activo en la portada, con acción `CAMBIAR PROFESIONAL` para equipos compartidos;
+- campos estructurados de inicio (glicemias, edad, IMC, criterios, síntomas y riesgo de hipoglicemia);
+- dosis actual/final en UI/kg/día, nivel de seguridad, bloqueo de escalamiento y motivo;
+- hoja `CasosRaw`, creada por el bridge, que recibe un registro append-only por aplicación;
+- `CasosRaw` no contiene nombre, fecha de nacimiento ni RUT en texto plano: usa identificadores pseudonimizados estables generados en el servidor y conserva un SHA-256 del JSON pseudonimizado para auditoría.
+
+El bridge v4 mantiene compatibilidad temporal de escritura con v3 durante el despliegue para no perder casos si un navegador conserva el release anterior mientras Apps Script ya fue actualizado.
+
+### Seguridad pendiente para piloto multiusuario
+
+El web app sigue desplegado con acceso anónimo mientras se define la nómina de profesionales participantes. El RUT valida formato y trazabilidad, pero no autentica identidad. Antes de abrir la recolección prospectiva a múltiples médicos debe reemplazarse por autenticación/autorización real y confirmación verificable de escritura.
