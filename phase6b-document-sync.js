@@ -251,8 +251,57 @@
   }
 
   function hasActiveClinicalCase() {
-    return Boolean(String(rawClinicalNote()).trim()
-      || String(document.getElementById("nombre-paciente")?.value || "").trim());
+    if (String(rawClinicalNote()).trim()) return true;
+
+    const valueSelectors = [
+      "#nombre-paciente",
+      "#fecha-nacimiento-paciente",
+      "#peso-paciente",
+      "#hba1c-inicio",
+      "#glicemia-ayunas-inicio",
+      "#glicemia-casual-inicio",
+      "#vfg-inicio",
+      "#edad-inicio",
+      "#imc-inicio",
+      "#peso-seguimiento",
+      "#am-actual",
+      "#pm-actual",
+      "#hba1c-control",
+      "#tabla-seguimiento .ay",
+      "#tabla-seguimiento .pre"
+    ];
+    const hasEnteredValue = valueSelectors.some((selector) =>
+      Array.from(document.querySelectorAll(selector)).some((input) => String(input.value || "").trim())
+    );
+    if (hasEnteredValue) return true;
+
+    if (document.querySelector(".inicio-btn.seleccionada, .aceptacion-btn.seleccionada, .catabolico-btn.seleccionada, .riesgo-hipo-btn.seleccionada")) {
+      return true;
+    }
+
+    const snapshot = state.snapshot();
+    const meaningfulStateKeys = [
+      "professionalDecision",
+      "esquemaInicio",
+      "factorInicioAplicado",
+      "esquemaInicioSugerido",
+      "factorInicioSugerido",
+      "amActual",
+      "pmActual",
+      "professionalAm",
+      "professionalPm",
+      "promAy",
+      "promPre",
+      "level3Timing",
+      "level3ImplicatedDose",
+      "level3AutomaticRecommendation",
+      "automaticEscalationBlocked",
+      "blocksAutomaticEscalation"
+    ];
+    return meaningfulStateKeys.some((key) => {
+      const value = snapshot[key];
+      return value !== undefined && value !== null && value !== "" && value !== false && value !== 0;
+    });
   }
 
   function renderProfessionalIdentity() {
@@ -286,6 +335,8 @@
       return false;
     }
     localStorage.removeItem(PROFESSIONAL_RUT_STORAGE_KEY);
+    lastDriveFingerprint = "";
+    lastDriveRecordId = "";
     closeProfessionalRutGate();
     renderProfessionalIdentity();
     showProfessionalRutGate();
@@ -436,6 +487,8 @@
       const rut = validation.formatted;
       input.value = rut;
       localStorage.setItem(PROFESSIONAL_RUT_STORAGE_KEY, JSON.stringify({ date: localDateKey(), rut }));
+      lastDriveFingerprint = "";
+      lastDriveRecordId = "";
       closeProfessionalRutGate();
       renderProfessionalIdentity();
     });
@@ -613,8 +666,9 @@
     const finalPm = urgencyAcceptedWithoutDose ? null : numberOrZero(data.professionalPm);
     const decision = data.professionalDecision === "modificada" ? "Modificada" : "Aceptada";
     const medication = concomitantMedicationSnapshot(tipo, data);
+    const professionalRut = storedDailyProfessionalRut();
     const fingerprint = [
-      patientName, birthDate, tipo, note, decision,
+      professionalRut, patientName, birthDate, tipo, note, decision,
       urgencyAcceptedWithoutDose ? "urgency-no-dose" : "",
       data.level3Timing || "", data.level3ReversibleCause || "",
       finalAm ?? "", finalPm ?? "", hba1c ?? "", targetA1c ?? "",
@@ -629,7 +683,6 @@
       medication.text
     ].join("|");
 
-    const professionalRut = storedDailyProfessionalRut();
 
     return {
       bridgeVersion: DRIVE_BRIDGE_VERSION,
