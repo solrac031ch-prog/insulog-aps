@@ -3,12 +3,12 @@
   "schema_version": 2,
   "farmacia": "Cerro Navia",
   "source_url": "https://farmaciapopularonline.cl/consultor?farmacia=cerro%20navia",
-  "updated_at": "2026-09-26T12:23:01.754941+00:00",
+  "updated_at": "2026-09-27T13:14:17.244243+00:00",
   "source_mode": "server_search",
   "base_rows": 16,
-  "source_rows": 14,
+  "source_rows": 13,
   "query_rows": {
-    "metfor": 5,
+    "metfor": 4,
     "empag": 6,
     "vilda": 5
   },
@@ -99,7 +99,7 @@
           "principle": "EMPAGLIFOZINA 10MG",
           "brand": "BOEHRINGER INGELHEIM",
           "botica": "Igualdad 150",
-          "stock": 127,
+          "stock": 126,
           "unit": "COMPRIMIDOS",
           "price": 25364,
           "laboratory": "BOEHRINGER INGELHEIM",
@@ -121,7 +121,7 @@
           "principle": "EMPAGLIFOZINA 25MG",
           "brand": "BOEHRINGER INGELHEIM",
           "botica": "Igualdad 150",
-          "stock": 363,
+          "stock": 360,
           "unit": "COMPRIMIDOS",
           "price": 31559,
           "laboratory": "BOEHRINGER INGELHEIM",
@@ -170,16 +170,16 @@
     },
     "vildaMet": {
       "available": true,
-      "best_price": 9940,
+      "best_price": 9716,
       "matches": [
         {
           "product": "VIDARON M 50/1000 MG X 60 COMP REC",
           "principle": "Vildagliptina 50 mg/Metformina 1000 mg",
           "brand": "HETERO",
           "botica": "Igualdad 150",
-          "stock": 15,
+          "stock": 11,
           "unit": "COMPRIMIDOS",
-          "price": 9940,
+          "price": 9716,
           "laboratory": "HETERO",
           "variant": "50/1000"
         },
@@ -239,17 +239,6 @@
     ],
     "requires_clinical_review": true,
     "unrecognized_presentations": [
-      {
-        "family": "metformina",
-        "product": "GLIMEFOR 1000 X 30 COMP REC",
-        "principle": "Metformina",
-        "brand": "ASCEND",
-        "botica": "Igualdad 150",
-        "stock": 10,
-        "price": 3208,
-        "laboratory": "ASCEND",
-        "reason": "Presentación o dosis de una familia monitorizada que aún no está mapeada en Insulog."
-      },
       {
         "family": "metformina",
         "product": "GLIMEFOR 1000 X 30 COMP REC",
