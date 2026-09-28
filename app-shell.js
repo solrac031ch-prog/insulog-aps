@@ -273,8 +273,8 @@
     const decisionCard = document.querySelector("#p5 .decision-card");
     if (decisionCard && !byId("best-professional-review")) {
       decisionCard.insertAdjacentHTML("beforebegin", `
-<div id="best-professional-review" class="card compact-card best-card text-left">
-          <p class="card-title text-center">Revisión profesional</p>
+<div id="best-professional-review" class="card compact-card best-card text-left" aria-label="Decisión profesional">
+          <p class="card-title text-center sr-only">Revisión profesional</p>
           <div class="best-review-actions">
             <button id="best-review-accept" type="button" class="btn btn-success" data-action="best-review-accept" aria-pressed="false">ACEPTAR RECOMENDACIÓN</button>
             <button id="best-review-reassess" type="button" class="btn" data-action="best-review-reassess" aria-pressed="false">MARCAR PARA REEVALUAR</button>
