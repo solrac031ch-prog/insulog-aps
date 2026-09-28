@@ -352,12 +352,10 @@
 
     if (!rut) {
       node.innerHTML = `
-        <div class="professional-card compact">
-          <div class="professional-card__identity">
-            <span class="professional-card__label">Profesional</span>
-            <span class="professional-card__status warning">Pendiente</span>
-          </div>
-        </div>`;
+        <button type="button" class="professional-card professional-card--pending" data-action="professional-rut-change" aria-label="Identificar profesional">
+          <span class="professional-card__status warning"><span class="professional-card__dot" aria-hidden="true"></span></span>
+          <span class="professional-card__label">Identificar profesional</span>
+        </button>`;
       return;
     }
 
@@ -370,12 +368,12 @@
           <span class="professional-card__status ${statusClass}" aria-label="${statusLabel}" title="${statusLabel}">
             <span class="professional-card__dot" aria-hidden="true"></span>${statusText}
           </span>
-          <span class="sr-only">Profesional activo</span>
+          <span class="professional-card__label">Profesional</span>
           <span class="professional-card__rut">${maskedProfessionalRut(rut)}</span>
         </div>
         <div class="professional-card__actions">
           <button type="button" class="professional-btn" data-action="professional-rut-change">Cambiar</button>
-          <button type="button" class="professional-btn danger" data-action="professional-rut-logout">Cerrar</button>
+          <button type="button" class="professional-btn professional-btn--quiet" data-action="professional-rut-logout" aria-label="Cerrar sesión profesional">Salir</button>
         </div>
       </div>`;
   }
@@ -587,12 +585,13 @@
     gate.setAttribute("aria-labelledby", "professional-rut-title");
     gate.innerHTML = `
       <form class="professional-rut-card" id="professional-rut-form" novalidate>
-        <h2 id="professional-rut-title">Identificación profesional</h2>
-        <p>Ingrese su RUT. Se solicitará una vez al día en este equipo.</p>
+        <div class="professional-rut-eyebrow">Insulog APS</div>
+        <h2 id="professional-rut-title">Identifíquese para continuar</h2>
+        <p class="professional-rut-copy">Su RUT se usa para atribuir correctamente los registros clínicos de hoy en este equipo.</p>
         <label for="professional-rut-input">RUT profesional</label>
         <input id="professional-rut-input" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" placeholder="12.345.678-5 o 1.234.567-K" aria-describedby="professional-rut-error">
         <div id="professional-rut-error" role="alert" aria-live="polite"></div>
-        <button id="professional-rut-submit" type="submit">CONTINUAR</button>
+        <button id="professional-rut-submit" type="submit">Continuar</button>
       </form>
     `;
 
