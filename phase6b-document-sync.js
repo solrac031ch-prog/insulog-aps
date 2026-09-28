@@ -452,15 +452,24 @@
       }
       #professional-rut-gate[hidden] { display: none !important; }
       #professional-rut-gate .professional-rut-card {
-        width: min(100%, 430px);
+        width: min(100%, 400px);
         background: #fff;
-        border-radius: 18px;
-        padding: 24px;
-        box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+        border: 1px solid rgba(226,232,240,.9);
+        border-radius: 22px;
+        padding: 26px;
+        box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
       }
-      #professional-rut-gate h2 { margin: 0 0 8px; font-size: 1.35rem; }
-      #professional-rut-gate p { margin: 0 0 16px; line-height: 1.45; }
-      #professional-rut-gate label { display: block; font-weight: 700; margin-bottom: 6px; }
+      #professional-rut-gate .professional-rut-eyebrow {
+        margin-bottom: 7px;
+        color: #2d68aa;
+        font-size: .72rem;
+        font-weight: 850;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+      }
+      #professional-rut-gate h2 { margin: 0 0 8px; color: #183a64; font-size: 1.3rem; line-height: 1.2; }
+      #professional-rut-gate .professional-rut-copy { margin: 0 0 18px; color: #60748d; font-size: .9rem; line-height: 1.5; }
+      #professional-rut-gate label { display: block; color: #304b6d; font-size: .82rem; font-weight: 750; margin-bottom: 6px; }
       #professional-rut-input {
         width: 100%;
         min-height: 48px;
@@ -490,57 +499,61 @@
 
       /* Fallback crítico para evitar una sesión sin estilo si la PWA cruza versiones. */
       .professional-identity-bar {
-        width: min(calc(100% - 24px), 520px);
-        margin: 10px auto 6px;
+        width: fit-content;
+        max-width: calc(100% - 24px);
+        margin: 12px auto 2px;
         -webkit-user-select: none;
         user-select: none;
       }
       .professional-card {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        padding: 8px 10px;
-        border: 1px solid #d9e4f2;
-        border-radius: 14px;
-        background: #f8fbff;
+        justify-content: center;
+        gap: 8px;
+        min-height: 34px;
+        padding: 4px 6px 4px 9px;
+        border: 1px solid #dde6f0;
+        border-radius: 999px;
+        background: rgba(248,251,255,.94);
+        color: #51667f;
         text-align: left;
       }
+      button.professional-card { appearance: none; font: inherit; cursor: pointer; }
       .professional-card__identity,
       .professional-card__actions {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 7px;
-        flex-wrap: wrap;
+        gap: 6px;
       }
       .professional-card__label {
-        color: #5f7392;
-        font-size: .74rem;
-        font-weight: 750;
+        color: #6a7d94;
+        font-size: .72rem;
+        font-weight: 700;
       }
       .professional-card__rut {
-        padding: 4px 8px;
-        border: 1px solid #d5e2f1;
-        border-radius: 9px;
-        background: #fff;
-        color: #0f4c97;
-        font-size: .83rem;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: #173f73;
+        font-size: .76rem;
         font-weight: 800;
       }
       .professional-card__status {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        min-height: 22px;
-        padding: 2px 6px;
+        gap: 4px;
+        min-height: 18px;
+        padding: 0;
+        border: 0;
         border-radius: 999px;
-        font-size: .68rem;
+        background: transparent;
+        font-size: .66rem;
         font-weight: 800;
       }
-      .professional-card__status.ok { padding-inline: 3px; color: #18794e; background: transparent; }
-      .professional-card__status.warning { color: #9a6a14; background: #fff7e8; }
-      .professional-card__status.error { color: #a33636; background: #fff1f1; }
-      .professional-card__status.sent { color: #185699; background: #eef5ff; }
+      .professional-card__status.ok { color: #1f7a55; }
+      .professional-card__status.warning { color: #a16b10; }
+      .professional-card__status.error { color: #b33b3b; }
+      .professional-card__status.sent { color: #2365a8; }
       .professional-card__dot {
         width: 7px;
         height: 7px;
@@ -548,18 +561,18 @@
         background: currentColor;
       }
       .professional-btn {
-        min-height: 30px;
-        padding: 5px 8px;
-        border: 1px solid #c8d8ec;
-        border-radius: 9px;
-        background: #fff;
-        color: #185699;
+        min-height: 26px;
+        padding: 3px 7px;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: #2c65a7;
         font: inherit;
-        font-size: .7rem;
+        font-size: .68rem;
         font-weight: 750;
         cursor: pointer;
       }
-      .professional-btn.danger { color: #a33636; border-color: #efc8c8; }
+      .professional-btn--quiet { color: #7a8797; }
     `;
     document.head.appendChild(style);
   }
