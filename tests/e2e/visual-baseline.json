@@ -1,5 +1,5 @@
 {
-  "version": "prepilot-r10-minimal-clinical-ui-20260924",
+  "version": "prepilot-r11-quiet-clinical-ui-20260928",
   "hashBits": 64,
   "defaultTolerance": 6,
   "profiles": {
@@ -24,7 +24,7 @@
       "tolerance": 6
     },
     "mobile-note": {
-      "hash": "d4d69e47eaeab249",
+      "hash": "e8d69e47eaeab2c0",
       "tolerance": 6
     },
     "desktop-p0": {
