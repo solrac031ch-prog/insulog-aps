@@ -265,11 +265,6 @@
   function injectBestOfUI() {
     injectBestOfStyles();
 
-    const evidence = document.querySelector("#p0 .evidence-content");
-    if (evidence && !byId("best-history-home-entry")) {
-      evidence.insertAdjacentHTML("beforeend", '<button id="best-history-home-entry" type="button" class="btn btn-narrow section-action" data-action="best-history-open">VER HISTORIAL DE LA SESIÓN</button>');
-    }
-
     const decisionCard = document.querySelector("#p5 .decision-card");
     if (decisionCard && !byId("best-professional-review")) {
       decisionCard.insertAdjacentHTML("beforebegin", `
@@ -280,40 +275,9 @@
             <button id="best-review-reassess" type="button" class="btn" data-action="best-review-reassess" aria-pressed="false">MARCAR PARA REEVALUAR</button>
           </div>
           <div id="best-review-status" class="best-review-status" role="status" aria-live="polite"></div>
-        </div>
-        <div id="best-history-save-card" class="card compact-card best-card text-left">
-          <p class="card-title text-center">Historial temporal de la sesión</p>
-          <div class="field">
-            <label for="best-history-alias">Alias / código local del paciente</label>
-            <input id="best-history-alias" type="text" maxlength="60" autocomplete="off" placeholder="Ej: PX-014">
-          </div>
-          <p class="helper-text">Se conserva sólo durante esta sesión y se borra al recargar o cerrar la app. No se sincroniza con un servidor. Use un alias o código local; no ingrese RUT ni nombre completo.</p>
-          <div class="best-review-actions">
-            <button type="button" class="btn btn-main" data-action="best-history-save">GUARDAR CASO</button>
-            <button type="button" class="btn" data-action="best-history-open">VER HISTORIAL</button>
-          </div>
-          <div id="best-history-status" class="best-history-status" role="status" aria-live="polite"></div>
         </div>`);
     }
 
-    if (!byId("p8")) {
-      const page = document.createElement("section");
-      page.id = "p8";
-      page.className = "page page-center";
-      page.setAttribute("aria-hidden", "true");
-      page.innerHTML = `
-        <div class="page-label">Historial · sesión actual</div>
-        <h2>Historial temporal de la sesión</h2>
-        <p class="lead small-lead">Casos guardados temporalmente durante esta sesión. Se borran al recargar o cerrar la app y no se sincronizan con la ficha clínica ni con un servidor.</p>
-        <div class="best-history-controls">
-          <div class="field"><label for="best-history-filter">Filtrar por alias / código local</label><input id="best-history-filter" type="text" maxlength="60" autocomplete="off" placeholder="Ej: PX-014"></div>
-        </div>
-        <div id="best-history-list"></div>
-        <button type="button" class="btn btn-danger btn-narrow section-action" data-action="best-history-clear">BORRAR HISTORIAL DE LA SESIÓN</button>
-        <button type="button" class="btn btn-narrow secondary-nav" data-action="best-history-home">VOLVER AL INICIO</button>`;
-      byId("app")?.appendChild(page);
-      byId("best-history-filter")?.addEventListener("input", renderBestHistory);
-    }
 
     const noteNode = byId("nota-clinica");
     if (noteNode && !noteNode.dataset.bestObserver) {
