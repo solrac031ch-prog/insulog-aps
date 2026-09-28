@@ -494,6 +494,8 @@
       .professional-identity-bar {
         width: min(calc(100% - 24px), 520px);
         margin: 10px auto 6px;
+        -webkit-user-select: none;
+        user-select: none;
       }
       .professional-card {
         display: flex;
@@ -537,7 +539,7 @@
         font-size: .68rem;
         font-weight: 800;
       }
-      .professional-card__status.ok { color: #18794e; background: #eaf8ef; }
+      .professional-card__status.ok { padding-inline: 3px; color: #18794e; background: transparent; }
       .professional-card__status.warning { color: #9a6a14; background: #fff7e8; }
       .professional-card__status.error { color: #a33636; background: #fff1f1; }
       .professional-card__status.sent { color: #185699; background: #eef5ff; }
