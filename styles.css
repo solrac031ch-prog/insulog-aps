@@ -1136,6 +1136,8 @@ footer p {
 .professional-identity-bar {
   width: min(calc(100% - 24px), 520px);
   margin: 10px auto 6px;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .professional-card {
@@ -1194,7 +1196,8 @@ footer p {
 }
 
 .professional-card__status.ok {
-  background: #eaf8ef;
+  padding-inline: 3px;
+  background: transparent;
   color: #18794e;
 }
 
@@ -1484,4 +1487,13 @@ footer p {
   .professional-card {
     gap: 7px;
   }
+}
+
+
+/* Final quiet polish: keep decision surfaces focused on actions, not headings. */
+#best-professional-review {
+  padding-top: 14px;
+}
+#best-professional-review > .card-title.sr-only {
+  margin: 0;
 }
