@@ -3,14 +3,14 @@
   "schema_version": 2,
   "farmacia": "Cerro Navia",
   "source_url": "https://farmaciapopularonline.cl/consultor?farmacia=cerro%20navia",
-  "updated_at": "2026-10-26T14:29:56.390017+00:00",
+  "updated_at": "2026-10-27T13:30:24.291003+00:00",
   "source_mode": "server_search",
-  "base_rows": 15,
-  "source_rows": 10,
+  "base_rows": 17,
+  "source_rows": 11,
   "query_rows": {
     "metfor": 4,
     "empag": 6,
-    "vilda": 2
+    "vilda": 3
   },
   "source_headers": [
     "bio equivalente",
@@ -87,7 +87,7 @@
           "principle": "EMPAGLIFOZINA 10MG",
           "brand": "BOEHRINGER INGELHEIM",
           "botica": "Mapocho 8265",
-          "stock": 127,
+          "stock": 124,
           "unit": "COMPRIMIDOS",
           "price": 25364,
           "laboratory": "BOEHRINGER INGELHEIM",
@@ -98,7 +98,7 @@
           "principle": "EMPAGLIFOZINA 10MG",
           "brand": "BOEHRINGER INGELHEIM",
           "botica": "Igualdad 150",
-          "stock": 121,
+          "stock": 114,
           "unit": "COMPRIMIDOS",
           "price": 25364,
           "laboratory": "BOEHRINGER INGELHEIM",
@@ -109,7 +109,7 @@
           "principle": "EMPAGLIFOZINA 25MG",
           "brand": "BOEHRINGER INGELHEIM",
           "botica": "Igualdad 150",
-          "stock": 296,
+          "stock": 293,
           "unit": "COMPRIMIDOS",
           "price": 31559,
           "laboratory": "BOEHRINGER INGELHEIM",
@@ -120,7 +120,7 @@
           "principle": "EMPAGLIFOZINA 25MG",
           "brand": "BOEHRINGER INGELHEIM",
           "botica": "Mapocho 8265",
-          "stock": 235,
+          "stock": 234,
           "unit": "COMPRIMIDOS",
           "price": 31559,
           "laboratory": "BOEHRINGER INGELHEIM",
@@ -137,7 +137,7 @@
           "principle": "Empagliflozina/Metformina",
           "brand": "LABORATORIO BAGÓ DE CHILE",
           "botica": "Mapocho 8265",
-          "stock": 79,
+          "stock": 78,
           "unit": "COMPRIMIDOS",
           "price": 33344,
           "laboratory": "LABORATORIO BAGÓ DE CHILE",
@@ -158,8 +158,19 @@
     },
     "vildaMet": {
       "available": true,
-      "best_price": 27775,
+      "best_price": 9716,
       "matches": [
+        {
+          "product": "VIDARON M 50/1000 MG X 60 COMP REC",
+          "principle": "Vildagliptina 50 mg/Metformina 1000 mg",
+          "brand": "HETERO",
+          "botica": "Mapocho 8265",
+          "stock": 1,
+          "unit": "COMPRIMIDOS",
+          "price": 9716,
+          "laboratory": "HETERO",
+          "variant": "50/1000"
+        },
         {
           "product": "VILZERMET 50MG/500 MG X 60 COMP",
           "principle": "Vildagliptina/Metformina",
@@ -200,7 +211,7 @@
         "principle": "Metformina",
         "brand": "ASCEND",
         "botica": "Igualdad 150",
-        "stock": 29,
+        "stock": 16,
         "price": 3396,
         "laboratory": "ASCEND",
         "reason": "Presentación o dosis de una familia monitorizada que aún no está mapeada en Insulog."
@@ -211,7 +222,7 @@
         "principle": "Metformina",
         "brand": "ASCEND",
         "botica": "Mapocho 8265",
-        "stock": 4,
+        "stock": 17,
         "price": 3396,
         "laboratory": "ASCEND",
         "reason": "Presentación o dosis de una familia monitorizada que aún no está mapeada en Insulog."
