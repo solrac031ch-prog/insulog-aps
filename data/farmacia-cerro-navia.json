@@ -3,14 +3,14 @@
   "schema_version": 2,
   "farmacia": "Cerro Navia",
   "source_url": "https://farmaciapopularonline.cl/consultor?farmacia=cerro%20navia",
-  "updated_at": "2026-11-09T17:44:57.911445+00:00",
+  "updated_at": "2026-11-10T15:43:58.038143+00:00",
   "source_mode": "server_search",
   "base_rows": 17,
-  "source_rows": 11,
+  "source_rows": 13,
   "query_rows": {
     "metfor": 4,
     "empag": 6,
-    "vilda": 3
+    "vilda": 5
   },
   "source_headers": [
     "bio equivalente",
@@ -87,7 +87,7 @@
           "principle": "EMPAGLIFOZINA 10MG",
           "brand": "BOEHRINGER INGELHEIM",
           "botica": "Mapocho 8265",
-          "stock": 113,
+          "stock": 112,
           "unit": "COMPRIMIDOS",
           "price": 25364,
           "laboratory": "BOEHRINGER INGELHEIM",
@@ -109,7 +109,7 @@
           "principle": "EMPAGLIFOZINA 25MG",
           "brand": "BOEHRINGER INGELHEIM",
           "botica": "Igualdad 150",
-          "stock": 169,
+          "stock": 166,
           "unit": "COMPRIMIDOS",
           "price": 31559,
           "laboratory": "BOEHRINGER INGELHEIM",
@@ -120,7 +120,7 @@
           "principle": "EMPAGLIFOZINA 25MG",
           "brand": "BOEHRINGER INGELHEIM",
           "botica": "Mapocho 8265",
-          "stock": 165,
+          "stock": 164,
           "unit": "COMPRIMIDOS",
           "price": 31559,
           "laboratory": "BOEHRINGER INGELHEIM",
@@ -158,8 +158,19 @@
     },
     "vildaMet": {
       "available": true,
-      "best_price": 27775,
+      "best_price": 9716,
       "matches": [
+        {
+          "product": "VIDARON M 50/1000 MG X 60 COMP REC",
+          "principle": "Vildagliptina 50 mg/Metformina 1000 mg",
+          "brand": "HETERO",
+          "botica": "Igualdad 150",
+          "stock": 139,
+          "unit": "COMPRIMIDOS",
+          "price": 9716,
+          "laboratory": "HETERO",
+          "variant": "50/1000"
+        },
         {
           "product": "VILZERMET 50MG/500 MG X 60 COMP",
           "principle": "Vildagliptina/Metformina",
