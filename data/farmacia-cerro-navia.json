@@ -3,13 +3,13 @@
   "schema_version": 2,
   "farmacia": "Cerro Navia",
   "source_url": "https://farmaciapopularonline.cl/consultor?farmacia=cerro%20navia",
-  "updated_at": "2026-11-10T15:43:58.038143+00:00",
+  "updated_at": "2026-11-11T15:32:58.572582+00:00",
   "source_mode": "server_search",
   "base_rows": 17,
-  "source_rows": 13,
+  "source_rows": 14,
   "query_rows": {
     "metfor": 4,
-    "empag": 6,
+    "empag": 7,
     "vilda": 5
   },
   "source_headers": [
@@ -87,7 +87,7 @@
           "principle": "EMPAGLIFOZINA 10MG",
           "brand": "BOEHRINGER INGELHEIM",
           "botica": "Mapocho 8265",
-          "stock": 112,
+          "stock": 110,
           "unit": "COMPRIMIDOS",
           "price": 25364,
           "laboratory": "BOEHRINGER INGELHEIM",
@@ -98,7 +98,7 @@
           "principle": "EMPAGLIFOZINA 10MG",
           "brand": "BOEHRINGER INGELHEIM",
           "botica": "Igualdad 150",
-          "stock": 96,
+          "stock": 93,
           "unit": "COMPRIMIDOS",
           "price": 25364,
           "laboratory": "BOEHRINGER INGELHEIM",
@@ -109,7 +109,7 @@
           "principle": "EMPAGLIFOZINA 25MG",
           "brand": "BOEHRINGER INGELHEIM",
           "botica": "Igualdad 150",
-          "stock": 166,
+          "stock": 164,
           "unit": "COMPRIMIDOS",
           "price": 31559,
           "laboratory": "BOEHRINGER INGELHEIM",
@@ -120,7 +120,7 @@
           "principle": "EMPAGLIFOZINA 25MG",
           "brand": "BOEHRINGER INGELHEIM",
           "botica": "Mapocho 8265",
-          "stock": 164,
+          "stock": 159,
           "unit": "COMPRIMIDOS",
           "price": 31559,
           "laboratory": "BOEHRINGER INGELHEIM",
@@ -134,7 +134,7 @@
       "matches": [
         {
           "product": "ENCLYNA DUO 12,5/850 MG X 60 COMP REC",
-          "principle": "Empagliflozina/Metformina",
+          "principle": "Empagliflozina 12,5 mg/Metformina 1000 mg",
           "brand": "LABORATORIO BAGÓ DE CHILE",
           "botica": "Mapocho 8265",
           "stock": 76,
@@ -145,7 +145,7 @@
         },
         {
           "product": "ENCLYNA DUO 12,5/850 MG X 60 COMP REC",
-          "principle": "Empagliflozina/Metformina",
+          "principle": "Empagliflozina 12,5 mg/Metformina 1000 mg",
           "brand": "LABORATORIO BAGÓ DE CHILE",
           "botica": "Igualdad 150",
           "stock": 20,
@@ -153,6 +153,17 @@
           "price": 33344,
           "laboratory": "LABORATORIO BAGÓ DE CHILE",
           "variant": "12.5/850"
+        },
+        {
+          "product": "JARDIANCE DUO 12.5/1000 MG X 60 COMP REC",
+          "principle": "Empagliflozina 12,5 mg/Metformina 1000 mg",
+          "brand": "BOEHRINGER INGELHEIM",
+          "botica": "Igualdad 150",
+          "stock": 80,
+          "unit": "COMPRIMIDOS",
+          "price": 35324,
+          "laboratory": "BOEHRINGER INGELHEIM",
+          "variant": "12.5/1000"
         }
       ]
     },
@@ -165,7 +176,7 @@
           "principle": "Vildagliptina 50 mg/Metformina 1000 mg",
           "brand": "HETERO",
           "botica": "Igualdad 150",
-          "stock": 139,
+          "stock": 136,
           "unit": "COMPRIMIDOS",
           "price": 9716,
           "laboratory": "HETERO",
